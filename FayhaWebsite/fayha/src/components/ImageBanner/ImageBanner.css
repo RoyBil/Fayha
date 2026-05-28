@@ -1,0 +1,43 @@
+.image-banner {
+  margin: 0;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  position: relative;
+  isolation: isolate;
+}
+
+.image-banner__image {
+  width: 100%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: transform var(--transition-slow);
+}
+
+.image-banner:hover .image-banner__image {
+  transform: scale(1.04);
+}
+
+.image-banner--small .image-banner__image { aspect-ratio: 16 / 7; }
+.image-banner--medium .image-banner__image { aspect-ratio: 16 / 9; }
+.image-banner--large .image-banner__image { aspect-ratio: 21 / 9; }
+.image-banner--portrait .image-banner__image { aspect-ratio: 4 / 5; }
+
+.image-banner__caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: var(--space-md);
+  background: linear-gradient(to top, rgba(26, 18, 16, 0.85), transparent);
+  color: var(--color-cream);
+  font-family: var(--font-heading);
+  font-style: italic;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 768px) {
+  .image-banner--large .image-banner__image { aspect-ratio: 16 / 10; }
+}

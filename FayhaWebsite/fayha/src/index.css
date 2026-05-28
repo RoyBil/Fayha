@@ -1,0 +1,34 @@
+/* index.css — app-specific overrides. Global design tokens & base rules live
+   in ./styles/global.css (imported before this file in index.js). */
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-dark);
+}
+
+/* Scrollbar (WebKit) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-off-white);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-accent);
+  border-radius: 5px;
+  border: 2px solid var(--color-off-white);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent-dark);
+}
+
+/* Focus styles */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}

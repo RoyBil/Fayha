@@ -1,0 +1,248 @@
+.music__intro {
+  text-align: center;
+  max-width: 720px;
+  margin: var(--space-xl) auto 0;
+}
+
+.music__intro p {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  line-height: 1.8;
+  color: var(--color-charcoal);
+  margin-bottom: var(--space-md);
+}
+
+.music__notice {
+  max-width: 720px;
+  margin: 0 auto var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(201, 161, 74, 0.12);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  color: var(--color-accent-dark);
+  font-size: 0.95rem;
+}
+
+.music__error {
+  max-width: 720px;
+  margin: 0 auto var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(186, 64, 64, 0.1);
+  border-radius: var(--radius-sm);
+  color: #8b2a2a;
+  font-size: 0.9rem;
+}
+
+/* Pieces */
+.music__pieces {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+}
+
+.music__piece-card {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.music__piece-card--choir {
+  border: 1px solid rgba(201, 161, 74, 0.4);
+  background: linear-gradient(180deg, var(--color-white), rgba(201, 161, 74, 0.04));
+}
+
+.music__choir-badge {
+  position: absolute;
+  top: var(--space-sm);
+  right: var(--space-sm);
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--color-cream);
+  background: var(--color-primary);
+  padding: 0.3rem 0.6rem;
+  border-radius: var(--radius-sm);
+  z-index: 2;
+}
+
+.music__piece-number {
+  position: absolute;
+  top: var(--space-md);
+  right: var(--space-md);
+  font-family: var(--font-heading);
+  font-size: 2.5rem;
+  color: var(--color-accent);
+  opacity: 0.3;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.music__piece-title {
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  color: var(--color-primary);
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.music__piece-translation {
+  font-family: var(--font-heading);
+  font-style: italic;
+  color: var(--color-gray);
+  font-size: 1.05rem;
+  margin-bottom: var(--space-sm);
+}
+
+.music__piece-divider {
+  width: 40px;
+  height: 2px;
+  background: var(--color-accent);
+  margin-bottom: var(--space-sm);
+}
+
+.music__piece-composers {
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-accent-dark);
+  margin-bottom: var(--space-sm);
+  font-weight: 500;
+}
+
+.music__piece-desc {
+  color: var(--color-gray);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  flex: 1;
+  margin-bottom: var(--space-md);
+}
+
+.music__piece-button {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.4rem;
+  background: var(--color-primary);
+  color: var(--color-cream);
+  font-size: 0.8rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-base);
+}
+
+.music__piece-button:hover {
+  background: var(--color-primary-dark);
+  color: var(--color-cream);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Trained Choirs */
+.music__choirs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-md);
+}
+
+.music__choir-card {
+  display: block;
+  background: rgba(250, 246, 240, 0.04);
+  border: 1px solid rgba(201, 161, 74, 0.2);
+  padding: var(--space-lg);
+  border-radius: var(--radius-md);
+  color: var(--color-cream);
+  text-decoration: none;
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.music__choir-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: var(--color-accent);
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform var(--transition-base);
+}
+
+.music__choir-card:hover {
+  background: rgba(250, 246, 240, 0.08);
+  border-color: var(--color-accent);
+  transform: translateY(-4px);
+  color: var(--color-cream);
+}
+
+.music__choir-card:hover::before {
+  transform: scaleY(1);
+}
+
+.music__choir-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xs);
+}
+
+.music__choir-head h4 {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  color: var(--color-accent-light);
+  margin: 0;
+  font-weight: 600;
+}
+
+.music__choir-period {
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-light-gray);
+  white-space: nowrap;
+  padding-top: 6px;
+}
+
+.music__choir-location {
+  font-size: 0.85rem;
+  color: var(--color-light-gray);
+  margin-bottom: var(--space-sm);
+  font-style: italic;
+}
+
+.music__choir-conductor {
+  font-size: 0.9rem;
+  color: var(--color-cream);
+  margin-bottom: var(--space-sm);
+}
+
+.music__choir-conductor span {
+  color: var(--color-light-gray);
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-right: 0.3rem;
+}
+
+.music__choir-note {
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--color-light-gray);
+  margin-bottom: var(--space-md);
+}
+
+.music__choir-link {
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  font-weight: 600;
+}

@@ -1,0 +1,229 @@
+.about__story {
+  max-width: 760px;
+  margin: var(--space-xl) auto 0;
+}
+
+.about__paragraph {
+  font-size: 1.1rem;
+  line-height: 1.9;
+  color: var(--color-charcoal);
+  margin-bottom: var(--space-md);
+  text-align: justify;
+}
+
+.about__dropcap {
+  float: left;
+  font-family: var(--font-heading);
+  font-size: 4.5rem;
+  line-height: 0.9;
+  font-weight: 600;
+  color: var(--color-primary);
+  padding: 6px 12px 0 0;
+  margin-top: 4px;
+}
+
+/* Maestro */
+.about__maestro {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-xl);
+  align-items: center;
+  max-width: 900px;
+  margin: 0 auto;
+  background: var(--color-white);
+  padding: var(--space-xl);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(201, 161, 74, 0.15);
+}
+
+.about__maestro-portrait {
+  position: relative;
+  width: 320px;
+  aspect-ratio: 4 / 5;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  flex-shrink: 0;
+}
+
+.about__maestro-portrait::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  right: 16px;
+  bottom: 16px;
+  border: 2px solid var(--color-accent);
+  border-radius: var(--radius-lg);
+  z-index: 0;
+}
+
+.about__maestro-portrait img {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 25%;
+  border-radius: var(--radius-lg);
+}
+
+.about__maestro-tag {
+  position: absolute;
+  bottom: var(--space-sm);
+  left: var(--space-sm);
+  z-index: 2;
+  padding: 0.4rem 0.9rem;
+  background: rgba(26, 18, 16, 0.8);
+  color: var(--color-accent);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  backdrop-filter: blur(8px);
+}
+
+.about__maestro-body p {
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: var(--color-gray);
+  margin-bottom: var(--space-sm);
+}
+
+.about__maestro-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* Timeline */
+.about__timeline {
+  max-width: 780px;
+  margin: 0 auto;
+  position: relative;
+  padding-left: var(--space-md);
+}
+
+.about__timeline::before {
+  content: '';
+  position: absolute;
+  left: 80px;
+  top: 20px;
+  bottom: 20px;
+  width: 2px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--color-accent) 10%,
+    var(--color-accent) 90%,
+    transparent
+  );
+}
+
+.about__timeline-item {
+  display: grid;
+  grid-template-columns: 70px 20px 1fr;
+  gap: var(--space-md);
+  align-items: start;
+  padding: var(--space-md) 0;
+  position: relative;
+}
+
+.about__timeline-year {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-align: right;
+  padding-top: 0.15rem;
+}
+
+.about__timeline-marker {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  border: 3px solid var(--color-cream);
+  box-shadow: 0 0 0 2px var(--color-accent);
+  margin-top: 8px;
+  justify-self: center;
+  position: relative;
+  z-index: 1;
+}
+
+.about__timeline-content h4 {
+  font-family: var(--font-heading);
+  font-size: 1.2rem;
+  color: var(--color-dark);
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+}
+
+.about__timeline-content p {
+  margin: 0;
+  color: var(--color-gray);
+  font-size: 0.95rem;
+}
+
+/* Quote */
+.about__quote {
+  background: var(--color-dark);
+  padding: var(--space-2xl) var(--space-md);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.about__quote::before {
+  content: '"';
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-heading);
+  font-size: 10rem;
+  color: var(--color-accent);
+  opacity: 0.15;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.about__quote blockquote {
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.about__quote p {
+  font-family: var(--font-heading);
+  font-style: italic;
+  font-size: clamp(1.3rem, 2.5vw, 1.8rem);
+  line-height: 1.5;
+  color: var(--color-cream);
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .about__maestro {
+    grid-template-columns: 1fr;
+    text-align: center;
+    padding: var(--space-lg);
+  }
+
+  .about__maestro-portrait {
+    width: min(260px, 80%);
+    margin: 0 auto;
+  }
+
+  .about__timeline::before { left: 60px; }
+
+  .about__timeline-item {
+    grid-template-columns: 50px 16px 1fr;
+    gap: var(--space-sm);
+  }
+
+  .about__timeline-year { font-size: 1.2rem; }
+
+  .about__paragraph { text-align: left; }
+}
