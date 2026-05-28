@@ -1,0 +1,44 @@
+# Flutter
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+*.iml
+*.lock
+pubspec.lock
+
+# React / Node
+node_modules/
+build/
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+.DS_Store
+
+# iOS
+ios/Pods/
+ios/Podfile.lock
+
+# macOS
+macos/Pods/
+macos/Podfile.lock
+
+# Android
+android/local.properties
+android/.gradle/
+android/captures/
+android/gradlew.bat
+
+# General
+*.log
+*.pyc
+__pycache__/
+.env
