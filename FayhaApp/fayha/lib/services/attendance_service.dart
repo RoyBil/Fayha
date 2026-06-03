@@ -20,11 +20,14 @@ class HistoryItem {
   final String title;
   final String subtitle;
   final DateTime date;
+  /// 0 = on time, >0 = how many minutes late (rehearsals only).
+  final int lateMinutes;
   const HistoryItem({
     required this.kind,
     required this.title,
     required this.subtitle,
     required this.date,
+    this.lateMinutes = 0,
   });
 }
 
@@ -120,25 +123,44 @@ class AttendanceService {
         .toList();
   }
 
-  /// Loads the saved sheet for one session.
-  static Future<({String? status, Map<String, bool> present})> loadSheet(
-      String branch, DateTime date) async {
+  /// Loads the saved sheet for one session — present flags + how many
+  /// minutes each member was late (0 = on time).
+  static Future<
+      ({
+        String? status,
+        Map<String, bool> present,
+        Map<String, int> lateMinutes,
+      })> loadSheet(String branch, DateTime date) async {
     final reh = await _c
         .from('rehearsals')
         .select('id,status')
         .eq('branch', branch)
         .eq('session_date', _d(date))
         .maybeSingle();
-    if (reh == null) return (status: null, present: <String, bool>{});
+    if (reh == null) {
+      return (
+        status: null,
+        present: <String, bool>{},
+        lateMinutes: <String, int>{},
+      );
+    }
     final att = await _c
         .from('attendance')
-        .select('member_id,present')
+        .select('member_id,present,late_minutes')
         .eq('rehearsal_id', reh['id'] as String);
     final present = <String, bool>{};
+    final lateMinutes = <String, int>{};
     for (final a in att as List) {
-      present[a['member_id'] as String] = a['present'] as bool;
+      final id = a['member_id'] as String;
+      present[id] = a['present'] as bool;
+      final lm = a['late_minutes'];
+      if (lm != null) lateMinutes[id] = lm as int;
     }
-    return (status: reh['status'] as String, present: present);
+    return (
+      status: reh['status'] as String,
+      present: present,
+      lateMinutes: lateMinutes,
+    );
   }
 
   /// Subscribes to live changes on the `attendance` table for the
@@ -208,7 +230,8 @@ class AttendanceService {
     try {
       final attRows = await _c
           .from('attendance')
-          .select('rehearsal_id, present, rehearsals(branch, session_date, status)')
+          .select(
+              'rehearsal_id, present, late_minutes, rehearsals(branch, session_date, status)')
           .eq('member_id', me.id)
           .eq('present', true)
           .limit(limit);
@@ -217,11 +240,13 @@ class AttendanceService {
         if (reh == null) continue;
         final dateStr = reh['session_date'] as String?;
         if (dateStr == null) continue;
+        final lm = (r['late_minutes'] as int?) ?? 0;
         items.add(HistoryItem(
           kind: 'rehearsal',
           title: 'Rehearsal · ${reh['branch']}',
-          subtitle: sessionTime,
+          subtitle: lm > 0 ? '$sessionTime · Late $lm min' : sessionTime,
           date: DateTime.parse(dateStr),
+          lateMinutes: lm,
         ));
       }
     } catch (_) {
@@ -263,6 +288,7 @@ class AttendanceService {
     required DateTime date,
     required bool cancelled,
     required Map<String, bool> present,
+    Map<String, int> lateMinutes = const {},
   }) async {
     final me = AppState.instance.currentMember;
     final reh = await _c.from('rehearsals').upsert({
@@ -281,6 +307,9 @@ class AttendanceService {
               'rehearsal_id': rehId,
               'member_id': e.key,
               'present': e.value,
+              // Only meaningful for present members; absent rows get null.
+              'late_minutes':
+                  e.value ? (lateMinutes[e.key] ?? 0) : null,
             })
         .toList();
     if (rows.isNotEmpty) {

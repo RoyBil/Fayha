@@ -16,6 +16,7 @@ class _ComposeMessageScreenState extends State<ComposeMessageScreen> {
   final _body = TextEditingController();
   String _audience = 'members';
   String? _branch;
+  String? _voice;
   bool _sending = false;
 
   @override
@@ -33,6 +34,12 @@ class _ComposeMessageScreenState extends State<ComposeMessageScreen> {
       );
       return;
     }
+    if (_audience == 'voice' && _voice == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pick a voice section')),
+      );
+      return;
+    }
     setState(() => _sending = true);
     try {
       await MessagesService.send(
@@ -40,6 +47,7 @@ class _ComposeMessageScreenState extends State<ComposeMessageScreen> {
         body: _body.text.trim(),
         audience: _audience,
         branch: _audience == 'branch' ? _branch : null,
+        voiceSection: _audience == 'voice' ? _voice : null,
       );
       if (!mounted) return;
       Navigator.pop(context, true);
@@ -108,6 +116,20 @@ class _ComposeMessageScreenState extends State<ComposeMessageScreen> {
                       .map((b) => DropdownMenuItem(value: b, child: Text(b)))
                       .toList(),
                   onChanged: (v) => setState(() => _branch = v),
+                ),
+              ],
+              if (_audience == 'voice') ...[
+                const SizedBox(height: 14),
+                DropdownButtonFormField<String>(
+                  value: _voice,
+                  decoration: const InputDecoration(
+                    labelText: 'Voice section or group',
+                    prefixIcon: Icon(Icons.music_note),
+                  ),
+                  items: ChoirData.messageVoiceTargets
+                      .map((v) => DropdownMenuItem(value: v, child: Text(v)))
+                      .toList(),
+                  onChanged: (v) => setState(() => _voice = v),
                 ),
               ],
               const SizedBox(height: 24),

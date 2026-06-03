@@ -21,6 +21,7 @@ class ConcertsService {
       date: DateTime.parse(row['starts_at'] as String).toLocal(),
       description: (row['description'] as String?) ?? '',
       kind: (row['kind'] as String?) ?? 'concert',
+      posterUrl: row['poster_url'] as String?,
     );
   }
 }

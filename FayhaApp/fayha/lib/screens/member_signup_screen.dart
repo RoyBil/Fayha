@@ -21,8 +21,7 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
   final _email = TextEditingController();
   final _phone = TextEditingController();
   final _password = TextEditingController();
-  final _concerts = TextEditingController(text: '0');
-  final _hours = TextEditingController(text: '0');
+  final _confirmPassword = TextEditingController();
 
   String? _branch;
   String? _voice;
@@ -35,18 +34,19 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
   String _photoExt = 'jpg';
 
   // clothing inventory
-  static const _clothingTypes = ['Suit', 'Shirt', 'Cap'];
+  static const _clothingTypes = ['Costume', 'T-shirt', 'Sweatshirt', 'Caps'];
   static const _sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'One Size'];
-  final Map<String, bool> _hasItem = {'Suit': false, 'Shirt': false, 'Cap': false};
-  final Map<String, String> _itemSize = {'Suit': 'M', 'Shirt': 'M', 'Cap': 'One Size'};
-  final Map<String, int> _itemQty = {'Suit': 1, 'Shirt': 1, 'Cap': 1};
+  final Map<String, bool> _hasItem = {
+    for (final t in _clothingTypes) t: false,
+  };
+  final Map<String, String> _itemSize = {
+    for (final t in _clothingTypes) t: (t == 'Caps' ? 'One Size' : 'M'),
+  };
+  final Map<String, int> _itemQty = {for (final t in _clothingTypes) t: 1};
 
   // new vs returning
   bool _isReturning = false;
   DateTime? _joinDate;
-  bool _tookBreak = false;
-  DateTime? _breakFrom;
-  DateTime? _breakTo;
 
   // trips the choir made (from the venues table), and the ones picked
   List<Venue> _allTrips = [];
@@ -73,8 +73,7 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
     _email.dispose();
     _phone.dispose();
     _password.dispose();
-    _concerts.dispose();
-    _hours.dispose();
+    _confirmPassword.dispose();
     super.dispose();
   }
 
@@ -117,8 +116,8 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
       _toast('Please pick the date you joined the choir');
       return;
     }
-    if (_isReturning && _tookBreak && (_breakFrom == null || _breakTo == null)) {
-      _toast('Please pick both break dates');
+    if (_password.text != _confirmPassword.text) {
+      _toast('Passwords do not match');
       return;
     }
     setState(() => _submitting = true);
@@ -132,13 +131,9 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
         branch: _branch ?? 'Tripoli',
         voiceSection: _voice ?? 'Soprano',
         joinDate: _isReturning ? _joinDate : null,
-        concertsCount: _isReturning ? (int.tryParse(_concerts.text) ?? 0) : 0,
-        practiceHours: _isReturning ? (num.tryParse(_hours.text) ?? 0) : 0,
         travelsCount: _isReturning ? trips.length : 0,
         travelLocations: _isReturning ? trips : const [],
-        isReturning: _isReturning && _tookBreak,
-        breakFrom: _isReturning && _tookBreak ? _breakFrom : null,
-        breakTo: _isReturning && _tookBreak ? _breakTo : null,
+        isReturning: _isReturning,
         clothing: [
           for (final t in _clothingTypes)
             if (_hasItem[t] == true)
@@ -317,6 +312,20 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
             ),
             const SizedBox(height: 14),
             TextFormField(
+              controller: _confirmPassword,
+              obscureText: _obscure,
+              decoration: const InputDecoration(
+                labelText: 'Confirm password',
+                prefixIcon: Icon(Icons.lock_outline),
+              ),
+              validator: (v) {
+                if (v == null || v.isEmpty) return 'Required';
+                if (v != _password.text) return 'Passwords do not match';
+                return null;
+              },
+            ),
+            const SizedBox(height: 14),
+            TextFormField(
               controller: _phone,
               keyboardType: TextInputType.phone,
               decoration: const InputDecoration(
@@ -418,10 +427,6 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
                         if (d != null) setState(() => _joinDate = d);
                       },
                     ),
-                    const SizedBox(height: 12),
-                    _numberField(_concerts, 'Concerts participated in', Icons.theater_comedy),
-                    const SizedBox(height: 12),
-                    _numberField(_hours, 'Hours practiced with the choir', Icons.timer_outlined),
                     const SizedBox(height: 16),
                     Row(
                       children: [
@@ -438,33 +443,6 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
                     ),
                     const SizedBox(height: 8),
                     _tripsPicker(theme),
-                    const SizedBox(height: 8),
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Did you take a break from the choir?'),
-                      value: _tookBreak,
-                      activeColor: AppColors.primary,
-                      onChanged: (v) => setState(() => _tookBreak = v),
-                    ),
-                    if (_tookBreak) ...[
-                      _dateTile(
-                        label: 'Stopped from',
-                        value: _breakFrom,
-                        onPick: () async {
-                          final d = await _pickDate(initial: _breakFrom);
-                          if (d != null) setState(() => _breakFrom = d);
-                        },
-                      ),
-                      const SizedBox(height: 10),
-                      _dateTile(
-                        label: 'Came back on',
-                        value: _breakTo,
-                        onPick: () async {
-                          final d = await _pickDate(initial: _breakTo);
-                          if (d != null) setState(() => _breakTo = d);
-                        },
-                      ),
-                    ],
                   ],
                 ),
               ),
@@ -788,19 +766,6 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
           );
         }),
       ],
-    );
-  }
-
-  Widget _numberField(TextEditingController c, String label, IconData icon) {
-    return TextFormField(
-      controller: c,
-      keyboardType: TextInputType.number,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon),
-        filled: true,
-        fillColor: Colors.white,
-      ),
     );
   }
 

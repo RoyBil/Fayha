@@ -25,6 +25,7 @@ class AuthService {
     DateTime? breakFrom,
     DateTime? breakTo,
     List<Map<String, dynamic>> clothing = const [],
+    String? singerLevel,
   }) async {
     String d(DateTime x) => x.toIso8601String().split('T').first;
     await _c.auth.signUp(
@@ -44,6 +45,7 @@ class AuthService {
         if (breakFrom != null) 'break_from': d(breakFrom),
         if (breakTo != null) 'break_to': d(breakTo),
         'clothing': clothing,
+        if (singerLevel != null) 'singer_level': singerLevel,
       },
     );
   }
@@ -98,6 +100,7 @@ class AuthService {
     num? practiceHours,
     int? travelsCount,
     List<String>? travelLocations,
+    String? singerLevel,
   }) async {
     final patch = <String, dynamic>{};
     if (name != null) patch['name'] = name;
@@ -115,6 +118,9 @@ class AuthService {
     if (practiceHours != null) patch['practice_hours'] = practiceHours;
     if (travelsCount != null) patch['travels_count'] = travelsCount;
     if (travelLocations != null) patch['travel_locations'] = travelLocations;
+    if (singerLevel != null) {
+      patch['singer_level'] = singerLevel.isEmpty ? null : singerLevel;
+    }
     if (patch.isEmpty) return;
     await _c.from('members').update(patch).eq('id', id);
   }

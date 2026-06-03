@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' show RealtimeChannel;
 import '../../data/choir_data.dart';
 import '../../services/alert_counts_service.dart';
-import '../../services/attendance_service.dart';
 import '../../services/concerts_service.dart';
 import '../../services/live_location_service.dart';
 import '../../state/app_state.dart';
@@ -29,24 +27,18 @@ class MemberHomeScreen extends StatefulWidget {
 
 class _MemberHomeScreenState extends State<MemberHomeScreen> {
   late Future<List<Concert>> _upcoming;
-  int _liveRehearsals = 0;
   int _unvotedPolls = 0;
   int _unreadDms = 0;
   int _adminInbox = 0;
   int _lastStatsVersion = -1;
-  RealtimeChannel? _attendanceChannel;
 
   @override
   void initState() {
     super.initState();
     _upcoming = ConcertsService.fetchUpcoming();
     _lastStatsVersion = AppState.instance.statsVersion;
-    _reloadLiveStats();
     _reloadAlertCounts();
     AppState.instance.addListener(_onAppStateChange);
-    // Live updates from other devices (admin marking us present).
-    _attendanceChannel =
-        AttendanceService.subscribeToMyAttendance(_reloadLiveStats);
   }
 
   Future<void> _reloadAlertCounts() async {
@@ -66,7 +58,6 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
   @override
   void dispose() {
     AppState.instance.removeListener(_onAppStateChange);
-    AttendanceService.unsubscribe(_attendanceChannel);
     super.dispose();
   }
 
@@ -74,18 +65,7 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
     final v = AppState.instance.statsVersion;
     if (v != _lastStatsVersion) {
       _lastStatsVersion = v;
-      _reloadLiveStats();
       _reloadAlertCounts();
-    }
-  }
-
-  Future<void> _reloadLiveStats() async {
-    try {
-      final n = await AttendanceService.myRehearsalCount();
-      if (!mounted) return;
-      setState(() => _liveRehearsals = n);
-    } catch (_) {
-      // ignore — keep last known value
     }
   }
 
@@ -97,12 +77,6 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
         final m = AppState.instance.currentMember!;
         final theme = Theme.of(context);
         final years = DateTime.now().year - m.joinDate.year;
-        // Baseline (from signup) + live count from attendance table.
-        // Each rehearsal is 3 hours.
-        final baselineRehearsals = (m.practiceHours / 3).round();
-        final rehearsals = baselineRehearsals + _liveRehearsals;
-        final hours = m.practiceHours.toDouble() + (_liveRehearsals * 3);
-        final concerts = m.concertsCount;
         final memorized = m.memorizedSongIds.length;
 
         return ListView(
@@ -166,13 +140,13 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
             const SizedBox(height: 20),
             Row(
               children: [
-                Expanded(child: _Stat(label: 'Rehearsals', value: '$rehearsals')),
+                Expanded(child: _Stat(label: 'Trips', value: '${m.travelsCount}')),
                 const SizedBox(width: 10),
-                Expanded(child: _Stat(label: 'Concerts', value: '$concerts')),
+                Expanded(child: _Stat(label: 'Songs', value: '$memorized')),
                 const SizedBox(width: 10),
-                Expanded(child: _Stat(label: 'Hours', value: hours.toStringAsFixed(1))),
+                Expanded(child: _Stat(label: 'Years', value: '$years')),
                 const SizedBox(width: 10),
-                Expanded(child: _Stat(label: 'Memorized', value: '$memorized')),
+                Expanded(child: _LevelStat(level: m.singerLevel)),
               ],
             ),
             const SizedBox(height: 28),
@@ -456,6 +430,81 @@ class _Stat extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: AppColors.gray,
+              letterSpacing: 0.6,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Stat box that shows the singer-level badge in the same place
+/// the other stats live. Coloured by level (grey / burgundy / gold).
+class _LevelStat extends StatelessWidget {
+  final String? level;
+  const _LevelStat({required this.level});
+
+  static String _label(String? v) {
+    switch (v) {
+      case 'beginner': return 'Beginner';
+      case 'intermediate': return 'Inter.';
+      case 'professional': return 'Pro';
+      default: return 'Not set';
+    }
+  }
+
+  static Color _color(String? v) {
+    switch (v) {
+      case 'beginner': return AppColors.gray;
+      case 'intermediate': return AppColors.primary;
+      case 'professional': return AppColors.accentDark;
+      default: return AppColors.gray;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final c = _color(level);
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.offWhite),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: c.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: c.withValues(alpha: 0.5)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.workspace_premium, size: 12, color: c),
+                const SizedBox(width: 4),
+                Text(
+                  _label(level),
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: c,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'LEVEL',
             style: theme.textTheme.labelSmall?.copyWith(
               color: AppColors.gray,
               letterSpacing: 0.6,

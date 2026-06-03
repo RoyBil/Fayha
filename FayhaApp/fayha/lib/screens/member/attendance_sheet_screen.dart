@@ -32,6 +32,7 @@ class _AttendanceSheetScreenState extends State<AttendanceSheetScreen> {
   bool _cancelled = false;
   List<Member> _members = [];
   final Map<String, bool> _present = {};
+  final Map<String, int> _lateMinutes = {};
 
   @override
   void initState() {
@@ -48,8 +49,8 @@ class _AttendanceSheetScreenState extends State<AttendanceSheetScreen> {
         _members = members;
         _cancelled = sheet.status == 'cancelled';
         for (final m in members) {
-          // default present; use saved value if the sheet exists
           _present[m.id] = sheet.present[m.id] ?? true;
+          _lateMinutes[m.id] = sheet.lateMinutes[m.id] ?? 0;
         }
         _loading = false;
       });
@@ -59,6 +60,41 @@ class _AttendanceSheetScreenState extends State<AttendanceSheetScreen> {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Could not load: $e')));
     }
+  }
+
+  Future<void> _editLateMinutes(Member m) async {
+    final controller = TextEditingController(
+        text: (_lateMinutes[m.id] ?? 0).toString());
+    final mins = await showDialog<int>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('${m.name} — minutes late'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Minutes late',
+            suffixText: 'min',
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () => Navigator.pop(
+                context, int.tryParse(controller.text) ?? 0),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    if (mins == null) return;
+    setState(() {
+      _present[m.id] = true;
+      _lateMinutes[m.id] = mins < 0 ? 0 : mins;
+    });
   }
 
   Future<void> _save() async {
@@ -76,6 +112,7 @@ class _AttendanceSheetScreenState extends State<AttendanceSheetScreen> {
         date: widget.date,
         cancelled: _cancelled,
         present: present,
+        lateMinutes: _lateMinutes,
       );
       // Tell stat-watching screens (member home) to refetch.
       AppState.instance.bumpStats();
@@ -155,14 +192,17 @@ class _AttendanceSheetScreenState extends State<AttendanceSheetScreen> {
                               const SizedBox(height: 10),
                               ..._members.map((m) {
                                 final here = _present[m.id] ?? true;
+                                final late = (_lateMinutes[m.id] ?? 0) > 0;
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: 8),
                                   child: ElegantCard(
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 6),
+                                        horizontal: 12, vertical: 8),
                                     child: Row(
                                       children: [
-                                        Avatar(name: m.name, size: 38,
+                                        Avatar(
+                                            name: m.name,
+                                            size: 38,
                                             photoUrl: m.photoUrl),
                                         const SizedBox(width: 12),
                                         Expanded(
@@ -171,27 +211,50 @@ class _AttendanceSheetScreenState extends State<AttendanceSheetScreen> {
                                                 CrossAxisAlignment.start,
                                             children: [
                                               Text(m.name,
-                                                  style: theme.textTheme.titleSmall),
-                                              Text(m.voiceSection,
-                                                  style: theme.textTheme.labelSmall),
+                                                  style: theme
+                                                      .textTheme.titleSmall),
+                                              Text(
+                                                here && late
+                                                    ? '${m.voiceSection} · late ${_lateMinutes[m.id]} min'
+                                                    : m.voiceSection,
+                                                style: theme
+                                                    .textTheme.labelSmall
+                                                    ?.copyWith(
+                                                  color: here && late
+                                                      ? AppColors.accentDark
+                                                      : null,
+                                                ),
+                                              ),
                                             ],
                                           ),
                                         ),
-                                        Text(
-                                          here ? 'Present' : 'Absent',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            color: here
-                                                ? AppColors.secondaryDark
-                                                : AppColors.gray,
-                                          ),
+                                        _StateChip(
+                                          label: 'Absent',
+                                          selected: !here,
+                                          color: AppColors.gray,
+                                          onTap: () => setState(() {
+                                            _present[m.id] = false;
+                                            _lateMinutes[m.id] = 0;
+                                          }),
                                         ),
-                                        Switch(
-                                          value: here,
-                                          activeColor: AppColors.secondary,
-                                          onChanged: (v) =>
-                                              setState(() => _present[m.id] = v),
+                                        const SizedBox(width: 4),
+                                        _StateChip(
+                                          label: late
+                                              ? 'Late ${_lateMinutes[m.id]}m'
+                                              : 'Late',
+                                          selected: here && late,
+                                          color: AppColors.accentDark,
+                                          onTap: () => _editLateMinutes(m),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        _StateChip(
+                                          label: 'Present',
+                                          selected: here && !late,
+                                          color: AppColors.secondaryDark,
+                                          onTap: () => setState(() {
+                                            _present[m.id] = true;
+                                            _lateMinutes[m.id] = 0;
+                                          }),
                                         ),
                                       ],
                                     ),
@@ -218,6 +281,53 @@ class _AttendanceSheetScreenState extends State<AttendanceSheetScreen> {
                 label: const Text('Save Attendance'),
               ),
             ),
+    );
+  }
+}
+
+/// Small selectable pill used as a 3-way Absent / Late / Present picker.
+class _StateChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final Color color;
+  final VoidCallback onTap;
+  const _StateChip({
+    required this.label,
+    required this.selected,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? color : Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Container(
+          padding:
+              const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: selected
+                  ? color
+                  : color.withValues(alpha: 0.4),
+              width: 1,
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: selected ? Colors.white : color,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

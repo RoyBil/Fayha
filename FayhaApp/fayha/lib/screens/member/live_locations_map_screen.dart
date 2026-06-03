@@ -4,7 +4,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../../data/map_data.dart';
 import '../../services/live_location_service.dart';
-import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/avatar.dart';
 import '../../widgets/elegant_card.dart';
@@ -34,10 +33,6 @@ class _LiveLocationsMapScreenState extends State<LiveLocationsMapScreen>
   @override
   void initState() {
     super.initState();
-    if (AppState.instance.currentMember?.role != 'superAdmin') {
-      _future = Future.value(const <LiveMemberLocation>[]);
-      return;
-    }
     _future = LiveLocationService.fetchAll();
     // Pull fresh data every 20s so the map shows recent positions.
     _refreshTimer = Timer.periodic(const Duration(seconds: 20), (_) {
@@ -66,17 +61,6 @@ class _LiveLocationsMapScreenState extends State<LiveLocationsMapScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isMaestro =
-        AppState.instance.currentMember?.role == 'superAdmin';
-    if (!isMaestro) {
-      return const Scaffold(
-        body: EmptyState(
-          icon: Icons.lock_outline,
-          title: 'Restricted',
-          message: 'Only the Maestro can see live locations.',
-        ),
-      );
-    }
     return Scaffold(
       appBar: AppBar(
         title: const Text('Live Locations'),

@@ -1,4 +1,6 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../services/admin_service.dart';
 import '../../theme/app_theme.dart';
 
@@ -18,6 +20,8 @@ class _ComposeEventScreenState extends State<ComposeEventScreen> {
   DateTime? _date;
   TimeOfDay? _time;
   bool _saving = false;
+  Uint8List? _posterBytes;
+  String _posterExt = 'jpg';
 
   @override
   void dispose() {
@@ -45,6 +49,24 @@ class _ComposeEventScreenState extends State<ComposeEventScreen> {
     if (t != null) setState(() => _time = t);
   }
 
+  Future<void> _pickPoster() async {
+    final f = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1600,
+      imageQuality: 85,
+    );
+    if (f == null) return;
+    final bytes = await f.readAsBytes();
+    final ext = f.name.contains('.')
+        ? f.name.split('.').last.toLowerCase()
+        : 'jpg';
+    if (!mounted) return;
+    setState(() {
+      _posterBytes = bytes;
+      _posterExt = ext;
+    });
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     if (_date == null || _time == null) {
@@ -57,12 +79,20 @@ class _ComposeEventScreenState extends State<ComposeEventScreen> {
     try {
       final when = DateTime(_date!.year, _date!.month, _date!.day,
           _time!.hour, _time!.minute);
+      String? posterUrl;
+      if (_posterBytes != null) {
+        posterUrl = await AdminService.uploadEventPoster(
+          bytes: _posterBytes!,
+          fileExtension: _posterExt,
+        );
+      }
       await AdminService.addEvent(
         title: _title.text.trim(),
         location: _location.text.trim(),
         startsAt: when,
         kind: _kind,
         description: _description.text.trim(),
+        posterUrl: posterUrl,
       );
       if (!mounted) return;
       Navigator.pop(context, true);
@@ -146,6 +176,8 @@ class _ComposeEventScreenState extends State<ComposeEventScreen> {
                   alignLabelWithHint: true,
                 ),
               ),
+              const SizedBox(height: 14),
+              _posterPicker(),
               const SizedBox(height: 24),
               FilledButton.icon(
                 onPressed: _saving ? null : _save,
@@ -196,6 +228,56 @@ class _ComposeEventScreenState extends State<ComposeEventScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _posterPicker() {
+    final hasPoster = _posterBytes != null;
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+            color: hasPoster ? AppColors.primary : AppColors.offWhite,
+            width: hasPoster ? 1.5 : 1),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.image_outlined,
+                  size: 18, color: AppColors.primary),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Poster (optional)',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+              ),
+              TextButton.icon(
+                onPressed: _pickPoster,
+                icon: Icon(hasPoster ? Icons.swap_horiz : Icons.upload,
+                    size: 16),
+                label: Text(hasPoster ? 'Replace' : 'Choose image'),
+              ),
+            ],
+          ),
+          if (hasPoster) ...[
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.memory(
+                _posterBytes!,
+                height: 160,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

@@ -23,8 +23,6 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
   late TextEditingController _name;
   late TextEditingController _email;
   late TextEditingController _phone;
-  late TextEditingController _concerts;
-  late TextEditingController _hours;
   late TextEditingController _travels;
   late List<String> _travelLocations;
 
@@ -35,8 +33,6 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
     _name = TextEditingController(text: m.name);
     _email = TextEditingController(text: m.email);
     _phone = TextEditingController(text: m.phone);
-    _concerts = TextEditingController(text: '${m.concertsCount}');
-    _hours = TextEditingController(text: '${m.practiceHours}');
     _travels = TextEditingController(text: '${m.travelsCount}');
     _travelLocations = List<String>.from(m.travelLocations);
   }
@@ -46,23 +42,17 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
     _name.dispose();
     _email.dispose();
     _phone.dispose();
-    _concerts.dispose();
-    _hours.dispose();
     _travels.dispose();
     super.dispose();
   }
 
   Future<void> _save() async {
     final m = AppState.instance.currentMember!;
-    final concerts = int.tryParse(_concerts.text) ?? m.concertsCount;
-    final hours = num.tryParse(_hours.text) ?? m.practiceHours;
     final travels = int.tryParse(_travels.text) ?? m.travelsCount;
     AppState.instance.updateProfile(
       name: _name.text,
       email: _email.text,
       phone: _phone.text,
-      concertsCount: concerts,
-      practiceHours: hours,
       travelsCount: travels,
       travelLocations: _travelLocations,
     );
@@ -72,8 +62,6 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
         id: m.id,
         name: _name.text.trim(),
         phone: _phone.text.trim(),
-        concertsCount: concerts,
-        practiceHours: hours,
         travelsCount: travels,
         travelLocations: _travelLocations,
       );
@@ -232,6 +220,12 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
                       value: m.voiceSection,
                     ),
                     const Divider(height: 24),
+                    _SingerLevelRow(
+                      level: m.singerLevel,
+                      editing: false, // members can't change it — admins assign
+                      onChanged: (_) {},
+                    ),
+                    const Divider(height: 24),
                     _ReadOnly(
                       icon: Icons.verified_user_outlined,
                       label: 'Account State',
@@ -253,29 +247,11 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
                   eyebrow: 'Stats', title: 'My Choir Activity'),
               const SizedBox(height: 14),
               ElegantCard(
-                child: Column(
-                  children: [
-                    _NumberField(
-                      label: 'Concerts participated in',
-                      icon: Icons.theater_comedy,
-                      controller: _concerts,
-                      editing: _editing,
-                    ),
-                    const Divider(height: 24),
-                    _NumberField(
-                      label: 'Hours of practice with the choir',
-                      icon: Icons.timer_outlined,
-                      controller: _hours,
-                      editing: _editing,
-                    ),
-                    const Divider(height: 24),
-                    _NumberField(
-                      label: 'Trips taken with the choir',
-                      icon: Icons.flight_takeoff,
-                      controller: _travels,
-                      editing: _editing,
-                    ),
-                  ],
+                child: _NumberField(
+                  label: 'Trips taken with the choir',
+                  icon: Icons.flight_takeoff,
+                  controller: _travels,
+                  editing: _editing,
                 ),
               ),
               const SizedBox(height: 18),
@@ -500,6 +476,94 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
       case 'cap': return Icons.sports_baseball;
       default: return Icons.style;
     }
+  }
+}
+
+/// Row that shows the singer-level badge (Beginner / Intermediate /
+/// Professional) and, when [editing] is true, lets the member change it.
+class _SingerLevelRow extends StatelessWidget {
+  final String? level;
+  final bool editing;
+  final ValueChanged<String?> onChanged;
+  const _SingerLevelRow({
+    required this.level,
+    required this.editing,
+    required this.onChanged,
+  });
+
+  static const _options = ['beginner', 'intermediate', 'professional'];
+  static String _label(String? v) {
+    switch (v) {
+      case 'beginner': return 'Beginner';
+      case 'intermediate': return 'Intermediate';
+      case 'professional': return 'Professional';
+      default: return 'Not set';
+    }
+  }
+
+  static Color _color(String? v) {
+    switch (v) {
+      case 'beginner': return AppColors.gray;
+      case 'intermediate': return AppColors.primary;
+      case 'professional': return AppColors.accentDark;
+      default: return AppColors.gray;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Icon(Icons.workspace_premium_outlined,
+            size: 18, color: AppColors.primary),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Singer Level', style: theme.textTheme.labelMedium),
+              const SizedBox(height: 4),
+              if (editing)
+                DropdownButton<String?>(
+                  value: level,
+                  isExpanded: true,
+                  hint: const Text('Not set'),
+                  underline: const SizedBox.shrink(),
+                  items: [
+                    const DropdownMenuItem<String?>(
+                        value: null, child: Text('Not set')),
+                    for (final v in _options)
+                      DropdownMenuItem<String?>(
+                          value: v, child: Text(_label(v))),
+                  ],
+                  onChanged: onChanged,
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: _color(level).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                        color: _color(level).withValues(alpha: 0.5)),
+                  ),
+                  child: Text(
+                    _label(level),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: _color(level),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }
 

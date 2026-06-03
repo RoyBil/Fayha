@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../services/admin_service.dart';
+import '../../services/auth_service.dart';
 import '../../services/join_requests_service.dart';
 import '../../services/messages_service.dart';
+import 'attendance_stats_screen.dart';
+import 'member_detail_screen.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/avatar.dart';
@@ -34,11 +37,15 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
 
   bool get _isSuper =>
       AppState.instance.currentMember?.role == 'superAdmin';
+  bool get _isAdmin {
+    final r = AppState.instance.currentMember?.role;
+    return r == 'admin' || r == 'superAdmin';
+  }
 
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: _isSuper ? 5 : 4, vsync: this);
+    _tabs = TabController(length: _isSuper ? 6 : 5, vsync: this);
     _reload();
   }
 
@@ -103,6 +110,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                 child: _TabLabel(
                     text: 'Join Requests', badge: _newJoinsCount)),
             const Tab(text: 'Members'),
+            const Tab(text: 'Stats'),
             const Tab(text: 'Messages'),
             const Tab(text: 'Content'),
           ],
@@ -116,6 +124,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               if (_isSuper) _approvalsTab(),
               _joinRequestsTab(),
               _membersTab(),
+              const AttendanceStatsBody(),
               _messagesTab(),
               _contentTab(),
             ],
@@ -429,6 +438,10 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
     final active = m.state == AccountState.active;
     final isSelf = m.id == AppState.instance.currentMember?.id;
     return ElegantCard(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => MemberDetailScreen(member: m)),
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: Row(
         children: [
@@ -482,7 +495,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               ),
             ),
           ),
-          if (_isSuper && !isSelf && m.role != 'superAdmin')
+          if (_isAdmin && !isSelf)
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert, color: AppColors.gray),
               onSelected: (action) {
@@ -499,22 +512,41 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                   case 'removeAdmin':
                     _run(() => AdminService.setRole(m.id, 'member'),
                         '${m.name} is no longer an admin');
+                  case 'makeSuper':
+                    _confirmMakeSuper(m);
+                  case 'demoteSuper':
+                    _run(() => AdminService.setRole(m.id, 'admin'),
+                        '${m.name} is no longer a super admin');
+                  case 'setLevel':
+                    _pickSingerLevel(m);
                 }
               },
               itemBuilder: (_) => [
-                if (m.role == 'member')
+                const PopupMenuItem(
+                    value: 'setLevel', child: Text('Set singer level')),
+                if (_isSuper) const PopupMenuDivider(),
+                if (_isSuper && m.role == 'member')
                   const PopupMenuItem(
                       value: 'makeAdmin', child: Text('Make admin'))
-                else
+                else if (_isSuper && m.role == 'admin')
                   const PopupMenuItem(
                       value: 'removeAdmin', child: Text('Remove admin')),
-                const PopupMenuDivider(),
-                if (active)
+                if (_isSuper && m.role != 'superAdmin')
+                  const PopupMenuItem(
+                      value: 'makeSuper', child: Text('Make super admin'))
+                else if (_isSuper)
+                  const PopupMenuItem(
+                      value: 'demoteSuper',
+                      child: Text('Remove super admin')),
+                if (_isSuper) const PopupMenuDivider(),
+                if (_isSuper && active)
                   const PopupMenuItem(value: 'pause', child: Text('Pause account'))
-                else
+                else if (_isSuper)
                   const PopupMenuItem(
                       value: 'reactivate', child: Text('Reactivate account')),
-                const PopupMenuItem(value: 'remove', child: Text('Remove from choir')),
+                if (_isSuper)
+                  const PopupMenuItem(
+                      value: 'remove', child: Text('Remove from choir')),
               ],
             ),
         ],
@@ -559,6 +591,76 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               _run(() => AdminService.remove(m.id), 'Removed ${m.name}');
             },
             child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickSingerLevel(Member m) async {
+    final picked = await showDialog<String>(
+      context: context,
+      builder: (_) => SimpleDialog(
+        title: Text('${m.name} — singer level'),
+        children: [
+          for (final entry in const [
+            ('beginner', 'Beginner'),
+            ('intermediate', 'Intermediate'),
+            ('professional', 'Professional'),
+          ])
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(context, entry.$1),
+              child: Row(
+                children: [
+                  Icon(
+                    m.singerLevel == entry.$1
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_off,
+                    size: 18,
+                    color: m.singerLevel == entry.$1
+                        ? AppColors.primary
+                        : AppColors.gray,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(entry.$2),
+                ],
+              ),
+            ),
+          const Divider(),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, '__clear__'),
+            child: const Text('Clear (not set)',
+                style: TextStyle(color: AppColors.gray)),
+          ),
+        ],
+      ),
+    );
+    if (picked == null) return;
+    final value = picked == '__clear__' ? '' : picked;
+    _run(
+      () => AuthService.updateProfile(id: m.id, singerLevel: value),
+      'Updated singer level for ${m.name}',
+    );
+  }
+
+  void _confirmMakeSuper(Member m) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Promote to super admin?'),
+        content: Text(
+            '${m.name} will gain full super admin permissions: approvals, role changes, live locations — everything you can do.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _run(() => AdminService.setRole(m.id, 'superAdmin'),
+                  '${m.name} is now a super admin');
+            },
+            child: const Text('Promote'),
           ),
         ],
       ),

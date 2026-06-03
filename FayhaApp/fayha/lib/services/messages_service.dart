@@ -7,6 +7,7 @@ class ChoirMessage {
   final String body;
   final String audience;
   final String? branch;
+  final String? voiceSection;
   final String? senderName;
   final DateTime createdAt;
 
@@ -16,6 +17,7 @@ class ChoirMessage {
     required this.body,
     required this.audience,
     this.branch,
+    this.voiceSection,
     this.senderName,
     required this.createdAt,
   });
@@ -26,6 +28,7 @@ class ChoirMessage {
         body: r['body'] as String,
         audience: r['audience'] as String,
         branch: r['branch'] as String?,
+        voiceSection: r['voice_section'] as String?,
         senderName: r['sender_name'] as String?,
         createdAt: DateTime.parse(r['created_at'] as String).toLocal(),
       );
@@ -44,6 +47,8 @@ class ChoirMessage {
         return 'Super admins';
       case 'branch':
         return '${branch ?? ''} branch';
+      case 'voice':
+        return '${voiceSection ?? ''} voice section';
       default:
         return audience;
     }
@@ -59,6 +64,7 @@ class MessagesService {
     ('audience', 'Audience (public app)'),
     ('members', 'All choir members'),
     ('branch', 'A specific branch'),
+    ('voice', 'A specific voice section'),
     ('admins', 'Admins only'),
     ('superAdmins', 'Super admins only'),
   ];
@@ -68,6 +74,7 @@ class MessagesService {
     required String body,
     required String audience,
     String? branch,
+    String? voiceSection,
   }) async {
     final me = AppState.instance.currentMember;
     await _c.from('messages').insert({
@@ -75,6 +82,7 @@ class MessagesService {
       'body': body,
       'audience': audience,
       if (audience == 'branch') 'branch': branch,
+      if (audience == 'voice') 'voice_section': voiceSection,
       'sender_id': me?.id,
       'sender_name': me?.name,
     });

@@ -95,16 +95,14 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     if (_target == _SongTarget.choir && !_isEdit) {
-      // Create mode: every voice part must be picked.
-      final missing = <String>[];
-      for (var i = 0; i < _parts.length; i++) {
-        if (_parts[i] == null) missing.add(choirVoiceParts[i]);
-      }
-      if (missing.isNotEmpty) {
+      // Create mode: at least one voice part is required so the song
+      // has something to play.
+      final any = _parts.any((p) => p != null);
+      if (!any) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
               content:
-                  Text('Missing audio for: ${missing.join(', ')}')),
+                  Text('Upload at least one voice part (e.g. Soprano).')),
         );
         return;
       }
@@ -127,8 +125,7 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
       } else if (_isEdit) {
         // ===== EDIT MODE =====
         final existing = widget.existing!;
-        // Only re-upload the parts the admin picked a new file for.
-        final newUrls = List<String?>.filled(_parts.length, null);
+        final partPatch = <String, String?>{};
         final picked = <int>[];
         for (var i = 0; i < _parts.length; i++) {
           if (_parts[i] != null) picked.add(i);
@@ -138,7 +135,8 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
           setState(() => _progress =
               'Uploading ${choirVoiceParts[i]} (${k + 1}/${picked.length})…');
           final p = _parts[i]!;
-          newUrls[i] = await ChoirSongsService.uploadPart(
+          partPatch[choirVoicePartKeys[i]] =
+              await ChoirSongsService.uploadPart(
             songId: existing.id,
             partKey: choirVoicePartKeys[i],
             bytes: Uint8List.fromList(p.bytes),
@@ -154,30 +152,28 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
           description: _description.text.trim(),
           lyrics: _lyrics.text.trim(),
           youtubeUrl: _youtube.text.trim(),
-          soprano1Url: newUrls[0],
-          soprano2Url: newUrls[1],
-          alto1Url: newUrls[2],
-          alto2Url: newUrls[3],
-          tenor1Url: newUrls[4],
-          tenor2Url: newUrls[5],
-          bass1Url: newUrls[6],
-          bass2Url: newUrls[7],
+          partUrls: partPatch.isEmpty ? null : partPatch,
         );
       } else {
         // ===== CREATE CHOIR SONG =====
         final id = 'csong_${DateTime.now().millisecondsSinceEpoch}';
-        final urls = <String>[];
+        final partUrls = <String, String?>{};
+        final picked = <int>[];
         for (var i = 0; i < _parts.length; i++) {
+          if (_parts[i] != null) picked.add(i);
+        }
+        for (var k = 0; k < picked.length; k++) {
+          final i = picked[k];
           setState(() => _progress =
-              'Uploading ${choirVoiceParts[i]} (${i + 1}/${_parts.length})…');
+              'Uploading ${choirVoiceParts[i]} (${k + 1}/${picked.length})…');
           final p = _parts[i]!;
-          final url = await ChoirSongsService.uploadPart(
+          partUrls[choirVoicePartKeys[i]] =
+              await ChoirSongsService.uploadPart(
             songId: id,
             partKey: choirVoicePartKeys[i],
             bytes: Uint8List.fromList(p.bytes),
             fileExtension: p.extension,
           );
-          urls.add(url);
         }
         setState(() => _progress = 'Publishing…');
         await ChoirSongsService.create(
@@ -192,14 +188,7 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
           lyrics: _lyrics.text.trim().isEmpty ? null : _lyrics.text.trim(),
           youtubeUrl:
               _youtube.text.trim().isEmpty ? null : _youtube.text.trim(),
-          soprano1Url: urls[0],
-          soprano2Url: urls[1],
-          alto1Url: urls[2],
-          alto2Url: urls[3],
-          tenor1Url: urls[4],
-          tenor2Url: urls[5],
-          bass1Url: urls[6],
-          bass2Url: urls[7],
+          partUrls: partUrls,
         );
       }
       if (!mounted) return;
@@ -238,7 +227,7 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
                     Expanded(
                       child: _targetChoice(
                         label: 'Choir library',
-                        sub: 'Members only · 8 voice parts',
+                        sub: 'Members only · 9 voice parts',
                         icon: Icons.groups,
                         value: _SongTarget.choir,
                       ),
@@ -273,14 +262,14 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
                 Text(
                   _isEdit
                       ? 'Voice part audio (replace any)'
-                      : 'Voice part audio (all 8 required)',
+                      : 'Voice part audio (optional per part)',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 4),
                 Text(
                   _isEdit
                       ? 'Pick a new file only for the sections you want to replace.'
-                      : 'Upload one audio file (m4a, mp3, wav…) for each section.',
+                      : 'Upload an audio file (m4a, mp3, wav…) for each section you have ready. At least one is required.',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 12),

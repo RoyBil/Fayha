@@ -34,6 +34,8 @@ class Member {
   double? houseLng;
   String? houseAddress;
   bool liveLocationEnabled;
+  /// 'beginner' | 'intermediate' | 'professional' | null
+  String? singerLevel;
 
   Member({
     this.id = '',
@@ -66,6 +68,7 @@ class Member {
     this.houseLng,
     this.houseAddress,
     this.liveLocationEnabled = false,
+    this.singerLevel,
   })  : memorizedSongIds = memorizedSongIds ?? <String>{},
         travelLocations = travelLocations ?? <String>[],
         clothing = clothing ?? <ClothingItem>[];
@@ -121,6 +124,7 @@ class Member {
       houseLng: (r['house_lng'] as num?)?.toDouble(),
       houseAddress: r['house_address'] as String?,
       liveLocationEnabled: (r['live_location_enabled'] as bool?) ?? false,
+      singerLevel: r['singer_level'] as String?,
     );
   }
 }
@@ -175,6 +179,7 @@ class AppState extends ChangeNotifier {
     num? practiceHours,
     int? travelsCount,
     List<String>? travelLocations,
+    String? singerLevel,
   }) {
     if (_currentMember == null) return;
     if (name != null) _currentMember!.name = name;
@@ -189,6 +194,9 @@ class AppState extends ChangeNotifier {
     if (travelsCount != null) _currentMember!.travelsCount = travelsCount;
     if (travelLocations != null) {
       _currentMember!.travelLocations = travelLocations;
+    }
+    if (singerLevel != null) {
+      _currentMember!.singerLevel = singerLevel.isEmpty ? null : singerLevel;
     }
     notifyListeners();
   }

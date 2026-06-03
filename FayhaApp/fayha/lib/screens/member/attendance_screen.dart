@@ -113,7 +113,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
-            child: _isSuper
+            child: _isAdmin
                 ? DropdownButtonFormField<String>(
                     value: _branch,
                     decoration: const InputDecoration(
@@ -166,28 +166,32 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                             ],
                           )
                         : _sessions.isEmpty
-                        ? ListView(
-                            children: const [
-                              SizedBox(height: 80),
-                              EmptyState(
-                                icon: Icons.event_available,
-                                title: 'All caught up',
-                                message: 'No rehearsal dates to record right now.',
+                            ? ListView(
+                                children: const [
+                                  SizedBox(height: 80),
+                                  EmptyState(
+                                    icon: Icons.event_available,
+                                    title: 'All caught up',
+                                    message:
+                                        'No rehearsal dates to record right now.',
+                                  ),
+                                ],
+                              )
+                            : ListView(
+                                padding: const EdgeInsets.fromLTRB(
+                                    20, 12, 20, 32),
+                                children: [
+                                  const SectionHeader(
+                                      eyebrow: 'Sessions',
+                                      title: 'Pick a date'),
+                                  const SizedBox(height: 12),
+                                  ..._sessions.map((s) => Padding(
+                                        padding:
+                                            const EdgeInsets.only(bottom: 8),
+                                        child: _sessionCard(theme, s),
+                                      )),
+                                ],
                               ),
-                            ],
-                          )
-                        : ListView(
-                            padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-                            children: [
-                              const SectionHeader(
-                                  eyebrow: 'Sessions', title: 'Pick a date'),
-                              const SizedBox(height: 12),
-                              ..._sessions.map((s) => Padding(
-                                    padding: const EdgeInsets.only(bottom: 8),
-                                    child: _sessionCard(theme, s),
-                                  )),
-                            ],
-                          ),
                   ),
           ),
         ],
@@ -198,16 +202,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   Widget _sessionCard(ThemeData theme, SessionInfo s) {
     final d = s.date;
     final today = _isToday(d);
-    // A session opens at 5:50 PM on its own day (10 min before practice).
-    final openTime = DateTime(d.year, d.month, d.day, 17, 50);
-    final open = !DateTime.now().isBefore(openTime);
 
     Color badgeColor;
     String badgeText;
-    if (!open) {
-      badgeColor = AppColors.gray;
-      badgeText = 'Opens 5:50 PM';
-    } else if (s.status == 'held') {
+    if (s.status == 'held') {
       badgeColor = AppColors.secondary;
       badgeText = 'Recorded';
     } else if (s.status == 'cancelled') {
@@ -218,19 +216,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       badgeText = today ? 'Today' : 'To record';
     }
 
-    return Opacity(
-      opacity: open ? 1 : 0.6,
-      child: ElegantCard(
+    return ElegantCard(
       onTap: () async {
-        if (!open) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                  'This session opens at 5:50 PM on the rehearsal day.'),
-            ),
-          );
-          return;
-        }
         final saved = await Navigator.push<bool>(
           context,
           MaterialPageRoute(
@@ -290,11 +277,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 )),
           ),
           const SizedBox(width: 4),
-          Icon(open ? Icons.chevron_right : Icons.lock_outline,
-              color: AppColors.gray),
+          const Icon(Icons.chevron_right, color: AppColors.gray),
         ],
       ),
-    ),
     );
   }
 }

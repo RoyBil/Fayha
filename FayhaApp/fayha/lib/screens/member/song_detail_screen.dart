@@ -52,14 +52,27 @@ class _SongDetailScreenState extends State<SongDetailScreen>
 
   Future<void> _initPlayers() async {
     try {
+      int? masterIdx;
       for (var i = 0; i < _players.length; i++) {
         final p = _players[i];
         await p.setReleaseMode(ReleaseMode.stop);
         await p.setVolume(_muted[i] ? 0.0 : _volumes[i]);
-        await p.setSource(UrlSource(widget.song.urlForPart(i)));
+        final url = widget.song.urlForPart(i);
+        if (url != null && url.isNotEmpty) {
+          await p.setSource(UrlSource(url));
+          masterIdx ??= i;
+        }
       }
-      // Use player 0 as the position/duration master.
-      final master = _players[0];
+      if (masterIdx == null) {
+        if (!mounted) return;
+        setState(() {
+          _loadError = 'No audio uploaded for this song yet.';
+          _loading = false;
+        });
+        return;
+      }
+      // Use the first available part as the position/duration master.
+      final master = _players[masterIdx];
       _posSub = master.onPositionChanged.listen((p) {
         if (!mounted) return;
         setState(() => _pos = p);
@@ -174,38 +187,56 @@ class _SongDetailScreenState extends State<SongDetailScreen>
     if (mounted) setState(() {});
   }
 
+  /// Short 2–3 char chip label for the mixer row, derived from the
+  /// SQL key (e.g. `mezzo_soprano` -> `MS`, `tenor_i` -> `TI`).
+  String _shortLabel(String key) {
+    final parts = key.split('_');
+    if (parts.length == 1) {
+      // Single word — first 2 letters in upper case.
+      return parts[0].substring(0, parts[0].length >= 2 ? 2 : 1).toUpperCase();
+    }
+    // Multi-word — first letter of each part.
+    return parts.map((p) => p[0]).join().toUpperCase();
+  }
+
   int _myIndex() {
-    final voice =
-        (AppState.instance.currentMember?.voiceSection ?? '').toLowerCase().trim();
+    final voice = (AppState.instance.currentMember?.voiceSection ?? '')
+        .toLowerCase()
+        .trim();
+    // Match the new vocabulary by lower-casing both sides.
+    for (var i = 0; i < choirVoiceParts.length; i++) {
+      if (choirVoiceParts[i].toLowerCase() == voice) return i;
+    }
+    // Loose fallbacks for older saved values.
     switch (voice) {
+      case 'mezzo-soprano':
+        return choirVoiceParts.indexOf('Mezzo Soprano');
+      case 'contralto':
+        return choirVoiceParts.indexOf('Contrary Alto');
       case 'soprano 1':
-      case 'soprano':
       case 'soprano1':
-        return 0;
+        return choirVoiceParts.indexOf('Soprano');
       case 'soprano 2':
       case 'soprano2':
-        return 1;
+        return choirVoiceParts.indexOf('Mezzo Soprano');
       case 'alto 1':
-      case 'alto':
       case 'alto1':
-        return 2;
+        return choirVoiceParts.indexOf('Alto');
       case 'alto 2':
       case 'alto2':
-        return 3;
+        return choirVoiceParts.indexOf('Contrary Alto');
       case 'tenor 1':
-      case 'tenor':
       case 'tenor1':
-        return 4;
+        return choirVoiceParts.indexOf('Tenor I');
       case 'tenor 2':
       case 'tenor2':
-        return 5;
+        return choirVoiceParts.indexOf('Tenor II');
       case 'bass 1':
-      case 'bass':
       case 'bass1':
-        return 6;
+        return choirVoiceParts.indexOf('Baritone');
       case 'bass 2':
       case 'bass2':
-        return 7;
+        return choirVoiceParts.indexOf('Bass');
     }
     return -1;
   }
@@ -468,15 +499,16 @@ class _SongDetailScreenState extends State<SongDetailScreen>
         ),
         const SizedBox(height: 12),
         for (var i = 0; i < choirVoiceParts.length; i++)
-          _PartMixerRow(
-            label: choirVoiceParts[i],
-            shortLabel: choirVoicePartKeys[i].toUpperCase(),
-            isMine: i == mine,
-            muted: _muted[i],
-            volume: _volumes[i],
-            onToggleMute: () => _toggleMute(i),
-            onVolume: (v) => _setVolume(i, v),
-          ),
+          if (widget.song.hasPart(i))
+            _PartMixerRow(
+              label: choirVoiceParts[i],
+              shortLabel: _shortLabel(choirVoicePartKeys[i]),
+              isMine: i == mine,
+              muted: _muted[i],
+              volume: _volumes[i],
+              onToggleMute: () => _toggleMute(i),
+              onVolume: (v) => _setVolume(i, v),
+            ),
       ],
     );
   }

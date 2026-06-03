@@ -284,6 +284,28 @@ class _HistoryTile extends StatelessWidget {
                     Text(m.label,
                         style: theme.textTheme.labelMedium
                             ?.copyWith(color: m.color)),
+                    if (item.lateMinutes > 0) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.accent.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                              color: AppColors.accentDark
+                                  .withValues(alpha: 0.45)),
+                        ),
+                        child: Text(
+                          'Late ${item.lateMinutes} min',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.accentDark,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 4),

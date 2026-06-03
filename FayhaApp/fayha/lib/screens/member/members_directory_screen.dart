@@ -172,6 +172,10 @@ class _MembersList extends StatelessWidget {
                             child: Text(m.name,
                                 style: Theme.of(context).textTheme.titleMedium),
                           ),
+                          if (m.singerLevel != null) ...[
+                            _LevelChip(level: m.singerLevel!),
+                            const SizedBox(width: 4),
+                          ],
                           if (m.role != 'member')
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -214,6 +218,52 @@ class _MembersList extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// Compact singer-level pill: Beginner (grey) / Intermediate (burgundy) /
+/// Professional (gold). Used on the directory tiles.
+class _LevelChip extends StatelessWidget {
+  final String level;
+  const _LevelChip({required this.level});
+
+  static String _label(String v) {
+    switch (v) {
+      case 'beginner': return 'Beginner';
+      case 'intermediate': return 'Intermediate';
+      case 'professional': return 'Pro';
+      default: return v;
+    }
+  }
+
+  static Color _color(String v) {
+    switch (v) {
+      case 'beginner': return AppColors.gray;
+      case 'intermediate': return AppColors.primary;
+      case 'professional': return AppColors.accentDark;
+      default: return AppColors.gray;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = _color(level);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: c.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: c.withValues(alpha: 0.5)),
+      ),
+      child: Text(
+        _label(level),
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          color: c,
+        ),
+      ),
     );
   }
 }

@@ -65,12 +65,14 @@ class Concert {
   final DateTime date;
   final String description;
   final String kind; // concert | rehearsal
+  final String? posterUrl;
   const Concert({
     required this.title,
     required this.location,
     required this.date,
     required this.description,
     this.kind = 'concert',
+    this.posterUrl,
   });
   bool get isRehearsal => kind == 'rehearsal';
 }
@@ -244,14 +246,55 @@ class ChoirData {
   static const String managerTitle = 'Managing Director';
 
   static const List<String> voiceSections = [
+    'Solo',
     'Soprano',
-    'Mezzo-Soprano',
+    'Mezzo Soprano',
     'Alto',
-    'Contralto',
-    'Tenor 1',
-    'Tenor 2',
-    'Bass 1',
-    'Bass 2',
+    'Contrary Alto',
+    'Tenor I',
+    'Tenor II',
+    'Baritone',
+    'Bass',
+  ];
+
+  /// Voice-section targets an admin can pick when sending a message —
+  /// individual sections + collective groups (e.g. "All Tenors").
+  /// The map value lists every individual section the group covers.
+  static const Map<String, List<String>> voiceSectionGroups = {
+    'All Sopranos': ['Soprano', 'Mezzo Soprano'],
+    'All Altos': ['Alto', 'Contrary Alto'],
+    'All Tenors': ['Tenor I', 'Tenor II'],
+    'All Basses': ['Baritone', 'Bass'],
+    'Whole choir': [
+      'Solo',
+      'Soprano',
+      'Mezzo Soprano',
+      'Alto',
+      'Contrary Alto',
+      'Tenor I',
+      'Tenor II',
+      'Baritone',
+      'Bass',
+    ],
+  };
+
+  /// Flat list of all message-target options: individual sections
+  /// first, then collective groups.
+  static const List<String> messageVoiceTargets = [
+    'Solo',
+    'Soprano',
+    'Mezzo Soprano',
+    'Alto',
+    'Contrary Alto',
+    'Tenor I',
+    'Tenor II',
+    'Baritone',
+    'Bass',
+    'All Sopranos',
+    'All Altos',
+    'All Tenors',
+    'All Basses',
+    'Whole choir',
   ];
 
   static const List<String> branches = [

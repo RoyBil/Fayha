@@ -17,9 +17,8 @@ alter table public.members
 -- Members can already update their own row via the existing
 -- "update own member row" policy. That covers writing the live coords.
 
--- Read access: a dedicated, narrow view that ONLY exposes the live
--- columns and is gated to superAdmin. Avoids loosening RLS on the
--- whole members table.
+-- Read access: a dedicated, narrow view that exposes only the live
+-- columns. Open to every signed-in (authenticated) user.
 create or replace view public.live_locations as
   select
     m.id,
@@ -34,7 +33,6 @@ create or replace view public.live_locations as
   from public.members m
   where m.live_location_enabled = true
     and m.live_lat is not null
-    and m.live_lng is not null
-    and public.my_role() = 'superAdmin';
+    and m.live_lng is not null;
 
 grant select on public.live_locations to authenticated;

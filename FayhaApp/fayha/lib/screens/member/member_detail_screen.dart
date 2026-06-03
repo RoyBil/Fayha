@@ -61,6 +61,24 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
 
   Member get member => widget.member;
 
+  static String _singerLevelLabel(String v) {
+    switch (v) {
+      case 'beginner': return 'Beginner';
+      case 'intermediate': return 'Intermediate';
+      case 'professional': return 'Professional';
+      default: return v;
+    }
+  }
+
+  static Color _singerLevelColor(String v) {
+    switch (v) {
+      case 'beginner': return AppColors.gray;
+      case 'intermediate': return AppColors.primary;
+      case 'professional': return AppColors.accentDark;
+      default: return AppColors.gray;
+    }
+  }
+
   String _roleLabel() {
     switch (member.role) {
       case 'superAdmin':
@@ -115,20 +133,44 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
                       fontWeight: FontWeight.w600,
                     )),
                 const SizedBox(height: 6),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(20),
-                    border:
-                        Border.all(color: Colors.white.withValues(alpha: 0.4)),
-                  ),
-                  child: Text(_roleLabel(),
-                      style: const TextStyle(
-                          color: AppColors.cream,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700)),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.4)),
+                      ),
+                      child: Text(_roleLabel(),
+                          style: const TextStyle(
+                              color: AppColors.cream,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700)),
+                    ),
+                    if (member.singerLevel != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.92),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          _singerLevelLabel(member.singerLevel!),
+                          style: TextStyle(
+                            color: _singerLevelColor(member.singerLevel!),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 10),
                 Text('${member.voiceSection} · ${member.branch} branch',

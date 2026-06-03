@@ -104,19 +104,17 @@ class MemberMoreScreen extends StatelessWidget {
                           MaterialPageRoute(builder: (_) => const AdminPanelScreen())),
                     ),
                   ],
-                  if (m.isMaestro) ...[
-                    const _Sep(),
-                    _Tile(
-                      icon: Icons.share_location,
-                      title: 'Live Locations',
-                      subtitle: 'See members sharing right now',
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const LiveLocationsMapScreen()),
-                      ),
+                  const _Sep(),
+                  _Tile(
+                    icon: Icons.share_location,
+                    title: 'Live Locations',
+                    subtitle: 'See members sharing right now',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const LiveLocationsMapScreen()),
                     ),
-                  ],
+                  ),
                 ],
               ),
             ),

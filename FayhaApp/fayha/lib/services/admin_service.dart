@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../state/app_state.dart';
 
@@ -77,6 +78,7 @@ class AdminService {
     required DateTime startsAt,
     required String kind, // concert | rehearsal
     String? description,
+    String? posterUrl,
   }) async {
     await _c.from('concerts').insert({
       'title': title,
@@ -84,7 +86,27 @@ class AdminService {
       'starts_at': startsAt.toUtc().toIso8601String(),
       'kind': kind,
       'description': description,
+      'poster_url': posterUrl,
     });
+  }
+
+  /// Uploads an event poster to the `event_posters` bucket and
+  /// returns the public URL.
+  static Future<String> uploadEventPoster({
+    required Uint8List bytes,
+    required String fileExtension,
+  }) async {
+    final ext = fileExtension.isEmpty ? 'jpg' : fileExtension;
+    final path = 'event_${DateTime.now().millisecondsSinceEpoch}.$ext';
+    await _c.storage.from('event_posters').uploadBinary(
+          path,
+          bytes,
+          fileOptions: FileOptions(
+            upsert: false,
+            contentType: 'image/$ext',
+          ),
+        );
+    return _c.storage.from('event_posters').getPublicUrl(path);
   }
 
   static Future<void> addNews({

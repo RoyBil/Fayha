@@ -27,18 +27,28 @@ class LiveMemberLocation {
   });
 }
 
-/// Singleton that pushes the current member's coordinates to Supabase
-/// every [_interval] while the app is open. The Maestro reads these
-/// from the `live_locations` view.
+/// Singleton that streams the current member's live coordinates to
+/// Supabase while the app is open. Uses Geolocator's positionStream
+/// so every meaningful movement (5+ meters) is pushed quickly, with a
+/// safety heartbeat every 60 seconds when stationary so the Maestro
+/// always sees a recent timestamp.
 class LiveLocationService {
   LiveLocationService._();
   static final LiveLocationService instance = LiveLocationService._();
 
   static final _c = Supabase.instance.client;
-  static const _interval = Duration(seconds: 30);
+  // Push a fresh GPS reading every few seconds even when stationary,
+  // so the Maestro always sees a recent `live_at` timestamp.
+  static const _heartbeat = Duration(seconds: 8);
+  // 0 = every GPS sample fires — no distance threshold at all.
+  static const _minDistanceMeters = 0;
+  // Use the highest accuracy the platform offers (true GPS on phones,
+  // navigator.geolocation with enableHighAccuracy on the web).
+  static const _accuracy = LocationAccuracy.bestForNavigation;
 
-  Timer? _timer;
-  bool get isRunning => _timer != null;
+  StreamSubscription<Position>? _posSub;
+  Timer? _heartbeatTimer;
+  bool get isRunning => _posSub != null;
 
   /// Enables live sharing for the current member, then immediately
   /// pushes a position. Throws on permission/service errors.
@@ -59,30 +69,42 @@ class LiveLocationService {
       throw 'Location permission denied';
     }
 
-    // Flip the DB flag on, then push one position immediately.
     await _c.from('members').update({
       'live_location_enabled': true,
     }).eq('id', me.id);
     me.liveLocationEnabled = true;
-    AppState.instance.bumpStats(); // triggers home rebuild
+    AppState.instance.bumpStats();
     await _pushOnce();
     _start();
   }
 
-  /// Start the periodic timer. Idempotent.
+  /// Start the position stream + heartbeat. Idempotent.
   void _start() {
-    _timer?.cancel();
-    _timer = Timer.periodic(_interval, (_) => _pushOnce());
+    _posSub?.cancel();
+    _heartbeatTimer?.cancel();
+
+    // Fast, movement-based updates from the OS.
+    _posSub = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: _accuracy,
+        distanceFilter: _minDistanceMeters,
+      ),
+    ).listen((pos) => _push(pos), onError: (_) {});
+
+    // Heartbeat so the Maestro sees a recent `live_at` even when
+    // the member is stationary.
+    _heartbeatTimer = Timer.periodic(_heartbeat, (_) => _pushOnce());
   }
 
-  /// Stop the periodic timer (does NOT disable sharing in the DB —
-  /// only the Maestro can do that). Used on sign-out / app close.
+  /// Stop pushing updates (does NOT disable sharing in the DB).
   void stopTimer() {
-    _timer?.cancel();
-    _timer = null;
+    _posSub?.cancel();
+    _posSub = null;
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
   }
 
-  /// Disables live sharing for the current member: stops the timer,
+  /// Disables live sharing for the current member: stops the stream,
   /// flips the DB flag off, and clears the stored coordinates.
   Future<void> disable() async {
     final me = AppState.instance.currentMember;
@@ -98,7 +120,7 @@ class LiveLocationService {
     AppState.instance.bumpStats();
   }
 
-  /// Restart the timer if the current member has live sharing on
+  /// Restart streaming if the current member has live sharing on
   /// (called after sign-in / on app start).
   void resumeIfEnabled() {
     final me = AppState.instance.currentMember;
@@ -131,6 +153,28 @@ class LiveLocationService {
         .toList();
   }
 
+  /// Pushes a single position to Supabase, updating the cached
+  /// last-pushed point. Used by the position-stream listener and the
+  /// heartbeat timer.
+  Future<void> _push(Position pos) async {
+    try {
+      final me = AppState.instance.currentMember;
+      if (me == null) {
+        stopTimer();
+        return;
+      }
+      await _c.from('members').update({
+        'live_lat': pos.latitude,
+        'live_lng': pos.longitude,
+        'live_at': DateTime.now().toUtc().toIso8601String(),
+      }).eq('id', me.id);
+    } catch (_) {
+      // Swallow errors — next event/heartbeat will try again.
+    }
+  }
+
+  /// Fetches the current position once and pushes it (used by the
+  /// heartbeat and by `enable()` / `resumeIfEnabled()`).
   Future<void> _pushOnce() async {
     try {
       final me = AppState.instance.currentMember;
@@ -140,16 +184,11 @@ class LiveLocationService {
       }
       final pos = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
+          accuracy: _accuracy,
+          timeLimit: Duration(seconds: 10),
         ),
       );
-      await _c.from('members').update({
-        'live_lat': pos.latitude,
-        'live_lng': pos.longitude,
-        'live_at': DateTime.now().toUtc().toIso8601String(),
-      }).eq('id', me.id);
-    } catch (_) {
-      // Swallow errors — next tick will try again.
-    }
+      await _push(pos);
+    } catch (_) {}
   }
 }

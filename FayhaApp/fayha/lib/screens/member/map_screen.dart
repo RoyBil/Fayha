@@ -97,13 +97,11 @@ class _MembersTabState extends State<_MembersTab> with TickerProviderStateMixin 
   List<LiveMemberLocation> _live = const [];
   _MapFilter _filter = _MapFilter.all;
 
-  bool get _isMaestro => AppState.instance.isMaestro;
-
   @override
   void initState() {
     super.initState();
     _houses = MemberHousesService.fetchAll();
-    if (_isMaestro) _loadLive();
+    _loadLive();
   }
 
   Future<void> _loadLive() async {
@@ -112,14 +110,14 @@ class _MembersTabState extends State<_MembersTab> with TickerProviderStateMixin 
       if (!mounted) return;
       setState(() => _live = list);
     } catch (_) {
-      // ignore — non-Maestro errors should not be possible
+      // ignore — view may be empty
     }
   }
 
   Future<void> _reload() async {
     final fut = MemberHousesService.fetchAll();
     setState(() => _houses = fut);
-    if (_isMaestro) await _loadLive();
+    await _loadLive();
     await fut;
   }
 
@@ -242,8 +240,7 @@ class _MembersTabState extends State<_MembersTab> with TickerProviderStateMixin 
         final showAll = _filter == _MapFilter.all;
         final showBranches = showAll || _filter == _MapFilter.branches;
         final showHouses = showAll || _filter == _MapFilter.houses;
-        final showLive = _isMaestro &&
-            (showAll || _filter == _MapFilter.live);
+        final showLive = showAll || _filter == _MapFilter.live;
         final visiblePins = [
           if (showBranches) ...branchPins,
           if (showHouses) ...housePins,
@@ -275,14 +272,13 @@ class _MembersTabState extends State<_MembersTab> with TickerProviderStateMixin 
                         onTap: () =>
                             setState(() => _filter = _MapFilter.houses),
                       ),
-                    if (_isMaestro)
-                      _FilterChip(
-                        label: 'Live',
-                        icon: Icons.share_location,
-                        selected: _filter == _MapFilter.live,
-                        onTap: () =>
-                            setState(() => _filter = _MapFilter.live),
-                      ),
+                    _FilterChip(
+                      label: 'Live',
+                      icon: Icons.share_location,
+                      selected: _filter == _MapFilter.live,
+                      onTap: () =>
+                          setState(() => _filter = _MapFilter.live),
+                    ),
                     _FilterChip(
                       label: 'Branches',
                       icon: Icons.account_balance,
