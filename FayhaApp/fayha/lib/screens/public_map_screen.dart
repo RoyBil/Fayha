@@ -7,6 +7,7 @@ import '../services/audience_data.dart';
 import '../theme/app_theme.dart';
 import '../widgets/elegant_card.dart';
 import '../widgets/section_header.dart';
+import 'branch_detail_screen.dart';
 
 class PublicMapScreen extends StatefulWidget {
   const PublicMapScreen({super.key});
@@ -569,7 +570,12 @@ class _BranchesTabState extends State<_BranchesTab> with TickerProviderStateMixi
         ...branches.map((b) => Padding(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
           child: ElegantCard(
-            onTap: () => _focus(b),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => BranchDetailScreen(branch: b),
+              ),
+            ),
             child: Row(
               children: [
                 Container(

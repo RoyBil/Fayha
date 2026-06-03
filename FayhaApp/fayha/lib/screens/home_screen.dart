@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../data/choir_data.dart';
 import '../data/mock_data.dart';
 import '../services/audience_data.dart';
@@ -6,6 +8,7 @@ import '../services/concerts_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/elegant_card.dart';
 import '../widgets/section_header.dart';
+import 'concert_detail_screen.dart';
 import 'join_screen.dart';
 import 'public_song_player_screen.dart';
 
@@ -128,6 +131,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 onSeeMore: widget.onGoToNews,
               ),
               const SizedBox(height: 16),
+              const _InstagramHandleCard(),
+              const SizedBox(height: 12),
               FutureBuilder<List<SocialPost>>(
                 future: _social,
                 builder: (context, snap) {
@@ -260,6 +265,12 @@ class _NextConcertCard extends StatelessWidget {
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     return ElegantCard(
       background: AppColors.offWhite,
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ConcertDetailScreen(concert: concert),
+        ),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -564,6 +575,65 @@ class _Newsletter extends StatelessWidget {
                 ),
               ],
             ),
+    );
+  }
+}
+
+/// Prominent Instagram handle card on the audience home — taps to
+/// open @fayhanationalchoir in the Instagram app / browser.
+class _InstagramHandleCard extends StatelessWidget {
+  const _InstagramHandleCard();
+
+  Future<void> _open() async {
+    await launchUrl(
+      Uri.parse('https://www.instagram.com/fayhanationalchoir/'),
+      mode: LaunchMode.externalApplication,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ElegantCard(
+      onTap: _open,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [
+                  Color(0xFFF58529),
+                  Color(0xFFDD2A7B),
+                  Color(0xFF8134AF),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const FaIcon(FontAwesomeIcons.instagram,
+                color: Colors.white, size: 22),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Follow us on Instagram',
+                    style: theme.textTheme.titleMedium),
+                const SizedBox(height: 2),
+                Text('@fayhanationalchoir',
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: AppColors.primary)),
+              ],
+            ),
+          ),
+          const Icon(Icons.open_in_new,
+              size: 18, color: AppColors.gray),
+        ],
+      ),
     );
   }
 }

@@ -47,6 +47,22 @@ class ConcertDetailScreen extends StatelessWidget {
             expandedHeight: concert.posterUrl != null ? 320 : 140,
             backgroundColor: AppColors.primary,
             foregroundColor: AppColors.cream,
+            leading: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Material(
+                color: Colors.black.withValues(alpha: 0.4),
+                shape: const CircleBorder(),
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: () => Navigator.maybePop(context),
+                  child: const Padding(
+                    padding: EdgeInsets.all(6),
+                    child: Icon(Icons.arrow_back,
+                        color: Colors.white, size: 20),
+                  ),
+                ),
+              ),
+            ),
             flexibleSpace: FlexibleSpaceBar(
               title: Text(
                 concert.title,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../data/choir_data.dart';
 import '../theme/app_theme.dart';
@@ -136,16 +137,17 @@ class MoreScreen extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: _SocialButton(
-                label: 'Instagram',
-                icon: Icons.camera_alt_outlined,
-                onTap: () => _launch('https://www.instagram.com/fayhachoir/'),
+                label: '@fayhanationalchoir',
+                icon: FontAwesomeIcons.instagram,
+                onTap: () => _launch(
+                    'https://www.instagram.com/fayhanationalchoir/'),
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: _SocialButton(
                 label: 'Facebook',
-                icon: Icons.facebook,
+                icon: FontAwesomeIcons.facebook,
                 onTap: () => _launch('https://www.facebook.com/FayhaChoir'),
               ),
             ),
@@ -281,7 +283,11 @@ class _SocialButton extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Icon(icon, size: 20),
+          // FaIcon renders both Material and Font Awesome IconData
+          // correctly because it picks the font family from the icon.
+          icon.fontFamily == 'MaterialIcons'
+              ? Icon(icon, size: 20)
+              : FaIcon(icon, size: 20),
           const SizedBox(height: 6),
           Text(label, style: const TextStyle(fontSize: 12)),
         ],

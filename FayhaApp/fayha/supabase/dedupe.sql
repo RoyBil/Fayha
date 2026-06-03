@@ -42,9 +42,10 @@ where a.ctid <> b.ctid
   and a.title = b.title
   and a.ctid > b.ctid;
 
--- ===== social_projects (title) =====
+-- ===== social_projects (name + period) =====
 delete from public.social_projects a
 using public.social_projects b
 where a.ctid <> b.ctid
-  and a.title = b.title
+  and a.name = b.name
+  and coalesce(a.period, '') = coalesce(b.period, '')
   and a.ctid > b.ctid;
