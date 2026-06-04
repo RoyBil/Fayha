@@ -13,6 +13,7 @@ import 'attendance_history_screen.dart';
 import 'attendance_screen.dart';
 import 'testimonials_member_screen.dart';
 import 'gallery_screen.dart';
+import 'qr_check_in_screen.dart';
 import 'admin_panel_screen.dart';
 import 'live_locations_map_screen.dart';
 import 'members_directory_screen.dart';
@@ -58,6 +59,20 @@ class MemberMoreScreen extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (!m.isAdmin) ...[
+                    const _Sep(),
+                    _Tile(
+                      icon: Icons.qr_code_scanner,
+                      title: 'Scan to Check In',
+                      subtitle:
+                          'Scan the QR your admin shows to mark attendance',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const QrCheckInScreen()),
+                      ),
+                    ),
+                  ],
                   const _Sep(),
                   _Tile(
                     icon: Icons.groups_outlined,

@@ -22,6 +22,7 @@ class MemberShell extends StatefulWidget {
 class _MemberShellState extends State<MemberShell> {
   int _index = 0;
   int _unread = 0;
+  String? _lastMemberId;
 
   final _screens = const <Widget>[
     MemberHomeScreen(),
@@ -36,7 +37,26 @@ class _MemberShellState extends State<MemberShell> {
   @override
   void initState() {
     super.initState();
-    _refreshUnread();
+    // Re-fetch the badge whenever the signed-in member changes
+    // (sign-in finishes, account switch, etc). Otherwise the badge
+    // is computed under a stale "anon" identity and lights up with
+    // every notification ever.
+    AppState.instance.addListener(_onAppStateChange);
+    _onAppStateChange();
+  }
+
+  @override
+  void dispose() {
+    AppState.instance.removeListener(_onAppStateChange);
+    super.dispose();
+  }
+
+  void _onAppStateChange() {
+    final id = AppState.instance.currentMember?.id;
+    if (id != _lastMemberId) {
+      _lastMemberId = id;
+      _refreshUnread();
+    }
   }
 
   Future<void> _refreshUnread() async {

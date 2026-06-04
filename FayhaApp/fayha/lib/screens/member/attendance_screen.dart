@@ -8,6 +8,8 @@ import '../../widgets/empty_state.dart';
 import '../../widgets/section_header.dart';
 import 'attendance_history_screen.dart';
 import 'attendance_sheet_screen.dart';
+import 'qr_attendance_admin_screen.dart';
+import 'qr_check_in_screen.dart';
 
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key});
@@ -68,6 +70,84 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   bool _isToday(DateTime d) {
     final n = DateTime.now();
     return d.year == n.year && d.month == n.month && d.day == n.day;
+  }
+
+  Future<void> _openSession(DateTime date) async {
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Take attendance',
+                  style: Theme.of(ctx).textTheme.titleLarge),
+              const SizedBox(height: 4),
+              Text(
+                '${_weekdays[date.weekday - 1]} · ${date.day}/${date.month}/${date.year}',
+                style: Theme.of(ctx).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 16),
+              _ModeTile(
+                icon: Icons.checklist,
+                title: 'Manual sheet',
+                subtitle:
+                    'Tick members one by one. Best when you have the roster in front of you.',
+                onTap: () => Navigator.pop(ctx, 'manual'),
+              ),
+              const SizedBox(height: 10),
+              _ModeTile(
+                icon: Icons.qr_code_2,
+                title: 'Show QR code',
+                subtitle: _isToday(date)
+                    ? 'Display a QR code for members to scan. Valid 3 hours.'
+                    : 'View who scanned (the QR window only opens on the day).',
+                onTap: () => Navigator.pop(ctx, 'qr_show'),
+              ),
+              if (_isToday(date)) ...[
+                const SizedBox(height: 10),
+                _ModeTile(
+                  icon: Icons.qr_code_scanner,
+                  title: 'Scan a QR',
+                  subtitle:
+                      'Another admin is hosting — scan their QR to count yourself in.',
+                  onTap: () => Navigator.pop(ctx, 'qr_scan'),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+    if (!mounted || choice == null) return;
+    if (choice == 'manual') {
+      final saved = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              AttendanceSheetScreen(branch: _branch, date: date),
+        ),
+      );
+      if (saved == true) _load();
+    } else if (choice == 'qr_show') {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              QrAttendanceAdminScreen(branch: _branch, date: date),
+        ),
+      );
+      _load();
+    } else if (choice == 'qr_scan') {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const QrCheckInScreen()),
+      );
+      _load();
+    }
   }
 
   @override
@@ -217,16 +297,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     }
 
     return ElegantCard(
-      onTap: () async {
-        final saved = await Navigator.push<bool>(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                AttendanceSheetScreen(branch: _branch, date: d),
-          ),
-        );
-        if (saved == true) _load();
-      },
+      onTap: () => _openSession(d),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: Row(
         children: [
@@ -277,6 +348,52 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 )),
           ),
           const SizedBox(width: 4),
+          const Icon(Icons.chevron_right, color: AppColors.gray),
+        ],
+      ),
+    );
+  }
+}
+
+class _ModeTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  const _ModeTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ElegantCard(
+      onTap: onTap,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: AppColors.primary),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: theme.textTheme.titleMedium),
+                const SizedBox(height: 2),
+                Text(subtitle, style: theme.textTheme.bodySmall),
+              ],
+            ),
+          ),
           const Icon(Icons.chevron_right, color: AppColors.gray),
         ],
       ),

@@ -12,7 +12,10 @@ class AlertCountsService {
 
   // ===== Per-user last-seen timestamps (SharedPreferences) =====
 
-  static String _kDms() => 'last_seen_dms_${AppState.instance.currentMember?.id ?? "anon"}';
+  static String _kDms() =>
+      'last_seen_dms_${AppState.instance.currentMember?.id ?? "anon"}';
+  static String _kAdminInbox() =>
+      'last_seen_admin_inbox_${AppState.instance.currentMember?.id ?? "anon"}';
 
   static Future<DateTime?> _lastSeen(String key) async {
     final prefs = await SharedPreferences.getInstance();
@@ -26,6 +29,7 @@ class AlertCountsService {
   }
 
   static Future<void> markDmsSeen() => _markSeen(_kDms());
+  static Future<void> markAdminInboxSeen() => _markSeen(_kAdminInbox());
 
   // ===== Polls a member hasn't voted on yet =====
 
@@ -34,7 +38,13 @@ class AlertCountsService {
       final me = AppState.instance.currentMember;
       final uid = _c.auth.currentUser?.id;
       if (me == null || uid == null) return 0;
-      final polls = await _c.from('polls').select('id');
+      // Only OPEN polls count: a closed poll the user never voted on
+      // would otherwise pin the badge at 1 forever.
+      final nowIso = DateTime.now().toUtc().toIso8601String();
+      final polls = await _c
+          .from('polls')
+          .select('id')
+          .or('closes_at.is.null,closes_at.gt.$nowIso');
       final myVotes = await _c
           .from('poll_votes')
           .select('poll_id')
@@ -88,16 +98,24 @@ class AlertCountsService {
 
   // ===== Admin tile combined count =====
 
-  /// Sum of: pending member approvals (Maestro only) + new join requests
-  /// + pending testimonials. Used on the home Admin tile.
+  /// New items in the admin inbox since the last time the admin
+  /// opened the panel: pending member approvals (Maestro only) +
+  /// new join requests. Old items the admin has already seen don't
+  /// count — opening the admin panel clears the home badge.
   static Future<int> adminInbox() async {
+    if (AppState.instance.currentMember == null) return 0;
+    final seen = await _lastSeen(_kAdminInbox());
+    final seenIso = (seen ?? DateTime.fromMillisecondsSinceEpoch(0))
+        .toUtc()
+        .toIso8601String();
     var total = 0;
     try {
       if (AppState.instance.isMaestro) {
         final pending = await _c
             .from('members')
             .select('id')
-            .eq('status', 'pending');
+            .eq('status', 'pending')
+            .gt('created_at', seenIso);
         total += (pending as List).length;
       }
     } catch (_) {}
@@ -105,15 +123,9 @@ class AlertCountsService {
       final joins = await _c
           .from('join_requests')
           .select('id')
-          .eq('status', 'new');
+          .eq('status', 'new')
+          .gt('created_at', seenIso);
       total += (joins as List).length;
-    } catch (_) {}
-    try {
-      final tests = await _c
-          .from('testimonials')
-          .select('id')
-          .eq('status', 'pending');
-      total += (tests as List).length;
     } catch (_) {}
     return total;
   }

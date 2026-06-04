@@ -156,6 +156,11 @@ class NotificationsService {
   }
 
   static Future<int> unreadCount() async {
+    // Bail out early when the app hasn't finished loading the signed-in
+    // member. Otherwise every read goes under the "anon" SharedPrefs
+    // key, has no last-seen timestamp, and the badge lights up with
+    // every notification ever.
+    if (AppState.instance.currentMember == null) return 0;
     final seen = await lastSeen();
     final items = await feed();
     final read = await readIds();

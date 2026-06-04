@@ -17,6 +17,7 @@ import 'testimonials_member_screen.dart';
 import 'member_profile_screen.dart';
 import 'admin_panel_screen.dart';
 import 'gallery_screen.dart';
+import 'qr_check_in_screen.dart';
 import 'house_location_picker_screen.dart';
 import 'members_directory_screen.dart';
 
@@ -34,6 +35,7 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
   int _unreadDms = 0;
   int _adminInbox = 0;
   int _lastStatsVersion = -1;
+  String? _lastMemberId;
 
   @override
   void initState() {
@@ -67,8 +69,13 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
 
   void _onAppStateChange() {
     final v = AppState.instance.statsVersion;
-    if (v != _lastStatsVersion) {
+    final id = AppState.instance.currentMember?.id;
+    // Re-fetch when the signed-in member loads or changes too, so the
+    // tile badges aren't stuck on counts from an "anon" identity that
+    // existed before AppState finished loading.
+    if (v != _lastStatsVersion || id != _lastMemberId) {
       _lastStatsVersion = v;
+      _lastMemberId = id;
       _reloadAlertCounts();
     }
   }
@@ -177,6 +184,15 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
                   ),
                 ),
                 _Tile(
+                  icon: Icons.qr_code_scanner,
+                  label: 'Scan QR',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const QrCheckInScreen()),
+                  ),
+                ),
+                _Tile(
                   icon: Icons.poll_outlined,
                   label: 'Polls',
                   badge: _unvotedPolls,
@@ -223,8 +239,14 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
                         : 'Admin',
                     badge: _adminInbox,
                     onTap: () async {
-                      await Navigator.push(
-                          context,
+                      // Opening admin counts as "seen" — the home badge
+                      // disappears whether or not every item is acted
+                      // on. The individual tab badges inside the panel
+                      // still show what's left to do.
+                      final navigator = Navigator.of(context);
+                      await AlertCountsService.markAdminInboxSeen();
+                      if (mounted) setState(() => _adminInbox = 0);
+                      await navigator.push(
                           MaterialPageRoute(
                               builder: (_) => const AdminPanelScreen()));
                       _reloadAlertCounts();

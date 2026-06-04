@@ -15,6 +15,7 @@ import '../../widgets/empty_state.dart';
 import '../../widgets/section_header.dart';
 import 'compose_event_screen.dart';
 import 'compose_gallery_post_screen.dart';
+import 'newsletter_subscribers_screen.dart';
 import 'compose_poll_screen.dart';
 import 'compose_message_screen.dart';
 import 'compose_news_screen.dart';
@@ -917,6 +918,20 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
           _ManageEventsList(onChanged: _reload),
           const SizedBox(height: 16),
           const _ManageTestimonialsList(),
+          const SizedBox(height: 16),
+          _ComposeCard(
+            icon: Icons.mail_outline,
+            color: AppColors.primaryDark,
+            colorAlpha: 0.12,
+            title: 'Newsletter Subscribers',
+            subtitle:
+                'See every email submitted from the audience homepage',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const NewsletterSubscribersScreen()),
+            ),
+          ),
         ],
       ],
     );

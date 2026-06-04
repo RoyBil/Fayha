@@ -1,0 +1,280 @@
+import 'dart:math';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+class QrSession {
+  final String id;
+  final String rehearsalId;
+  final String branch;
+  final String token;
+  final DateTime startedAt;
+  final DateTime expiresAt;
+  final DateTime? lateAfter;
+  QrSession({
+    required this.id,
+    required this.rehearsalId,
+    required this.branch,
+    required this.token,
+    required this.startedAt,
+    required this.expiresAt,
+    this.lateAfter,
+  });
+  factory QrSession.fromMap(Map<String, dynamic> m) => QrSession(
+        id: m['id'] as String,
+        rehearsalId: m['rehearsal_id'] as String,
+        branch: m['branch'] as String,
+        token: m['token'] as String,
+        startedAt: DateTime.parse(m['started_at'] as String).toLocal(),
+        expiresAt: DateTime.parse(m['expires_at'] as String).toLocal(),
+        lateAfter: m['late_after'] == null
+            ? null
+            : DateTime.parse(m['late_after'] as String).toLocal(),
+      );
+
+  Duration get remaining => expiresAt.difference(DateTime.now());
+  bool get isExpired => DateTime.now().isAfter(expiresAt);
+}
+
+class QrCheckin {
+  final String memberId;
+  final String memberName;
+  final DateTime checkedInAt;
+  final int lateMinutes;
+  final double? lat;
+  final double? lng;
+  QrCheckin({
+    required this.memberId,
+    required this.memberName,
+    required this.checkedInAt,
+    required this.lateMinutes,
+    this.lat,
+    this.lng,
+  });
+}
+
+class QrAttendanceService {
+  static final _c = Supabase.instance.client;
+
+  /// Creates (or fetches the still-valid) QR session for [branch]
+  /// on [date]. If no rehearsal row exists yet for the date, one is
+  /// auto-created with status 'held' so attendance has somewhere to
+  /// land.
+  ///
+  /// [lateAfter] — scans after this moment are flagged as late.
+  /// Defaults to 15 minutes after [startedAt].
+  static Future<QrSession> startSession({
+    required String branch,
+    DateTime? date,
+    DateTime? lateAfter,
+    Duration validFor = const Duration(hours: 3),
+  }) async {
+    final now = DateTime.now();
+    final day = date ?? DateTime(now.year, now.month, now.day);
+    final dayStr =
+        '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+
+    // Make sure a rehearsal row exists for the day.
+    final existingRehearsal = await _c
+        .from('rehearsals')
+        .select('id')
+        .eq('branch', branch)
+        .eq('session_date', dayStr)
+        .maybeSingle();
+    String rehearsalId;
+    if (existingRehearsal != null) {
+      rehearsalId = existingRehearsal['id'] as String;
+    } else {
+      final row = await _c.from('rehearsals').insert({
+        'branch': branch,
+        'session_date': dayStr,
+        'status': 'held',
+        'recorded_by': _c.auth.currentUser?.id,
+      }).select('id').single();
+      rehearsalId = row['id'] as String;
+    }
+
+    // Reuse a still-valid session if one exists.
+    final liveRows = await _c
+        .from('qr_sessions')
+        .select()
+        .eq('rehearsal_id', rehearsalId)
+        .gt('expires_at', DateTime.now().toUtc().toIso8601String())
+        .order('started_at', ascending: false)
+        .limit(1);
+    if (liveRows.isNotEmpty) {
+      return QrSession.fromMap(liveRows.first);
+    }
+
+    final token = _generateToken();
+    final inserted = await _c
+        .from('qr_sessions')
+        .insert({
+          'rehearsal_id': rehearsalId,
+          'branch': branch,
+          'token': token,
+          'started_at': now.toUtc().toIso8601String(),
+          'expires_at': now.add(validFor).toUtc().toIso8601String(),
+          'late_after': (lateAfter ??
+                  now.add(const Duration(minutes: 15)))
+              .toUtc()
+              .toIso8601String(),
+          'created_by': _c.auth.currentUser?.id,
+        })
+        .select()
+        .single();
+    final session = QrSession.fromMap(inserted);
+
+    // The admin running the session is, by definition, present at the
+    // rehearsal — mark them attended so their own history reflects it.
+    await _autoAttendAdmin(rehearsalId, session.id);
+
+    return session;
+  }
+
+  /// Upserts the current admin / superAdmin as present for this
+  /// rehearsal. Safe to call repeatedly. Silently ignores failure
+  /// (e.g. the row already exists with manual data we shouldn't
+  /// clobber).
+  static Future<void> _autoAttendAdmin(
+      String rehearsalId, String sessionId) async {
+    final adminId = _c.auth.currentUser?.id;
+    if (adminId == null) return;
+    try {
+      await _c.from('attendance').upsert({
+        'rehearsal_id': rehearsalId,
+        'member_id': adminId,
+        'present': true,
+        'late_minutes': 0,
+        'checked_in_at': DateTime.now().toUtc().toIso8601String(),
+        'via': 'qr',
+        'qr_session_id': sessionId,
+      }, onConflict: 'rehearsal_id,member_id');
+    } catch (_) {
+      // Don't fail session creation if the admin's own attendance row
+      // can't be written — the QR session itself is the priority.
+    }
+  }
+
+  /// Member side: send the scanned token + (optional) GPS to the
+  /// `claim_attendance` RPC. Throws with a human message on failure
+  /// (invalid / expired / already-checked-in / etc.).
+  ///
+  /// Returns the late-minute count from the server.
+  static Future<int> claimAttendance({
+    required String token,
+    double? lat,
+    double? lng,
+  }) async {
+    final res = await _c.rpc('claim_attendance', params: {
+      'p_token': token,
+      'p_lat': lat,
+      'p_lng': lng,
+    });
+    final map = (res as Map).cast<String, dynamic>();
+    return (map['late_minutes'] as num?)?.toInt() ?? 0;
+  }
+
+  /// Returns the live list of check-ins for one session, newest first.
+  static Future<List<QrCheckin>> checkins(QrSession session) async {
+    final rows = await _c
+        .from('attendance')
+        .select('member_id, late_minutes, checked_in_at, '
+            'checked_in_lat, checked_in_lng, '
+            'members:member_id(name)')
+        .eq('qr_session_id', session.id)
+        .order('checked_in_at', ascending: false);
+    return _mapCheckins(rows as List);
+  }
+
+  /// All QR check-ins on a given branch+date (across any sessions that
+  /// were opened that day). Used to show admins past attendance even
+  /// after the 3-hour window has closed.
+  static Future<List<QrCheckin>> checkinsForDay({
+    required String branch,
+    required DateTime date,
+  }) async {
+    final dayStr =
+        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    final rehearsal = await _c
+        .from('rehearsals')
+        .select('id')
+        .eq('branch', branch)
+        .eq('session_date', dayStr)
+        .maybeSingle();
+    if (rehearsal == null) return const [];
+    final rows = await _c
+        .from('attendance')
+        .select('member_id, late_minutes, checked_in_at, '
+            'checked_in_lat, checked_in_lng, '
+            'members:member_id(name)')
+        .eq('rehearsal_id', rehearsal['id'] as String)
+        .eq('via', 'qr')
+        .order('checked_in_at', ascending: false);
+    return _mapCheckins(rows as List);
+  }
+
+  /// The latest QR session (active OR expired) for that branch+date,
+  /// or null if no session was ever opened. Used by the admin screen
+  /// to show the QR if it's still alive and the attendee history
+  /// either way.
+  static Future<QrSession?> latestSession({
+    required String branch,
+    required DateTime date,
+  }) async {
+    final dayStr =
+        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    final rehearsal = await _c
+        .from('rehearsals')
+        .select('id')
+        .eq('branch', branch)
+        .eq('session_date', dayStr)
+        .maybeSingle();
+    if (rehearsal == null) return null;
+    final rows = await _c
+        .from('qr_sessions')
+        .select()
+        .eq('rehearsal_id', rehearsal['id'] as String)
+        .order('started_at', ascending: false)
+        .limit(1);
+    if ((rows as List).isEmpty) return null;
+    return QrSession.fromMap(rows.first);
+  }
+
+  static List<QrCheckin> _mapCheckins(List rows) {
+    return rows.map((r) {
+      final m = r as Map<String, dynamic>;
+      final memberMap = m['members'] as Map<String, dynamic>?;
+      return QrCheckin(
+        memberId: m['member_id'] as String,
+        memberName: (memberMap?['name'] as String?) ?? 'Unknown',
+        checkedInAt: m['checked_in_at'] != null
+            ? DateTime.parse(m['checked_in_at'] as String).toLocal()
+            : DateTime.now(),
+        lateMinutes: (m['late_minutes'] as num?)?.toInt() ?? 0,
+        lat: (m['checked_in_lat'] as num?)?.toDouble(),
+        lng: (m['checked_in_lng'] as num?)?.toDouble(),
+      );
+    }).toList();
+  }
+
+  /// Used by the admin screen to keep the attendee list live.
+  static Stream<List<QrCheckin>> watchCheckins(QrSession session) async* {
+    yield await checkins(session);
+    // Re-poll every 5s. Could use Supabase realtime channels too.
+    while (true) {
+      await Future.delayed(const Duration(seconds: 5));
+      try {
+        yield await checkins(session);
+      } catch (_) {
+        // Swallow transient errors — next tick will retry.
+      }
+    }
+  }
+
+  static String _generateToken() {
+    final r = Random.secure();
+    const charset =
+        'ABCDEFGHJKLMNPQRSTUVWXYZ23456789abcdefghijkmnpqrstuvwxyz';
+    return List.generate(24, (_) => charset[r.nextInt(charset.length)])
+        .join();
+  }
+}
