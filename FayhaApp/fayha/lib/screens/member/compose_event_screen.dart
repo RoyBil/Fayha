@@ -5,7 +5,9 @@ import '../../services/admin_service.dart';
 import '../../theme/app_theme.dart';
 
 class ComposeEventScreen extends StatefulWidget {
-  const ComposeEventScreen({super.key});
+  /// When non-null, the screen edits the given event row.
+  final Map<String, dynamic>? existing;
+  const ComposeEventScreen({super.key, this.existing});
 
   @override
   State<ComposeEventScreen> createState() => _ComposeEventScreenState();
@@ -22,6 +24,28 @@ class _ComposeEventScreenState extends State<ComposeEventScreen> {
   bool _saving = false;
   Uint8List? _posterBytes;
   String _posterExt = 'jpg';
+  String? _existingPosterUrl;
+
+  bool get _isEdit => widget.existing != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final e = widget.existing;
+    if (e != null) {
+      _title.text = (e['title'] as String?) ?? '';
+      _location.text = (e['location'] as String?) ?? '';
+      _description.text = (e['description'] as String?) ?? '';
+      _kind = (e['kind'] as String?) ?? 'concert';
+      final startsAt = e['starts_at'] as String?;
+      if (startsAt != null) {
+        final dt = DateTime.parse(startsAt).toLocal();
+        _date = DateTime(dt.year, dt.month, dt.day);
+        _time = TimeOfDay(hour: dt.hour, minute: dt.minute);
+      }
+      _existingPosterUrl = e['poster_url'] as String?;
+    }
+  }
 
   @override
   void dispose() {
@@ -85,22 +109,38 @@ class _ComposeEventScreenState extends State<ComposeEventScreen> {
           bytes: _posterBytes!,
           fileExtension: _posterExt,
         );
+      } else if (_isEdit) {
+        posterUrl = _existingPosterUrl;
       }
-      await AdminService.addEvent(
-        title: _title.text.trim(),
-        location: _location.text.trim(),
-        startsAt: when,
-        kind: _kind,
-        description: _description.text.trim(),
-        posterUrl: posterUrl,
-      );
+      if (_isEdit) {
+        await AdminService.updateEvent(
+          id: widget.existing!['id'] as String,
+          title: _title.text.trim(),
+          location: _location.text.trim(),
+          startsAt: when,
+          kind: _kind,
+          description: _description.text.trim(),
+          posterUrl: posterUrl,
+        );
+      } else {
+        await AdminService.addEvent(
+          title: _title.text.trim(),
+          location: _location.text.trim(),
+          startsAt: when,
+          kind: _kind,
+          description: _description.text.trim(),
+          posterUrl: posterUrl,
+        );
+      }
       if (!mounted) return;
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not add event: $e')),
+        SnackBar(content: Text(_isEdit
+            ? 'Could not save changes: $e'
+            : 'Could not add event: $e')),
       );
     }
   }
@@ -110,7 +150,7 @@ class _ComposeEventScreenState extends State<ComposeEventScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Add Event')),
+      appBar: AppBar(title: Text(_isEdit ? 'Edit Event' : 'Add Event')),
       body: AbsorbPointer(
         absorbing: _saving,
         child: Form(
@@ -186,8 +226,8 @@ class _ComposeEventScreenState extends State<ComposeEventScreen> {
                         height: 18, width: 18,
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: AppColors.cream))
-                    : const Icon(Icons.add, size: 18),
-                label: const Text('Add Event'),
+                    : Icon(_isEdit ? Icons.save : Icons.add, size: 18),
+                label: Text(_isEdit ? 'Save Changes' : 'Add Event'),
               ),
             ],
           ),
@@ -274,6 +314,19 @@ class _ComposeEventScreenState extends State<ComposeEventScreen> {
                 height: 160,
                 width: double.infinity,
                 fit: BoxFit.cover,
+              ),
+            ),
+          ] else if (_existingPosterUrl != null &&
+              _existingPosterUrl!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                _existingPosterUrl!,
+                height: 160,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
               ),
             ),
           ],

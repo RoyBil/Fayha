@@ -8,6 +8,7 @@ import '../services/messages_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/elegant_card.dart';
 import '../widgets/section_header.dart';
+import 'news_detail_screen.dart';
 
 class NewsScreen extends StatefulWidget {
   const NewsScreen({super.key});
@@ -116,7 +117,11 @@ class _NewsScreenState extends State<NewsScreen> {
                   .map((item) => Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: _NewsCard(
-                            date: item.date, title: item.title, body: item.body),
+                          date: item.date,
+                          title: item.title,
+                          body: item.body,
+                          posterUrl: item.posterUrl,
+                        ),
                       ))
                   .toList(),
             );
@@ -220,20 +225,75 @@ class _NewsCard extends StatelessWidget {
   final String date;
   final String title;
   final String body;
-  const _NewsCard({required this.date, required this.title, required this.body});
+  final String? posterUrl;
+  const _NewsCard({
+    required this.date,
+    required this.title,
+    required this.body,
+    this.posterUrl,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return ElegantCard(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => NewsDetailScreen(
+            title: title,
+            body: body,
+            dateLabel: date,
+            posterUrl: posterUrl,
+          ),
+        ),
+      ),
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(date.toUpperCase(), style: theme.textTheme.labelSmall),
-          const SizedBox(height: 6),
-          Text(title, style: theme.textTheme.titleLarge),
-          const SizedBox(height: 8),
-          Text(body, style: theme.textTheme.bodyMedium?.copyWith(height: 1.55)),
+          if (posterUrl != null && posterUrl!.isNotEmpty)
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(12)),
+              child: Image.network(
+                posterUrl!,
+                height: 170,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(date.toUpperCase(), style: theme.textTheme.labelSmall),
+                const SizedBox(height: 6),
+                Text(title, style: theme.textTheme.titleLarge),
+                const SizedBox(height: 8),
+                Text(
+                  body,
+                  style: theme.textTheme.bodyMedium?.copyWith(height: 1.55),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text('Read more',
+                        style: theme.textTheme.labelMedium
+                            ?.copyWith(color: AppColors.primary)),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.arrow_forward,
+                        size: 14, color: AppColors.primary),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

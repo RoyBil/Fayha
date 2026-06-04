@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../data/mock_data.dart';
 import '../../services/admin_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/join_requests_service.dart';
 import '../../services/messages_service.dart';
+import '../../services/testimonials_service.dart';
 import 'attendance_stats_screen.dart';
 import 'member_detail_screen.dart';
 import '../../state/app_state.dart';
@@ -12,6 +14,7 @@ import '../../widgets/elegant_card.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/section_header.dart';
 import 'compose_event_screen.dart';
+import 'compose_gallery_post_screen.dart';
 import 'compose_poll_screen.dart';
 import 'compose_message_screen.dart';
 import 'compose_news_screen.dart';
@@ -41,11 +44,26 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
     final r = AppState.instance.currentMember?.role;
     return r == 'admin' || r == 'superAdmin';
   }
+  bool get _isEditor {
+    final r = AppState.instance.currentMember?.role;
+    return r == 'editor' || r == 'superAdmin';
+  }
+
+  /// Tabs the current user can see, in left-to-right order.
+  /// Each tuple is (label, builder).
+  List<(String, Widget Function())> get _availableTabs => [
+        if (_isSuper) ('Approvals', _approvalsTab),
+        if (_isAdmin) ('Join Requests', _joinRequestsTab),
+        if (_isAdmin) ('Members', _membersTab),
+        if (_isAdmin) ('Stats', () => const AttendanceStatsBody()),
+        if (_isEditor) ('Messages', _messagesTab),
+        if (_isEditor || _isAdmin) ('Content', _contentTab),
+      ];
 
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: _isSuper ? 6 : 5, vsync: this);
+    _tabs = TabController(length: _availableTabs.length, vsync: this);
     _reload();
   }
 
@@ -104,15 +122,13 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
           indicatorColor: AppColors.accent,
           isScrollable: true,
           tabs: [
-            if (_isSuper)
-              Tab(child: _TabLabel(text: 'Approvals', badge: _pendingCount)),
-            Tab(
-                child: _TabLabel(
-                    text: 'Join Requests', badge: _newJoinsCount)),
-            const Tab(text: 'Members'),
-            const Tab(text: 'Stats'),
-            const Tab(text: 'Messages'),
-            const Tab(text: 'Content'),
+            for (final (label, _) in _availableTabs)
+              if (label == 'Approvals')
+                Tab(child: _TabLabel(text: label, badge: _pendingCount))
+              else if (label == 'Join Requests')
+                Tab(child: _TabLabel(text: label, badge: _newJoinsCount))
+              else
+                Tab(text: label),
           ],
         ),
       ),
@@ -121,12 +137,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
           TabBarView(
             controller: _tabs,
             children: [
-              if (_isSuper) _approvalsTab(),
-              _joinRequestsTab(),
-              _membersTab(),
-              const AttendanceStatsBody(),
-              _messagesTab(),
-              _contentTab(),
+              for (final (_, build) in _availableTabs) build(),
             ],
           ),
           if (_working)
@@ -517,6 +528,12 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                   case 'demoteSuper':
                     _run(() => AdminService.setRole(m.id, 'admin'),
                         '${m.name} is no longer a super admin');
+                  case 'makeEditor':
+                    _run(() => AdminService.setRole(m.id, 'editor'),
+                        '${m.name} is now an editor');
+                  case 'removeEditor':
+                    _run(() => AdminService.setRole(m.id, 'member'),
+                        '${m.name} is no longer an editor');
                   case 'setLevel':
                     _pickSingerLevel(m);
                 }
@@ -531,6 +548,12 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                 else if (_isSuper && m.role == 'admin')
                   const PopupMenuItem(
                       value: 'removeAdmin', child: Text('Remove admin')),
+                if (_isSuper && m.role != 'editor' && m.role != 'superAdmin')
+                  const PopupMenuItem(
+                      value: 'makeEditor', child: Text('Make editor'))
+                else if (_isSuper && m.role == 'editor')
+                  const PopupMenuItem(
+                      value: 'removeEditor', child: Text('Remove editor')),
                 if (_isSuper && m.role != 'superAdmin')
                   const PopupMenuItem(
                       value: 'makeSuper', child: Text('Make super admin'))
@@ -782,152 +805,119 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
         const SectionHeader(
           eyebrow: 'Public App',
           title: 'Manage Content',
-          subtitle: 'Add songs and news that appear in the audience app.',
+          subtitle: 'Add and edit content that appears in the audience app.',
         ),
         const SizedBox(height: 16),
-        ElegantCard(
-          onTap: () async {
-            final added = await Navigator.push<bool>(context,
-                MaterialPageRoute(builder: (_) => const ComposeSongScreen()));
-            if (added == true && mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Song added')),
-              );
-            }
-          },
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.library_music, color: AppColors.primary),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Add a Song', style: theme.textTheme.titleMedium),
-                    Text('Title, lyrics, composers, YouTube link',
-                        style: theme.textTheme.bodySmall),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right, color: AppColors.gray),
-            ],
+
+        // ===== Add =====
+        if (_isAdmin) ...[
+          _ComposeCard(
+            icon: Icons.library_music,
+            color: AppColors.primary,
+            title: 'Add a Song',
+            subtitle: 'Title, lyrics, composers, YouTube link',
+            onTap: () async {
+              final added = await Navigator.push<bool>(context,
+                  MaterialPageRoute(
+                      builder: (_) => const ComposeSongScreen()));
+              if (added == true && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Song added')),
+                );
+              }
+            },
           ),
-        ),
-        const SizedBox(height: 12),
-        ElegantCard(
-          onTap: () async {
-            final added = await Navigator.push<bool>(context,
-                MaterialPageRoute(builder: (_) => const ComposeNewsScreen()));
-            if (added == true && mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('News published')),
-              );
-            }
-          },
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.secondary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.newspaper, color: AppColors.secondary),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Post News', style: theme.textTheme.titleMedium),
-                    Text('A headline and article for the News tab',
-                        style: theme.textTheme.bodySmall),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right, color: AppColors.gray),
-            ],
+          const SizedBox(height: 12),
+          _ComposeCard(
+            icon: Icons.poll_outlined,
+            color: AppColors.primary,
+            colorAlpha: 0.12,
+            title: 'New Poll',
+            subtitle: 'Ask members a question with up to 8 options',
+            onTap: () async {
+              final added = await Navigator.push<bool>(context,
+                  MaterialPageRoute(
+                      builder: (_) => const ComposePollScreen()));
+              if (added == true && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Poll published')),
+                );
+              }
+            },
           ),
-        ),
-        const SizedBox(height: 12),
-        ElegantCard(
-          onTap: () async {
-            final added = await Navigator.push<bool>(context,
-                MaterialPageRoute(builder: (_) => const ComposeEventScreen()));
-            if (added == true && mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Event added')),
-              );
-            }
-          },
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.accent.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.event_available, color: AppColors.accentDark),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Add Event', style: theme.textTheme.titleMedium),
-                    Text('A concert or big rehearsal — shows under "Coming Up"',
-                        style: theme.textTheme.bodySmall),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right, color: AppColors.gray),
-            ],
+        ],
+        if (_isAdmin && _isEditor) const SizedBox(height: 12),
+        if (_isEditor) ...[
+          _ComposeCard(
+            icon: Icons.newspaper,
+            color: AppColors.secondary,
+            title: 'Post News',
+            subtitle: 'A headline and article for the News tab',
+            onTap: () async {
+              final added = await Navigator.push<bool>(context,
+                  MaterialPageRoute(
+                      builder: (_) => const ComposeNewsScreen()));
+              if (added == true && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('News published')),
+                );
+                _reload();
+              }
+            },
           ),
-        ),
-        const SizedBox(height: 12),
-        ElegantCard(
-          onTap: () async {
-            final added = await Navigator.push<bool>(context,
-                MaterialPageRoute(builder: (_) => const ComposePollScreen()));
-            if (added == true && mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Poll published')),
-              );
-            }
-          },
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.poll_outlined, color: AppColors.primary),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('New Poll', style: theme.textTheme.titleMedium),
-                    Text('Ask members a question with up to 8 options',
-                        style: theme.textTheme.bodySmall),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right, color: AppColors.gray),
-            ],
+          const SizedBox(height: 12),
+          _ComposeCard(
+            icon: Icons.event_available,
+            color: AppColors.accentDark,
+            colorAlpha: 0.2,
+            title: 'Add Event',
+            subtitle: 'A concert or big rehearsal — shows under "Coming Up"',
+            onTap: () async {
+              final added = await Navigator.push<bool>(context,
+                  MaterialPageRoute(
+                      builder: (_) => const ComposeEventScreen()));
+              if (added == true && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Event added')),
+                );
+                _reload();
+              }
+            },
           ),
-        ),
+          const SizedBox(height: 12),
+          _ComposeCard(
+            icon: Icons.photo_library_outlined,
+            color: AppColors.secondaryDark,
+            colorAlpha: 0.15,
+            title: 'New Gallery Post',
+            subtitle: 'A photo + caption for members’ gallery',
+            onTap: () async {
+              final added = await Navigator.push<bool>(context,
+                  MaterialPageRoute(
+                      builder: (_) => const ComposeGalleryPostScreen()));
+              if (added == true && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Posted to gallery')),
+                );
+              }
+            },
+          ),
+
+          // ===== Manage existing =====
+          const SizedBox(height: 28),
+          Text('Manage existing', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 4),
+          Text(
+            'Tap any item to edit it, or swipe / long-press to delete.',
+            style: theme.textTheme.bodySmall,
+          ),
+          const SizedBox(height: 12),
+          _ManageNewsList(onChanged: _reload),
+          const SizedBox(height: 16),
+          _ManageEventsList(onChanged: _reload),
+          const SizedBox(height: 16),
+          const _ManageTestimonialsList(),
+        ],
       ],
     );
   }
@@ -995,6 +985,648 @@ class _TabLabel extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+/// Reusable "Add a …" tile used inside the Content tab.
+class _ComposeCard extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final double colorAlpha;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  const _ComposeCard({
+    required this.icon,
+    required this.color,
+    this.colorAlpha = 0.1,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ElegantCard(
+      onTap: onTap,
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: colorAlpha),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: theme.textTheme.titleMedium),
+                Text(subtitle, style: theme.textTheme.bodySmall),
+              ],
+            ),
+          ),
+          const Icon(Icons.chevron_right, color: AppColors.gray),
+        ],
+      ),
+    );
+  }
+}
+
+/// Editor-only: list of existing news posts with tap-to-edit + delete.
+class _ManageNewsList extends StatefulWidget {
+  final VoidCallback onChanged;
+  const _ManageNewsList({required this.onChanged});
+
+  @override
+  State<_ManageNewsList> createState() => _ManageNewsListState();
+}
+
+class _ManageNewsListState extends State<_ManageNewsList> {
+  late Future<List<Map<String, dynamic>>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = AdminService.listNews();
+  }
+
+  void _reload() {
+    setState(() => _future = AdminService.listNews());
+  }
+
+  Future<void> _confirmDelete(Map<String, dynamic> row) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Delete this news post?'),
+        content: Text('"${row['title']}" will be removed permanently.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Delete')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await AdminService.deleteNews(row['id'] as String);
+      _reload();
+      widget.onChanged();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not delete: $e')),
+      );
+    }
+  }
+
+  Future<void> _openEdit(Map<String, dynamic> row) async {
+    final saved = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+          builder: (_) => ComposeNewsScreen(existing: row)),
+    );
+    if (saved == true) {
+      _reload();
+      widget.onChanged();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _future,
+      builder: (context, snap) {
+        if (snap.connectionState != ConnectionState.done) {
+          return const Padding(
+            padding: EdgeInsets.all(20),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+        final rows = snap.data ?? const [];
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text('News',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: AppColors.secondary,
+                    letterSpacing: 0.8,
+                  )),
+            ),
+            if (rows.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4, bottom: 8),
+                child: Text('No news posts yet.',
+                    style: theme.textTheme.bodySmall),
+              )
+            else
+              ...rows.map((r) => Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: ElegantCard(
+                      onTap: () => _openEdit(r),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                      child: Row(
+                        children: [
+                          if ((r['poster_url'] as String?)?.isNotEmpty == true)
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: Image.network(
+                                r['poster_url'] as String,
+                                width: 50, height: 50,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => const SizedBox(
+                                  width: 50, height: 50),
+                              ),
+                            )
+                          else
+                            Container(
+                              width: 50, height: 50,
+                              decoration: BoxDecoration(
+                                color: AppColors.secondary
+                                    .withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Icon(Icons.newspaper,
+                                  color: AppColors.secondary),
+                            ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                              children: [
+                                Text((r['title'] as String?) ?? '',
+                                    style: theme.textTheme.titleSmall,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis),
+                                Text(
+                                  (r['date_label'] as String?) ?? '',
+                                  style: theme.textTheme.labelSmall,
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline,
+                                color: AppColors.gray),
+                            visualDensity: VisualDensity.compact,
+                            onPressed: () => _confirmDelete(r),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Editor-only: list of existing events with tap-to-edit + delete.
+class _ManageEventsList extends StatefulWidget {
+  final VoidCallback onChanged;
+  const _ManageEventsList({required this.onChanged});
+
+  @override
+  State<_ManageEventsList> createState() => _ManageEventsListState();
+}
+
+class _ManageEventsListState extends State<_ManageEventsList> {
+  late Future<List<Map<String, dynamic>>> _future;
+
+  static const _months = [
+    'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _future = AdminService.listEvents();
+  }
+
+  void _reload() {
+    setState(() => _future = AdminService.listEvents());
+  }
+
+  Future<void> _confirmDelete(Map<String, dynamic> row) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Delete this event?'),
+        content: Text('"${row['title']}" will be removed permanently.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Delete')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await AdminService.deleteEvent(row['id'] as String);
+      _reload();
+      widget.onChanged();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not delete: $e')),
+      );
+    }
+  }
+
+  Future<void> _openEdit(Map<String, dynamic> row) async {
+    final saved = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+          builder: (_) => ComposeEventScreen(existing: row)),
+    );
+    if (saved == true) {
+      _reload();
+      widget.onChanged();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _future,
+      builder: (context, snap) {
+        if (snap.connectionState != ConnectionState.done) {
+          return const Padding(
+            padding: EdgeInsets.all(20),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+        final rows = snap.data ?? const [];
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text('Events',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: AppColors.accentDark,
+                    letterSpacing: 0.8,
+                  )),
+            ),
+            if (rows.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text('No events yet.',
+                    style: theme.textTheme.bodySmall),
+              )
+            else
+              ...rows.map((r) {
+                final d = DateTime.parse(r['starts_at'] as String).toLocal();
+                final isRehearsal = (r['kind'] as String?) == 'rehearsal';
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: ElegantCard(
+                    onTap: () => _openEdit(r),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 46,
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 6),
+                          decoration: BoxDecoration(
+                            color: isRehearsal
+                                ? AppColors.secondaryDark
+                                : AppColors.accentDark,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                _months[d.month - 1].toUpperCase(),
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 10,
+                                ),
+                              ),
+                              Text('${d.day}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w700,
+                                    height: 1,
+                                  )),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                            children: [
+                              Text((r['title'] as String?) ?? '',
+                                  style: theme.textTheme.titleSmall,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis),
+                              Text(
+                                '${isRehearsal ? "Rehearsal" : "Concert"} · ${(r['location'] as String?) ?? ''}',
+                                style: theme.textTheme.labelSmall,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline,
+                              color: AppColors.gray),
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () => _confirmDelete(r),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Editor / super admin: see every testimonial, set importance, delete.
+class _ManageTestimonialsList extends StatefulWidget {
+  const _ManageTestimonialsList();
+
+  @override
+  State<_ManageTestimonialsList> createState() =>
+      _ManageTestimonialsListState();
+}
+
+class _ManageTestimonialsListState extends State<_ManageTestimonialsList> {
+  List<Testimonial>? _rows;
+  bool _loading = true;
+  String? _busyId;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final rows = await TestimonialsService.fetchAll();
+      if (!mounted) return;
+      setState(() {
+        _rows = rows;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _rows = const [];
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _setImportance(
+      Testimonial t, TestimonialImportance i) async {
+    if (t.id == null || t.importance == i || _busyId != null) return;
+    // Optimistic update: flip the chip instantly so the UI feels snappy.
+    setState(() {
+      t.importance = i;
+      _busyId = t.id;
+    });
+    try {
+      await TestimonialsService.setImportance(t.id!, i);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not update: $e')),
+      );
+      // Revert by re-fetching the row.
+      await _load();
+    } finally {
+      if (mounted) setState(() => _busyId = null);
+    }
+  }
+
+  Future<void> _confirmDelete(Testimonial t) async {
+    if (t.id == null) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Delete this testimonial?'),
+        content: Text('"${t.author}" will be removed permanently.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await TestimonialsService.delete(t.id!);
+      if (!mounted) return;
+      setState(() => _rows = _rows?.where((r) => r.id != t.id).toList());
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not delete: $e')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    if (_loading) {
+      return const Padding(
+        padding: EdgeInsets.all(20),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    final rows = _rows ?? const <Testimonial>[];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Text(
+            'Testimonials',
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: AppColors.primary,
+              letterSpacing: 0.8,
+            ),
+          ),
+        ),
+        if (rows.isEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text('No testimonials yet.',
+                style: theme.textTheme.bodySmall),
+          )
+        else
+          ...rows.map((t) => Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: _TestimonialAdminCard(
+                  t: t,
+                  onSetImportance: (i) => _setImportance(t, i),
+                  onDelete: () => _confirmDelete(t),
+                ),
+              )),
+      ],
+    );
+  }
+}
+
+class _TestimonialAdminCard extends StatelessWidget {
+  final Testimonial t;
+  final ValueChanged<TestimonialImportance> onSetImportance;
+  final VoidCallback onDelete;
+  const _TestimonialAdminCard({
+    required this.t,
+    required this.onSetImportance,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ElegantCard(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              if (t.photoUrl != null && t.photoUrl!.isNotEmpty)
+                CircleAvatar(
+                  radius: 20,
+                  backgroundImage: NetworkImage(t.photoUrl!),
+                  backgroundColor: AppColors.offWhite,
+                )
+              else
+                Avatar(name: t.author, size: 40),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(t.author,
+                        style: theme.textTheme.titleSmall,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                    if ((t.email ?? '').isNotEmpty)
+                      Text(t.email!,
+                          style: theme.textTheme.labelSmall,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline,
+                    color: AppColors.gray),
+                visualDensity: VisualDensity.compact,
+                onPressed: onDelete,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            t.body,
+            style: theme.textTheme.bodySmall?.copyWith(height: 1.4),
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 6,
+            children: [
+              _importanceChip(
+                context,
+                label: 'Most important',
+                icon: Icons.star_rounded,
+                value: TestimonialImportance.featured,
+                color: AppColors.accentDark,
+              ),
+              _importanceChip(
+                context,
+                label: 'Normal',
+                icon: Icons.check_circle_outline,
+                value: TestimonialImportance.normal,
+                color: AppColors.secondaryDark,
+              ),
+              _importanceChip(
+                context,
+                label: 'Not important',
+                icon: Icons.visibility_off_outlined,
+                value: TestimonialImportance.hidden,
+                color: AppColors.gray,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _importanceChip(
+    BuildContext context, {
+    required String label,
+    required IconData icon,
+    required TestimonialImportance value,
+    required Color color,
+  }) {
+    final selected = t.importance == value;
+    return ChoiceChip(
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14,
+              color: selected ? Colors.white : color),
+          const SizedBox(width: 4),
+          Text(label,
+              style: TextStyle(
+                fontSize: 12,
+                color: selected ? Colors.white : color,
+                fontWeight: FontWeight.w600,
+              )),
+        ],
+      ),
+      selected: selected,
+      onSelected: (_) => onSetImportance(value),
+      selectedColor: color,
+      backgroundColor: color.withValues(alpha: 0.08),
+      side: BorderSide(color: color.withValues(alpha: 0.4)),
+      visualDensity: VisualDensity.compact,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
   }
 }

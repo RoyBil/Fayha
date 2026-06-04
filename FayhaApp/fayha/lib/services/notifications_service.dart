@@ -2,16 +2,32 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../state/app_state.dart';
 
+/// One row in the notifications feed. `kind` tells the UI which icon
+/// and label to use; `sourceId` / `extra` carry enough info to deep-
+/// link to the right destination when the user taps the item.
 class FeedItem {
-  final String kind; // announcement | news | concert
+  /// 'announcement' | 'news' | 'concert' | 'big_rehearsal' | 'message' | 'poll'
+  final String kind;
   final String title;
   final String body;
   final DateTime date;
+
+  /// Stable id for per-item state (star, mark-unread). Built from
+  /// the underlying row's primary key when possible.
+  final String id;
+
+  /// Reference to the underlying row used for navigation. For
+  /// concerts, includes title/location/etc so the detail screen can
+  /// render without a refetch.
+  final Map<String, dynamic> extra;
+
   const FeedItem({
+    required this.id,
     required this.kind,
     required this.title,
     required this.body,
     required this.date,
+    this.extra = const {},
   });
 }
 
@@ -19,76 +35,100 @@ class NotificationsService {
   static final _c = Supabase.instance.client;
 
   /// Aggregated feed for members/admins: admin announcements,
-  /// official news, and upcoming concerts — newest first.
+  /// official news, upcoming concerts, DMs, polls — newest first.
   static Future<List<FeedItem>> feed() async {
     final nowIso = DateTime.now().toUtc().toIso8601String();
     final isMaestro =
         AppState.instance.currentMember?.role == 'superAdmin';
     final results = await Future.wait([
-      _c.from('messages').select('title,body,created_at')
+      _c.from('messages').select('id,title,body,created_at,sender_name')
           .order('created_at', ascending: false),
-      _c.from('news_posts').select('title,body,sort_date')
+      _c.from('news_posts').select('id,title,body,sort_date,poster_url,date_label')
           .order('sort_date', ascending: false),
       _c.from('concerts')
-          .select('title,description,location,starts_at,created_at')
+          .select('id,title,description,location,starts_at,kind,poster_url,created_at')
           .gte('starts_at', nowIso).order('starts_at'),
       _c.from('direct_messages')
-          .select('body,from_maestro,created_at,members(name)')
+          .select('id,member_id,body,from_maestro,created_at,members(name)')
           .order('created_at', ascending: false),
-      _c.from('polls').select('question,created_by_name,created_at')
+      _c.from('polls').select('id,question,created_by_name,created_at')
           .order('created_at', ascending: false),
     ]);
 
     final items = <FeedItem>[];
     for (final m in results[0] as List) {
       items.add(FeedItem(
+        id: 'msg:${m['id']}',
         kind: 'announcement',
         title: m['title'] as String,
         body: m['body'] as String,
         date: DateTime.parse(m['created_at'] as String).toLocal(),
+        extra: {
+          'sender_name': m['sender_name'],
+        },
       ));
     }
     for (final n in results[1] as List) {
       items.add(FeedItem(
+        id: 'news:${n['id']}',
         kind: 'news',
         title: n['title'] as String,
         body: n['body'] as String,
         date: DateTime.parse(n['sort_date'] as String).toLocal(),
+        extra: {
+          'poster_url': n['poster_url'],
+          'date_label': n['date_label'],
+        },
       ));
     }
     for (final c in results[2] as List) {
       final starts = DateTime.parse(c['starts_at'] as String).toLocal();
-      // Sort by when the concert was announced, not by its event date.
       final announced = c['created_at'] != null
           ? DateTime.parse(c['created_at'] as String).toLocal()
           : starts;
+      final isRehearsal = (c['kind'] as String?) == 'rehearsal';
       items.add(FeedItem(
-        kind: 'concert',
-        title: 'Concert · ${c['title']}',
+        id: 'concert:${c['id']}',
+        kind: isRehearsal ? 'big_rehearsal' : 'concert',
+        title: '${isRehearsal ? "Rehearsal" : "Concert"} · ${c['title']}',
         body: '${c['location']} · ${starts.day}/${starts.month}/${starts.year}',
         date: announced,
+        extra: {
+          'concert_title': c['title'],
+          'location': c['location'],
+          'description': c['description'] ?? '',
+          'starts_at': c['starts_at'],
+          'kind': c['kind'] ?? 'concert',
+          'poster_url': c['poster_url'],
+        },
       ));
     }
-    // Direct messages received (not the ones you sent yourself).
+    // Direct messages received (skip own sent ones).
     for (final d in results[3] as List) {
       final fromMaestro = d['from_maestro'] as bool;
-      if (isMaestro == fromMaestro) continue; // skip own sent messages
+      if (isMaestro == fromMaestro) continue;
       final senderName = fromMaestro
           ? 'Maestro Barkev'
           : ((d['members'] as Map<String, dynamic>?)?['name'] as String? ??
               'A member');
       items.add(FeedItem(
+        id: 'dm:${d['id']}',
         kind: 'message',
         title: 'Message from $senderName',
-        body: d['body'] as String,
+        body: (d['body'] as String?) ?? '🎙 Voice message',
         date: DateTime.parse(d['created_at'] as String).toLocal(),
+        extra: {
+          'member_id': d['member_id'],   // for Maestro to open the right thread
+          'sender_name': senderName,
+        },
       ));
     }
     for (final p in results[4] as List) {
       items.add(FeedItem(
+        id: 'poll:${p['id']}',
         kind: 'poll',
         title: 'New poll · ${p['question']}',
-        body: 'From ${p['created_by_name'] ?? 'an admin'} — tap Polls to vote',
+        body: 'From ${p['created_by_name'] ?? 'an admin'} — tap to vote',
         date: DateTime.parse(p['created_at'] as String).toLocal(),
       ));
     }
@@ -96,10 +136,10 @@ class NotificationsService {
     return items;
   }
 
-  /// SharedPreferences key for the last-seen timestamp, per signed-in user.
+  // ===== Per-user "last seen" timestamp (bell badge) =====
+
   static String _lastSeenKey() {
-    final uid =
-        AppState.instance.currentMember?.id ?? 'anon';
+    final uid = AppState.instance.currentMember?.id ?? 'anon';
     return 'notifications_last_seen_$uid';
   }
 
@@ -109,18 +149,99 @@ class NotificationsService {
     return iso == null ? null : DateTime.tryParse(iso);
   }
 
-  /// Marks "now" as the last-seen moment for the current user.
   static Future<void> markSeen() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
         _lastSeenKey(), DateTime.now().toIso8601String());
   }
 
-  /// Count of feed items newer than the last-seen timestamp.
   static Future<int> unreadCount() async {
     final seen = await lastSeen();
     final items = await feed();
-    if (seen == null) return items.length;
-    return items.where((i) => i.date.isAfter(seen)).length;
+    final read = await readIds();
+    final forcedUnread = await forcedUnreadIds();
+    return items.where((i) {
+      if (forcedUnread.contains(i.id)) return true;
+      if (read.contains(i.id)) return false;
+      if (seen == null) return true;
+      return i.date.isAfter(seen);
+    }).length;
+  }
+
+  // ===== Per-item star + mark-unread state (SharedPreferences) =====
+
+  static String _starKey() {
+    final uid = AppState.instance.currentMember?.id ?? 'anon';
+    return 'notif_starred_$uid';
+  }
+
+  static String _unreadKey() {
+    final uid = AppState.instance.currentMember?.id ?? 'anon';
+    return 'notif_forced_unread_$uid';
+  }
+
+  static Future<Set<String>> starredIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    return (prefs.getStringList(_starKey()) ?? const []).toSet();
+  }
+
+  static Future<void> toggleStar(String id) async {
+    final prefs = await SharedPreferences.getInstance();
+    final s = (prefs.getStringList(_starKey()) ?? <String>[]).toSet();
+    if (!s.add(id)) s.remove(id);
+    await prefs.setStringList(_starKey(), s.toList());
+  }
+
+  // ===== Per-item "read" set =====
+  // Items the user has explicitly tapped open. They stay read forever
+  // (unless explicitly marked unread again) regardless of `lastSeen`.
+
+  static String _readKey() {
+    final uid = AppState.instance.currentMember?.id ?? 'anon';
+    return 'notif_read_$uid';
+  }
+
+  static Future<Set<String>> readIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    return (prefs.getStringList(_readKey()) ?? const []).toSet();
+  }
+
+  /// Marks one notification as read. Also clears any forced-unread
+  /// flag for that id.
+  static Future<void> markItemRead(String id) async {
+    final prefs = await SharedPreferences.getInstance();
+    final r = (prefs.getStringList(_readKey()) ?? <String>[]).toSet();
+    r.add(id);
+    await prefs.setStringList(_readKey(), r.toList());
+    final u = (prefs.getStringList(_unreadKey()) ?? <String>[]).toSet();
+    if (u.remove(id)) {
+      await prefs.setStringList(_unreadKey(), u.toList());
+    }
+  }
+
+  /// IDs the user has explicitly marked unread (overrides the
+  /// timestamp-based "seen" logic for the bell badge).
+  static Future<Set<String>> forcedUnreadIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    return (prefs.getStringList(_unreadKey()) ?? const []).toSet();
+  }
+
+  static Future<void> markUnread(String id) async {
+    final prefs = await SharedPreferences.getInstance();
+    final s = (prefs.getStringList(_unreadKey()) ?? <String>[]).toSet();
+    s.add(id);
+    await prefs.setStringList(_unreadKey(), s.toList());
+    // Also lift the "read" flag so the item is genuinely unread again.
+    final r = (prefs.getStringList(_readKey()) ?? <String>[]).toSet();
+    if (r.remove(id)) {
+      await prefs.setStringList(_readKey(), r.toList());
+    }
+  }
+
+  static Future<void> clearForcedUnread(String id) async {
+    final prefs = await SharedPreferences.getInstance();
+    final s = (prefs.getStringList(_unreadKey()) ?? <String>[]).toSet();
+    s.remove(id);
+    await prefs.setStringList(_unreadKey(), s.toList());
   }
 }

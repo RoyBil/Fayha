@@ -182,17 +182,31 @@ class Poll {
 
 enum TestimonialStatus { pending, approved, rejected }
 
+/// Editor-set importance level.
+/// - featured: highlighted at the top of the public list
+/// - normal:   shown in the public list
+/// - hidden:   not shown publicly (kept for moderation)
+enum TestimonialImportance { featured, normal, hidden }
+
 class Testimonial {
+  final String? id;
   final String author;
   final String voiceSection;
   final String body;
+  final String? email;
+  final String? photoUrl;
   TestimonialStatus status;
+  TestimonialImportance importance;
   final DateTime submittedAt;
   Testimonial({
+    this.id,
     required this.author,
     required this.voiceSection,
     required this.body,
+    this.email,
+    this.photoUrl,
     this.status = TestimonialStatus.pending,
+    this.importance = TestimonialImportance.normal,
     required this.submittedAt,
   });
 }

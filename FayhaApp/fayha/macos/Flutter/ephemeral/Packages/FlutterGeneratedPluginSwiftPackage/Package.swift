@@ -15,6 +15,7 @@ let package = Package(
         .library(name: "FlutterGeneratedPluginSwiftPackage", type: .static, targets: ["FlutterGeneratedPluginSwiftPackage"])
     ],
     dependencies: [
+        .package(name: "video_player_avfoundation", path: "../.packages/video_player_avfoundation-2.9.7"),
         .package(name: "url_launcher_macos", path: "../.packages/url_launcher_macos-3.2.3"),
         .package(name: "shared_preferences_foundation", path: "../.packages/shared_preferences_foundation-2.5.4"),
         .package(name: "path_provider_foundation", path: "../.packages/path_provider_foundation-2.4.2"),
@@ -28,6 +29,7 @@ let package = Package(
         .target(
             name: "FlutterGeneratedPluginSwiftPackage",
             dependencies: [
+                .product(name: "video-player-avfoundation", package: "video_player_avfoundation"),
                 .product(name: "url-launcher-macos", package: "url_launcher_macos"),
                 .product(name: "shared-preferences-foundation", package: "shared_preferences_foundation"),
                 .product(name: "path-provider-foundation", package: "path_provider_foundation"),

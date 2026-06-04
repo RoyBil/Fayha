@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../data/choir_data.dart';
 import '../../services/alert_counts_service.dart';
 import '../../services/concerts_service.dart';
+import '../../services/gallery_service.dart';
 import '../../services/live_location_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
@@ -15,6 +16,7 @@ import 'polls_screen.dart';
 import 'testimonials_member_screen.dart';
 import 'member_profile_screen.dart';
 import 'admin_panel_screen.dart';
+import 'gallery_screen.dart';
 import 'house_location_picker_screen.dart';
 import 'members_directory_screen.dart';
 
@@ -27,6 +29,7 @@ class MemberHomeScreen extends StatefulWidget {
 
 class _MemberHomeScreenState extends State<MemberHomeScreen> {
   late Future<List<Concert>> _upcoming;
+  Future<List<GalleryPost>>? _gallery;
   int _unvotedPolls = 0;
   int _unreadDms = 0;
   int _adminInbox = 0;
@@ -36,6 +39,7 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
   void initState() {
     super.initState();
     _upcoming = ConcertsService.fetchUpcoming();
+    _gallery = GalleryService.list(limit: 12);
     _lastStatsVersion = AppState.instance.statsVersion;
     _reloadAlertCounts();
     AppState.instance.addListener(_onAppStateChange);
@@ -209,10 +213,14 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
                         builder: (_) => const MembersDirectoryScreen()),
                   ),
                 ),
-                if (m.isAdmin)
+                if (m.isAdmin || m.isContentEditor)
                   _Tile(
-                    icon: Icons.admin_panel_settings_outlined,
-                    label: 'Admin',
+                    icon: m.isContentEditor && !m.isAdmin
+                        ? Icons.edit_note_outlined
+                        : Icons.admin_panel_settings_outlined,
+                    label: m.isContentEditor && !m.isAdmin
+                        ? 'Editor'
+                        : 'Admin',
                     badge: _adminInbox,
                     onTap: () async {
                       await Navigator.push(
@@ -225,6 +233,8 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
               ],
             ),
             const SizedBox(height: 32),
+            _GalleryStrip(future: _gallery ??= GalleryService.list(limit: 12)),
+            const SizedBox(height: 28),
             const SectionHeader(
                 eyebrow: 'Coming Up', title: 'Concerts & Rehearsals'),
             const SizedBox(height: 12),
@@ -778,6 +788,131 @@ class _HouseLocationPrompt extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Horizontal preview of recent gallery posts on the member home.
+/// Tapping anywhere in this zone navigates to the full Gallery.
+class _GalleryStrip extends StatelessWidget {
+  final Future<List<GalleryPost>> future;
+  const _GalleryStrip({required this.future});
+
+  void _openGallery(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const GalleryScreen()),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<GalleryPost>>(
+      future: future,
+      builder: (context, snap) {
+        final posts = snap.data ?? const <GalleryPost>[];
+        if (snap.connectionState != ConnectionState.done) {
+          return const SizedBox.shrink();
+        }
+        if (posts.isEmpty) return const SizedBox.shrink();
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => _openGallery(context),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  const Expanded(
+                    child: SectionHeader(
+                        eyebrow: 'Gallery', title: 'Recent Moments'),
+                  ),
+                  TextButton(
+                    onPressed: () => _openGallery(context),
+                    child: const Text('See all →'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 160,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  // Disable horizontal scroll so the whole zone is one tap
+                  // target. Members go to the gallery to browse.
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: posts.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  itemBuilder: (context, i) {
+                    final p = posts[i];
+                    final caption = (p.caption ?? '').trim();
+                    return IgnorePointer(
+                      child: SizedBox(
+                        width: 120,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: SizedBox(
+                                width: 120,
+                                height: 120,
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    if (p.isVideo)
+                                      Container(color: AppColors.dark)
+                                    else
+                                      Image.network(
+                                        p.photoUrl,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => Container(
+                                            color: AppColors.offWhite,
+                                            child: const Icon(Icons.broken_image,
+                                                color: AppColors.gray)),
+                                        loadingBuilder: (ctx, child, ev) {
+                                          if (ev == null) return child;
+                                          return Container(
+                                              color: AppColors.offWhite);
+                                        },
+                                      ),
+                                    if (p.isVideo)
+                                      const Center(
+                                        child: Icon(
+                                            Icons.play_circle_fill_rounded,
+                                            color: Colors.white,
+                                            size: 30),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              caption.isEmpty ? ' ' : caption,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelSmall
+                                  ?.copyWith(
+                                    color: caption.isEmpty
+                                        ? Colors.transparent
+                                        : AppColors.dark,
+                                    height: 1.2,
+                                  ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

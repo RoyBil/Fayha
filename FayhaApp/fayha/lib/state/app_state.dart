@@ -16,7 +16,10 @@ class Member {
   AccountState state;
   bool isAdmin;
   bool isMaestro;
+  bool isEditor;
   bool isPollCreator;
+  /// Anyone who is allowed to post news / events / announcements.
+  bool get isContentEditor => isEditor || isMaestro;
   bool leftChoir;
   bool shareLocation;
   Set<String> memorizedSongIds;
@@ -50,6 +53,7 @@ class Member {
     this.state = AccountState.active,
     this.isAdmin = false,
     this.isMaestro = false,
+    this.isEditor = false,
     this.isPollCreator = false,
     this.leftChoir = false,
     this.shareLocation = true,
@@ -96,7 +100,9 @@ class Member {
       },
       isAdmin: role == 'admin' || role == 'superAdmin',
       isMaestro: role == 'superAdmin',
-      isPollCreator: role == 'admin' || role == 'superAdmin',
+      isEditor: role == 'editor',
+      isPollCreator:
+          role == 'admin' || role == 'editor' || role == 'superAdmin',
       leftChoir: status == 'left',
       shareLocation: (r['share_location'] as bool?) ?? true,
       favoriteSongId: r['favorite_song_id'] as String?,
@@ -138,6 +144,9 @@ class AppState extends ChangeNotifier {
   bool get isSignedIn => _currentMember != null;
   bool get isMaestro => _currentMember?.isMaestro ?? false;
   bool get isAdmin => _currentMember?.isAdmin ?? false;
+  bool get isEditor => _currentMember?.isEditor ?? false;
+  bool get isContentEditor =>
+      _currentMember?.isContentEditor ?? false;
 
   /// Bumped whenever something happens that should invalidate the
   /// home-page stat boxes (e.g. attendance was just recorded).

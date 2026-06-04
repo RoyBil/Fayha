@@ -1,16 +1,19 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../data/choir_data.dart';
 import '../data/mock_data.dart';
 import '../services/audience_data.dart';
 import '../services/concerts_service.dart';
+import '../services/testimonials_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/avatar.dart';
 import '../widgets/elegant_card.dart';
 import '../widgets/section_header.dart';
 import 'concert_detail_screen.dart';
 import 'join_screen.dart';
 import 'public_song_player_screen.dart';
+import 'testimonials_public_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback? onGoToMusic;
@@ -28,6 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late Future<List<Concert>> _upcoming;
   late Future<List<RepertoireSong>> _songs;
   late Future<List<SocialPost>> _social;
+  Future<List<Testimonial>>? _testimonials;
 
   @override
   void initState() {
@@ -35,6 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _upcoming = ConcertsService.fetchUpcoming();
     _songs = AudienceData.fetchSongs();
     _social = AudienceData.fetchSocialPosts();
+    _testimonials = TestimonialsService.fetchPublic();
   }
 
   @override
@@ -76,10 +81,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         onSeeMore: widget.onGoToNews,
                       ),
                       const SizedBox(height: 16),
-                      ...concerts.take(3).map((c) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: _NextConcertCard(concert: c),
-                          )),
+                      ...concerts
+                          .take(3)
+                          .map(
+                            (c) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _NextConcertCard(concert: c),
+                            ),
+                          ),
                       const SizedBox(height: 24),
                     ],
                   );
@@ -105,7 +114,9 @@ class _HomeScreenState extends State<HomeScreen> {
               FutureBuilder<List<RepertoireSong>>(
                 future: _songs,
                 builder: (context, snap) {
-                  final songs = (snap.data ?? const <RepertoireSong>[]).take(3).toList();
+                  final songs = (snap.data ?? const <RepertoireSong>[])
+                      .take(3)
+                      .toList();
                   if (snap.connectionState != ConnectionState.done) {
                     return const SizedBox(
                       height: 60,
@@ -114,10 +125,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
                   return Column(
                     children: songs
-                        .map((s) => Padding(
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: _SongTile(song: s),
-                            ))
+                        .map(
+                          (s) => Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: _SongTile(song: s),
+                          ),
+                        )
                         .toList(),
                   );
                 },
@@ -136,7 +149,9 @@ class _HomeScreenState extends State<HomeScreen> {
               FutureBuilder<List<SocialPost>>(
                 future: _social,
                 builder: (context, snap) {
-                  final posts = (snap.data ?? const <SocialPost>[]).take(2).toList();
+                  final posts = (snap.data ?? const <SocialPost>[])
+                      .take(2)
+                      .toList();
                   if (snap.connectionState != ConnectionState.done) {
                     return const SizedBox(
                       height: 60,
@@ -145,15 +160,44 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
                   return Column(
                     children: posts
-                        .map((p) => Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: _SocialCard(post: p),
-                            ))
+                        .map(
+                          (p) => Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: _SocialCard(post: p),
+                          ),
+                        )
                         .toList(),
                   );
                 },
               ),
               const SizedBox(height: 36),
+
+              // ===== Testimonials =====
+              FutureBuilder<List<Testimonial>>(
+                future: _testimonials ??= TestimonialsService.fetchPublic(),
+                builder: (context, snap) {
+                  final list = snap.data ?? const <Testimonial>[];
+                  if (list.isEmpty) return const SizedBox.shrink();
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _SectionRow(
+                        eyebrow: 'Voices',
+                        title: 'What People Say',
+                        onSeeMore: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const TestimonialsPublicScreen(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _TestimonialsCarousel(items: list),
+                      const SizedBox(height: 36),
+                    ],
+                  );
+                },
+              ),
 
               // ===== Newsletter =====
               _Newsletter(
@@ -163,7 +207,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   final email = _newsletter.text.trim();
                   if (!email.contains('@')) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Please enter a valid email')),
+                      const SnackBar(
+                        content: Text('Please enter a valid email'),
+                      ),
                     );
                     return;
                   }
@@ -199,34 +245,48 @@ class _Hero extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [AppColors.primaryDark, AppColors.primary, AppColors.charcoal],
+          colors: [
+            AppColors.primaryDark,
+            AppColors.primary,
+            AppColors.charcoal,
+          ],
         ),
       ),
       padding: EdgeInsets.fromLTRB(
-          24, MediaQuery.of(context).padding.top + kToolbarHeight + 20, 24, 44),
+        24,
+        MediaQuery.of(context).padding.top + kToolbarHeight + 20,
+        24,
+        44,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('EST. ${ChoirData.founded}',
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: AppColors.accentLight,
-                letterSpacing: 2.0,
-              )),
+          Text(
+            'EST. ${ChoirData.founded}',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: AppColors.accentLight,
+              letterSpacing: 2.0,
+            ),
+          ),
           const SizedBox(height: 14),
-          Text(ChoirData.name,
-              style: theme.textTheme.displaySmall?.copyWith(
-                color: AppColors.cream,
-                fontWeight: FontWeight.w600,
-                height: 1.05,
-              )),
+          Text(
+            ChoirData.name,
+            style: theme.textTheme.displaySmall?.copyWith(
+              color: AppColors.cream,
+              fontWeight: FontWeight.w600,
+              height: 1.05,
+            ),
+          ),
           const SizedBox(height: 14),
           Container(height: 2, width: 48, color: AppColors.accent),
           const SizedBox(height: 16),
-          Text(ChoirData.tagline,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: AppColors.cream.withValues(alpha: 0.9),
-                height: 1.5,
-              )),
+          Text(
+            ChoirData.tagline,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: AppColors.cream.withValues(alpha: 0.9),
+              height: 1.5,
+            ),
+          ),
         ],
       ),
     );
@@ -237,19 +297,22 @@ class _SectionRow extends StatelessWidget {
   final String eyebrow;
   final String title;
   final VoidCallback? onSeeMore;
-  const _SectionRow({required this.eyebrow, required this.title, this.onSeeMore});
+  const _SectionRow({
+    required this.eyebrow,
+    required this.title,
+    this.onSeeMore,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Expanded(child: SectionHeader(eyebrow: eyebrow, title: title)),
+        Expanded(
+          child: SectionHeader(eyebrow: eyebrow, title: title),
+        ),
         if (onSeeMore != null)
-          TextButton(
-            onPressed: onSeeMore,
-            child: const Text('See all →'),
-          ),
+          TextButton(onPressed: onSeeMore, child: const Text('See all →')),
       ],
     );
   }
@@ -262,7 +325,20 @@ class _NextConcertCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return ElegantCard(
       background: AppColors.offWhite,
       onTap: () => Navigator.push(
@@ -282,11 +358,13 @@ class _NextConcertCard extends StatelessWidget {
             ),
             child: Column(
               children: [
-                Text(months[concert.date.month - 1].toUpperCase(),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: AppColors.accentLight,
-                      letterSpacing: 1.5,
-                    )),
+                Text(
+                  months[concert.date.month - 1].toUpperCase(),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: AppColors.accentLight,
+                    letterSpacing: 1.5,
+                  ),
+                ),
                 const SizedBox(height: 2),
                 Text(
                   concert.date.day.toString(),
@@ -305,12 +383,16 @@ class _NextConcertCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
-                    color: (concert.isRehearsal
-                            ? AppColors.secondary
-                            : AppColors.accentDark)
-                        .withValues(alpha: 0.15),
+                    color:
+                        (concert.isRehearsal
+                                ? AppColors.secondary
+                                : AppColors.accentDark)
+                            .withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -330,14 +412,25 @@ class _NextConcertCard extends StatelessWidget {
                 const SizedBox(height: 6),
                 Row(
                   children: [
-                    const Icon(Icons.place_outlined, size: 14, color: AppColors.gray),
+                    const Icon(
+                      Icons.place_outlined,
+                      size: 14,
+                      color: AppColors.gray,
+                    ),
                     const SizedBox(width: 4),
-                    Expanded(child: Text(concert.location, style: theme.textTheme.bodySmall)),
+                    Expanded(
+                      child: Text(
+                        concert.location,
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 10),
-                Text(concert.description,
-                    style: theme.textTheme.bodyMedium?.copyWith(height: 1.5)),
+                Text(
+                  concert.description,
+                  style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
+                ),
               ],
             ),
           ),
@@ -377,8 +470,11 @@ class _JoinCta extends StatelessWidget {
                   color: AppColors.dark.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.person_add_alt_1,
-                    color: AppColors.dark, size: 26),
+                child: const Icon(
+                  Icons.person_add_alt_1,
+                  color: AppColors.dark,
+                  size: 26,
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -418,8 +514,10 @@ class _SongTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return ElegantCard(
-      onTap: () => Navigator.push(context,
-          MaterialPageRoute(builder: (_) => PublicSongPlayerScreen(song: song))),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => PublicSongPlayerScreen(song: song)),
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: Row(
         children: [
@@ -430,7 +528,11 @@ class _SongTile extends StatelessWidget {
               color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.play_arrow, color: AppColors.primary, size: 26),
+            child: const Icon(
+              Icons.play_arrow,
+              color: AppColors.primary,
+              size: 26,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -438,8 +540,12 @@ class _SongTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(song.title, style: theme.textTheme.titleMedium),
-                Text(song.subtitle,
-                    style: theme.textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic)),
+                Text(
+                  song.subtitle,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
               ],
             ),
           ),
@@ -467,11 +573,15 @@ class _SocialCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: (isInsta ? AppColors.primary : AppColors.secondary).withValues(alpha: 0.1),
+                  color: (isInsta ? AppColors.primary : AppColors.secondary)
+                      .withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(isInsta ? Icons.camera_alt : Icons.facebook,
-                    size: 18, color: isInsta ? AppColors.primary : AppColors.secondary),
+                child: Icon(
+                  isInsta ? Icons.camera_alt : Icons.facebook,
+                  size: 18,
+                  color: isInsta ? AppColors.primary : AppColors.secondary,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -479,14 +589,20 @@ class _SocialCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(post.author, style: theme.textTheme.titleSmall),
-                    Text('${post.platform} · ${post.postedAgo}', style: theme.textTheme.labelSmall),
+                    Text(
+                      '${post.platform} · ${post.postedAgo}',
+                      style: theme.textTheme.labelSmall,
+                    ),
                   ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          Text(post.body, style: theme.textTheme.bodyMedium?.copyWith(height: 1.55)),
+          Text(
+            post.body,
+            style: theme.textTheme.bodyMedium?.copyWith(height: 1.55),
+          ),
         ],
       ),
     );
@@ -524,7 +640,9 @@ class _Newsletter extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'You\'re subscribed! Look for the next newsletter in your inbox.',
-                    style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.cream),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: AppColors.cream,
+                    ),
                   ),
                 ),
               ],
@@ -532,14 +650,20 @@ class _Newsletter extends StatelessWidget {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Newsletter',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: AppColors.accentLight,
-                      letterSpacing: 1.5,
-                    )),
+                Text(
+                  'Newsletter',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: AppColors.accentLight,
+                    letterSpacing: 1.5,
+                  ),
+                ),
                 const SizedBox(height: 6),
-                Text('Stay in tune',
-                    style: theme.textTheme.headlineSmall?.copyWith(color: AppColors.cream)),
+                Text(
+                  'Stay in tune',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    color: AppColors.cream,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 Text(
                   'Get concert announcements, new music releases, and stories from the choir.',
@@ -558,7 +682,10 @@ class _Newsletter extends StatelessWidget {
                         style: const TextStyle(color: AppColors.dark),
                         decoration: const InputDecoration(
                           hintText: 'you@example.com',
-                          contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
                         ),
                       ),
                     ),
@@ -613,27 +740,245 @@ class _InstagramHandleCard extends StatelessWidget {
               ),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const FaIcon(FontAwesomeIcons.instagram,
-                color: Colors.white, size: 22),
+            child: const _InstagramGlyph(color: Colors.white, size: 22),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Follow us on Instagram',
-                    style: theme.textTheme.titleMedium),
+                Text(
+                  'Follow us on Instagram',
+                  style: theme.textTheme.titleMedium,
+                ),
                 const SizedBox(height: 2),
-                Text('@fayhanationalchoir',
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: AppColors.primary)),
+                Text(
+                  '@fayhanationalchoir',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.primary,
+                  ),
+                ),
               ],
             ),
           ),
-          const Icon(Icons.open_in_new,
-              size: 18, color: AppColors.gray),
+          const Icon(Icons.open_in_new, size: 18, color: AppColors.gray),
         ],
       ),
     );
   }
 }
+
+/// Auto-advancing single-card carousel of testimonials.
+/// Ordering reflects editor-set importance (featured first), but the
+/// importance itself is never shown to the audience here.
+class _TestimonialsCarousel extends StatefulWidget {
+  final List<Testimonial> items;
+  const _TestimonialsCarousel({required this.items});
+
+  @override
+  State<_TestimonialsCarousel> createState() => _TestimonialsCarouselState();
+}
+
+class _TestimonialsCarouselState extends State<_TestimonialsCarousel> {
+  static const _interval = Duration(seconds: 5);
+  static const _animDuration = Duration(milliseconds: 600);
+
+  final PageController _ctrl = PageController(viewportFraction: 0.92);
+  Timer? _timer;
+  int _page = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimer();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    if (widget.items.length < 2) return;
+    _timer = Timer.periodic(_interval, (_) {
+      if (!mounted || !_ctrl.hasClients) return;
+      final next = (_page + 1) % widget.items.length;
+      _ctrl.animateToPage(
+        next,
+        duration: _animDuration,
+        curve: Curves.easeInOut,
+      );
+    });
+  }
+
+  void _openAll() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const TestimonialsPublicScreen()),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final items = widget.items;
+    return Column(
+      children: [
+        SizedBox(
+          height: 200,
+          child: PageView.builder(
+            controller: _ctrl,
+            itemCount: items.length,
+            onPageChanged: (i) {
+              setState(() => _page = i);
+              _startTimer(); // reset timer after manual swipe
+            },
+            itemBuilder: (context, i) {
+              final t = items[i];
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: _HomeTestimonialCard(t: t, onTap: _openAll),
+              );
+            },
+          ),
+        ),
+        if (items.length > 1) ...[
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(items.length, (i) {
+              final active = i == _page;
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                height: 6,
+                width: active ? 18 : 6,
+                decoration: BoxDecoration(
+                  color: active ? AppColors.primary : AppColors.offWhite,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              );
+            }),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _HomeTestimonialCard extends StatelessWidget {
+  final Testimonial t;
+  final VoidCallback onTap;
+  const _HomeTestimonialCard({required this.t, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ElegantCard(
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              if (t.photoUrl != null && t.photoUrl!.isNotEmpty)
+                CircleAvatar(
+                  radius: 22,
+                  backgroundImage: NetworkImage(t.photoUrl!),
+                  backgroundColor: AppColors.offWhite,
+                )
+              else
+                Avatar(name: t.author, size: 44),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(t.author,
+                        style: theme.textTheme.titleMedium,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                    if (t.voiceSection.isNotEmpty)
+                      Text(t.voiceSection,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: AppColors.primary,
+                          )),
+                  ],
+                ),
+              ),
+              const Icon(Icons.format_quote_rounded,
+                  color: AppColors.accent, size: 28),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Expanded(
+            child: Text(
+              t.body,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                height: 1.5,
+                fontStyle: FontStyle.italic,
+              ),
+              maxLines: 4,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Hand-drawn Instagram glyph: rounded square + circle + corner dot.
+/// Avoids a 3rd-party icon package that broke against recent Flutter.
+class _InstagramGlyph extends StatelessWidget {
+  final Color color;
+  final double size;
+  const _InstagramGlyph({required this.color, this.size = 22});
+
+  @override
+  Widget build(BuildContext context) {
+    final stroke = size * 0.09;
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Outer rounded square.
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(size * 0.28),
+              border: Border.all(color: color, width: stroke),
+            ),
+          ),
+          // Inner lens circle.
+          Container(
+            width: size * 0.46,
+            height: size * 0.46,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: color, width: stroke),
+            ),
+          ),
+          // Top-right dot.
+          Positioned(
+            top: size * 0.18,
+            right: size * 0.18,
+            child: Container(
+              width: size * 0.11,
+              height: size * 0.11,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+

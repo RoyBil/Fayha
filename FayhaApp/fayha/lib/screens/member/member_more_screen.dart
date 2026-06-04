@@ -12,6 +12,7 @@ import 'polls_screen.dart';
 import 'attendance_history_screen.dart';
 import 'attendance_screen.dart';
 import 'testimonials_member_screen.dart';
+import 'gallery_screen.dart';
 import 'admin_panel_screen.dart';
 import 'live_locations_map_screen.dart';
 import 'members_directory_screen.dart';
@@ -94,12 +95,26 @@ class MemberMoreScreen extends StatelessWidget {
                     onTap: () => Navigator.push(context,
                         MaterialPageRoute(builder: (_) => const TestimonialsMemberScreen())),
                   ),
-                  if (m.isAdmin || m.isMaestro) ...[
+                  const _Sep(),
+                  _Tile(
+                    icon: Icons.photo_library_outlined,
+                    title: 'Gallery',
+                    subtitle: 'Moments from the choir',
+                    onTap: () => Navigator.push(context,
+                        MaterialPageRoute(builder: (_) => const GalleryScreen())),
+                  ),
+                  if (m.isAdmin || m.isContentEditor) ...[
                     const _Sep(),
                     _Tile(
-                      icon: Icons.admin_panel_settings_outlined,
-                      title: 'Admin Panel',
-                      subtitle: 'Approvals · members · testimonials',
+                      icon: m.isContentEditor && !m.isAdmin
+                          ? Icons.edit_note_outlined
+                          : Icons.admin_panel_settings_outlined,
+                      title: m.isContentEditor && !m.isAdmin
+                          ? 'Editor Panel'
+                          : 'Admin Panel',
+                      subtitle: m.isContentEditor && !m.isAdmin
+                          ? 'Post news, events and announcements'
+                          : 'Approvals · members · attendance stats',
                       onTap: () => Navigator.push(context,
                           MaterialPageRoute(builder: (_) => const AdminPanelScreen())),
                     ),

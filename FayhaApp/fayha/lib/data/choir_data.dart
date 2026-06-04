@@ -52,10 +52,12 @@ class NewsItem {
   final String title;
   final String body;
   final String date;
+  final String? posterUrl;
   const NewsItem({
     required this.title,
     required this.body,
     required this.date,
+    this.posterUrl,
   });
 }
 

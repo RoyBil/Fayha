@@ -17,6 +17,7 @@ class AudienceData {
               date: r['date_label'] as String,
               title: r['title'] as String,
               body: r['body'] as String,
+              posterUrl: r['poster_url'] as String?,
             ))
         .toList();
   }

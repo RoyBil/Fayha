@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../data/choir_data.dart';
 import '../theme/app_theme.dart';
@@ -18,15 +17,13 @@ class MoreScreen extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
       children: [
-        const SectionHeader(
-          eyebrow: 'Learn',
-          title: 'About the Choir',
-        ),
+        const SectionHeader(eyebrow: 'Learn', title: 'About the Choir'),
         const SizedBox(height: 20),
         _ActionCard(
           icon: Icons.menu_book_outlined,
           title: 'Our Story',
-          subtitle: 'Choir biography, achievements, leadership, social projects.',
+          subtitle:
+              'Choir biography, achievements, leadership, social projects.',
           color: AppColors.primaryDark,
           onTap: () => Navigator.push(
             context,
@@ -74,10 +71,7 @@ class MoreScreen extends StatelessWidget {
         ),
         const SizedBox(height: 32),
 
-        const SectionHeader(
-          eyebrow: 'Reach Out',
-          title: 'Contact',
-        ),
+        const SectionHeader(eyebrow: 'Reach Out', title: 'Contact'),
         const SizedBox(height: 16),
         ElegantCard(
           child: Column(
@@ -120,10 +114,7 @@ class MoreScreen extends StatelessWidget {
         ),
 
         const SizedBox(height: 32),
-        const SectionHeader(
-          eyebrow: 'Online',
-          title: 'Follow Us',
-        ),
+        const SectionHeader(eyebrow: 'Online', title: 'Follow Us'),
         const SizedBox(height: 16),
         Row(
           children: [
@@ -138,16 +129,16 @@ class MoreScreen extends StatelessWidget {
             Expanded(
               child: _SocialButton(
                 label: '@fayhanationalchoir',
-                icon: FontAwesomeIcons.instagram,
-                onTap: () => _launch(
-                    'https://www.instagram.com/fayhanationalchoir/'),
+                icon: Icons.camera_alt_outlined,
+                onTap: () =>
+                    _launch('https://www.instagram.com/fayhanationalchoir/'),
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: _SocialButton(
                 label: 'Facebook',
-                icon: FontAwesomeIcons.facebook,
+                icon: Icons.people_outline,
                 onTap: () => _launch('https://www.facebook.com/FayhaChoir'),
               ),
             ),
@@ -283,11 +274,7 @@ class _SocialButton extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // FaIcon renders both Material and Font Awesome IconData
-          // correctly because it picks the font family from the icon.
-          icon.fontFamily == 'MaterialIcons'
-              ? Icon(icon, size: 20)
-              : FaIcon(icon, size: 20),
+          Icon(icon, size: 20),
           const SizedBox(height: 6),
           Text(label, style: const TextStyle(fontSize: 12)),
         ],

@@ -113,12 +113,78 @@ class AdminService {
     required String dateLabel,
     required String title,
     required String body,
+    String? posterUrl,
   }) async {
     await _c.from('news_posts').insert({
       'date_label': dateLabel,
       'title': title,
       'body': body,
+      'poster_url': posterUrl,
       'sort_date': DateTime.now().toUtc().toIso8601String(),
     });
+  }
+
+  // ===== News + events: list + edit + delete =====
+
+  static Future<List<Map<String, dynamic>>> listNews() async {
+    final rows = await _c
+        .from('news_posts')
+        .select()
+        .order('sort_date', ascending: false);
+    return (rows as List).cast<Map<String, dynamic>>();
+  }
+
+  static Future<void> updateNews({
+    required String id,
+    String? dateLabel,
+    String? title,
+    String? body,
+    String? posterUrl,
+  }) async {
+    final patch = <String, dynamic>{};
+    if (dateLabel != null) patch['date_label'] = dateLabel;
+    if (title != null) patch['title'] = title;
+    if (body != null) patch['body'] = body;
+    if (posterUrl != null) patch['poster_url'] = posterUrl;
+    if (patch.isEmpty) return;
+    await _c.from('news_posts').update(patch).eq('id', id);
+  }
+
+  static Future<void> deleteNews(String id) async {
+    await _c.from('news_posts').delete().eq('id', id);
+  }
+
+  static Future<List<Map<String, dynamic>>> listEvents() async {
+    final rows = await _c
+        .from('concerts')
+        .select()
+        .order('starts_at', ascending: false);
+    return (rows as List).cast<Map<String, dynamic>>();
+  }
+
+  static Future<void> updateEvent({
+    required String id,
+    String? title,
+    String? location,
+    DateTime? startsAt,
+    String? kind,
+    String? description,
+    String? posterUrl,
+  }) async {
+    final patch = <String, dynamic>{};
+    if (title != null) patch['title'] = title;
+    if (location != null) patch['location'] = location;
+    if (startsAt != null) {
+      patch['starts_at'] = startsAt.toUtc().toIso8601String();
+    }
+    if (kind != null) patch['kind'] = kind;
+    if (description != null) patch['description'] = description;
+    if (posterUrl != null) patch['poster_url'] = posterUrl;
+    if (patch.isEmpty) return;
+    await _c.from('concerts').update(patch).eq('id', id);
+  }
+
+  static Future<void> deleteEvent(String id) async {
+    await _c.from('concerts').delete().eq('id', id);
   }
 }
