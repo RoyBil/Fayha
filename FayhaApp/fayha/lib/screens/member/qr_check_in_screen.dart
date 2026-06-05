@@ -27,28 +27,38 @@ class _QrCheckInScreenState extends State<QrCheckInScreen> {
     super.dispose();
   }
 
-  Future<({double? lat, double? lng})> _tryLocation() async {
+  /// Captures the member's GPS. Throws a [_LocationRequiredError] with
+  /// a human-readable message if location is off or permission isn't
+  /// granted — the scan is blocked unless we have real coordinates.
+  Future<({double lat, double lng})> _requireLocation() async {
+    final serviceOn = await Geolocator.isLocationServiceEnabled();
+    if (!serviceOn) {
+      throw const _LocationRequiredError(
+          'Turn on Location Services in your phone settings, then scan again.');
+    }
+    var perm = await Geolocator.checkPermission();
+    if (perm == LocationPermission.denied) {
+      perm = await Geolocator.requestPermission();
+    }
+    if (perm == LocationPermission.denied) {
+      throw const _LocationRequiredError(
+          'Allow location access to check in.');
+    }
+    if (perm == LocationPermission.deniedForever) {
+      throw const _LocationRequiredError(
+          'Location is blocked. Enable it for this app in your phone settings.');
+    }
     try {
-      final perm = await Geolocator.checkPermission();
-      if (perm == LocationPermission.denied) {
-        final asked = await Geolocator.requestPermission();
-        if (asked == LocationPermission.denied ||
-            asked == LocationPermission.deniedForever) {
-          return (lat: null, lng: null);
-        }
-      }
-      if (perm == LocationPermission.deniedForever) {
-        return (lat: null, lng: null);
-      }
       final pos = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.medium,
-          timeLimit: Duration(seconds: 6),
+          timeLimit: Duration(seconds: 10),
         ),
       );
       return (lat: pos.latitude, lng: pos.longitude);
-    } catch (_) {
-      return (lat: null, lng: null);
+    } catch (e) {
+      throw _LocationRequiredError(
+          'Could not read your location ($e). Move outside if you\'re inside a building, then try again.');
     }
   }
 
@@ -67,7 +77,18 @@ class _QrCheckInScreenState extends State<QrCheckInScreen> {
     });
     await _ctrl.stop();
 
-    final loc = await _tryLocation();
+    final ({double lat, double lng}) loc;
+    try {
+      loc = await _requireLocation();
+    } on _LocationRequiredError catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _submitting = false;
+        _status = e.message;
+      });
+      await _ctrl.start();
+      return;
+    }
     try {
       final lateMinutes = await QrAttendanceService.claimAttendance(
         token: token,
@@ -229,4 +250,11 @@ class _QrCheckInScreenState extends State<QrCheckInScreen> {
       ),
     );
   }
+}
+
+class _LocationRequiredError implements Exception {
+  final String message;
+  const _LocationRequiredError(this.message);
+  @override
+  String toString() => message;
 }

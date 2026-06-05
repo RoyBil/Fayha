@@ -62,6 +62,7 @@ class NewsItem {
 }
 
 class Concert {
+  final String? id;
   final String title;
   final String location;
   final DateTime date;
@@ -69,6 +70,7 @@ class Concert {
   final String kind; // concert | rehearsal
   final String? posterUrl;
   const Concert({
+    this.id,
     required this.title,
     required this.location,
     required this.date,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../data/choir_data.dart';
 import '../../services/attendance_service.dart';
+import '../../services/concerts_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/elegant_card.dart';
@@ -28,6 +29,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
   late String _branch;
   List<SessionInfo> _sessions = [];
+  List<Concert> _events = const [];
   bool _loading = true;
   String? _error;
 
@@ -52,10 +54,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       _error = null;
     });
     try {
-      final s = await AttendanceService.displaySessions(_branch);
+      final results = await Future.wait([
+        AttendanceService.displaySessions(_branch),
+        ConcertsService.fetchRecentAndUpcoming(),
+      ]);
       if (!mounted) return;
       setState(() {
-        _sessions = s;
+        _sessions = results[0] as List<SessionInfo>;
+        _events = results[1] as List<Concert>;
         _loading = false;
       });
     } catch (e) {
@@ -70,6 +76,76 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   bool _isToday(DateTime d) {
     final n = DateTime.now();
     return d.year == n.year && d.month == n.month && d.day == n.day;
+  }
+
+  /// Same chooser as a rehearsal date, but the target is an event
+  /// (concert or big rehearsal).
+  Future<void> _openEvent(Concert e) async {
+    if (e.id == null) return;
+    final isFuture = e.date.isAfter(DateTime.now());
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(e.isRehearsal ? 'Big rehearsal' : 'Concert',
+                  style: Theme.of(ctx).textTheme.labelMedium),
+              Text(e.title, style: Theme.of(ctx).textTheme.titleLarge),
+              const SizedBox(height: 4),
+              Text(
+                '${e.location} · ${e.date.day}/${e.date.month}/${e.date.year}',
+                style: Theme.of(ctx).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 16),
+              _ModeTile(
+                icon: Icons.qr_code_2,
+                title: 'Show QR code',
+                subtitle: isFuture || _isToday(e.date)
+                    ? 'Open a QR session for this event.'
+                    : 'View who scanned (no new QR after the event).',
+                onTap: () => Navigator.pop(ctx, 'qr_show'),
+              ),
+              if (_isToday(e.date) || isFuture) ...[
+                const SizedBox(height: 10),
+                _ModeTile(
+                  icon: Icons.qr_code_scanner,
+                  title: 'Scan a QR',
+                  subtitle:
+                      'Another admin is hosting — scan their QR to count yourself in.',
+                  onTap: () => Navigator.pop(ctx, 'qr_scan'),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+    if (!mounted || choice == null) return;
+    if (choice == 'qr_show') {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => QrAttendanceAdminScreen.event(
+            concertId: e.id!,
+            concertTitle: e.title,
+            concertStart: e.date,
+            isBigRehearsal: e.isRehearsal,
+          ),
+        ),
+      );
+      _load();
+    } else if (choice == 'qr_scan') {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const QrCheckInScreen()),
+      );
+      _load();
+    }
   }
 
   Future<void> _openSession(DateTime date) async {
@@ -136,8 +212,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) =>
-              QrAttendanceAdminScreen(branch: _branch, date: date),
+          builder: (_) => QrAttendanceAdminScreen.rehearsal(
+              branch: _branch, date: date),
         ),
       );
       _load();
@@ -270,10 +346,91 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                             const EdgeInsets.only(bottom: 8),
                                         child: _sessionCard(theme, s),
                                       )),
+                                  if (_events.isNotEmpty) ...[
+                                    const SizedBox(height: 24),
+                                    const SectionHeader(
+                                      eyebrow: 'Events',
+                                      title: 'Concerts & big rehearsals',
+                                      subtitle:
+                                          'Open a QR session for an event with attendance.',
+                                    ),
+                                    const SizedBox(height: 12),
+                                    ..._events.map((e) => Padding(
+                                          padding: const EdgeInsets.only(
+                                              bottom: 8),
+                                          child: _eventCard(theme, e),
+                                        )),
+                                  ],
                                 ],
                               ),
                   ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _eventCard(ThemeData theme, Concert e) {
+    const months = [
+      'JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'
+    ];
+    final d = e.date;
+    final today = _isToday(d);
+    final past = d.isBefore(DateTime.now()) && !today;
+    final tone = e.isRehearsal ? AppColors.secondaryDark : AppColors.accentDark;
+    return ElegantCard(
+      onTap: () => _openEvent(e),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            decoration: BoxDecoration(
+              color: today ? AppColors.accent : tone,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              children: [
+                Text(months[d.month - 1],
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: today ? AppColors.dark : AppColors.accentLight,
+                    )),
+                Text('${d.day}',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: today ? AppColors.dark : AppColors.cream,
+                      height: 1,
+                    )),
+              ],
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(e.title, style: theme.textTheme.titleMedium,
+                    maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(
+                  '${e.isRehearsal ? "Big rehearsal" : "Concert"} · ${e.location}',
+                  style: theme.textTheme.bodySmall,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          if (past)
+            const Padding(
+              padding: EdgeInsets.only(right: 4),
+              child: Text('Past',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppColors.gray,
+                    fontWeight: FontWeight.w600,
+                  )),
+            ),
+          const Icon(Icons.chevron_right, color: AppColors.gray),
         ],
       ),
     );
