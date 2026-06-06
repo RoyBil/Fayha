@@ -16,6 +16,7 @@ import '../../widgets/section_header.dart';
 import 'compose_event_screen.dart';
 import 'compose_gallery_post_screen.dart';
 import 'newsletter_subscribers_screen.dart';
+import 'manage_social_posts_screen.dart';
 import 'compose_poll_screen.dart';
 import 'compose_message_screen.dart';
 import 'compose_news_screen.dart';
@@ -930,6 +931,20 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               context,
               MaterialPageRoute(
                   builder: (_) => const NewsletterSubscribersScreen()),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _ComposeCard(
+            icon: Icons.share_outlined,
+            color: AppColors.accentDark,
+            colorAlpha: 0.15,
+            title: 'Social posts',
+            subtitle:
+                'Pick which Instagram & Facebook posts surface to the audience',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const ManageSocialPostsScreen()),
             ),
           ),
         ],

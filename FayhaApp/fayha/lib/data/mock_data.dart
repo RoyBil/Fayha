@@ -117,16 +117,28 @@ class NewsPost {
   });
 }
 
+enum SocialImportance { important, normal, hidden }
+
 class SocialPost {
+  final String? id;
   final String platform;
   final String author;
   final String body;
   final String postedAgo;
+  final String? permalink;
+  final String? mediaUrl;
+  final String? mediaType;
+  final SocialImportance importance;
   const SocialPost({
+    this.id,
     required this.platform,
     required this.author,
     required this.body,
     required this.postedAgo,
+    this.permalink,
+    this.mediaUrl,
+    this.mediaType,
+    this.importance = SocialImportance.normal,
   });
 }
 

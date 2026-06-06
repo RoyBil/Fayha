@@ -560,11 +560,21 @@ class _SocialCard extends StatelessWidget {
   final SocialPost post;
   const _SocialCard({required this.post});
 
+  Future<void> _openSource() async {
+    final url = post.permalink;
+    if (url == null || url.isEmpty) return;
+    try {
+      await launchUrl(Uri.parse(url),
+          mode: LaunchMode.externalApplication);
+    } catch (_) {}
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isInsta = post.platform == 'Instagram';
+    final isInsta = post.platform.toLowerCase().contains('inst');
     return ElegantCard(
+      onTap: post.permalink != null ? _openSource : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -596,13 +606,33 @@ class _SocialCard extends StatelessWidget {
                   ],
                 ),
               ),
+              if (post.permalink != null)
+                const Icon(Icons.open_in_new,
+                    size: 16, color: AppColors.gray),
             ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            post.body,
-            style: theme.textTheme.bodyMedium?.copyWith(height: 1.55),
-          ),
+          if ((post.mediaUrl ?? '').isNotEmpty) ...[
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                post.mediaUrl!,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: 200,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            ),
+          ],
+          if (post.body.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              post.body,
+              style: theme.textTheme.bodyMedium?.copyWith(height: 1.55),
+              maxLines: 6,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ],
       ),
     );

@@ -167,26 +167,39 @@ class AudienceData {
   }
 
   // ===== SOCIAL POSTS =====
+  // RLS limits audience visibility to importance='important' rows.
   static Future<List<SocialPost>> fetchSocialPosts() async {
     final rows = await _c
         .from('social_posts')
         .select()
+        .eq('importance', 'important')
         .order('posted_at', ascending: false);
     return (rows as List)
         .map((r) => SocialPost(
+              id: r['id'] as String?,
               platform: r['platform'] as String,
               author: r['author'] as String,
-              body: r['body'] as String,
-              postedAgo: r['posted_label'] as String,
+              body: (r['body'] as String?) ?? '',
+              postedAgo: (r['posted_label'] as String?) ?? '',
+              permalink: r['permalink'] as String?,
+              mediaUrl: r['media_url'] as String?,
+              mediaType: r['media_type'] as String?,
+              importance: SocialImportance.important,
             ))
         .toList();
   }
 
   // ===== NEWSLETTER =====
   static Future<void> subscribeNewsletter(String email) async {
-    await _c.from('newsletter_subscriptions').upsert(
-      {'email': email},
-      onConflict: 'email',
-    );
+    // Plain insert — `upsert(onConflict: 'email')` needed an UPDATE
+    // policy that anon users don't have, which made every signup fail.
+    // A duplicate just means "already on the list" → silent success.
+    try {
+      await _c.from('newsletter_subscriptions').insert({'email': email});
+    } on PostgrestException catch (e) {
+      // 23505 = unique_violation.
+      if (e.code == '23505') return;
+      rethrow;
+    }
   }
 }

@@ -194,6 +194,11 @@ class QrAttendanceService {
     final adminId = _c.auth.currentUser?.id;
     if (adminId == null) return;
     try {
+      // We can't use ON CONFLICT here: after v2 the `attendance`
+      // uniqueness lives in two partial unique indexes (one per
+      // target), and PostgREST's `upsert(onConflict: 'a,b')` only
+      // matches a non-partial constraint. So: select then update or
+      // insert.
       final row = <String, dynamic>{
         'member_id': adminId,
         'present': true,
@@ -202,18 +207,22 @@ class QrAttendanceService {
         'via': 'qr',
         'qr_session_id': sessionId,
       };
-      if (rehearsalId != null) {
-        row['rehearsal_id'] = rehearsalId;
-        await _c.from('attendance').upsert(
-              row,
-              onConflict: 'rehearsal_id,member_id',
-            );
-      } else if (concertId != null) {
-        row['concert_id'] = concertId;
-        await _c.from('attendance').upsert(
-              row,
-              onConflict: 'concert_id,member_id',
-            );
+
+      final query = _c.from('attendance').select('id').eq('member_id', adminId);
+      final existing = await (rehearsalId != null
+              ? query.eq('rehearsal_id', rehearsalId)
+              : query.eq('concert_id', concertId as Object))
+          .maybeSingle();
+
+      if (existing != null) {
+        await _c
+            .from('attendance')
+            .update(row)
+            .eq('id', existing['id'] as String);
+      } else {
+        if (rehearsalId != null) row['rehearsal_id'] = rehearsalId;
+        if (concertId != null) row['concert_id'] = concertId;
+        await _c.from('attendance').insert(row);
       }
     } catch (_) {
       // Don't fail session creation if the admin's own attendance row

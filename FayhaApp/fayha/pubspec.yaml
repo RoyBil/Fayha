@@ -28,6 +28,11 @@ dependencies:
   video_player: ^2.9.1
   mobile_scanner: ^5.2.3
   qr_flutter: ^4.1.0
+  youtube_player_iframe: ^5.2.0
+  # Required transitive — without this declared explicitly the
+  # Android / iOS WebView platform impls don't always register and
+  # YoutubePlayer throws "WebViewPlatform.instance == null".
+  webview_flutter: ^4.10.0
 
 dev_dependencies:
   flutter_test:

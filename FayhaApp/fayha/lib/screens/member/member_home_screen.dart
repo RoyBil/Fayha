@@ -207,9 +207,15 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
                   label: m.isMaestro ? 'Messages' : 'Message Maestro',
                   badge: _unreadDms,
                   onTap: () async {
-                    await Navigator.push(context,
-                        MaterialPageRoute(
-                            builder: (_) => const MessagesScreen()));
+                    // Tapping is "I am opening my messages" — drop the
+                    // badge instantly. We still mark seen again on
+                    // pop so any DM that arrives while reading is
+                    // also considered seen.
+                    final navigator = Navigator.of(context);
+                    await AlertCountsService.markDmsSeen();
+                    if (mounted) setState(() => _unreadDms = 0);
+                    await navigator.push(MaterialPageRoute(
+                        builder: (_) => const MessagesScreen()));
                     await AlertCountsService.markDmsSeen();
                     _reloadAlertCounts();
                   },

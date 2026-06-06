@@ -6,6 +6,7 @@ import '../services/audience_data.dart';
 import '../theme/app_theme.dart';
 import '../widgets/elegant_card.dart';
 import '../widgets/section_header.dart';
+import '../widgets/youtube_popup.dart';
 import 'public_song_player_screen.dart';
 
 class MusicScreen extends StatefulWidget {
@@ -235,9 +236,11 @@ class _PieceCard extends StatelessWidget {
           Text(piece.description, style: theme.textTheme.bodyMedium?.copyWith(height: 1.55)),
           const SizedBox(height: 16),
           FilledButton.icon(
-            onPressed: () async {
-              await launchUrl(Uri.parse(piece.youtubeUrl), mode: LaunchMode.externalApplication);
-            },
+            onPressed: () => showYoutubePopup(
+              context,
+              piece.youtubeUrl,
+              title: piece.title,
+            ),
             icon: const Icon(Icons.play_arrow_rounded, size: 20),
             label: const Text('Watch Performance'),
           ),

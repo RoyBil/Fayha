@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../services/choir_songs_service.dart';
 import '../../services/member_songs_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/elegant_card.dart';
+import '../../widgets/youtube_popup.dart';
 import 'compose_song_screen.dart';
 
 class SongDetailScreen extends StatefulWidget {
@@ -244,7 +244,13 @@ class _SongDetailScreenState extends State<SongDetailScreen>
   Future<void> _openYoutube() async {
     final url = widget.song.youtubeUrl;
     if (url == null || url.isEmpty) return;
-    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    // Pause any audio that's currently playing so two players don't
+    // overlap.
+    for (final p in _players) {
+      await p.pause();
+    }
+    if (!mounted) return;
+    await showYoutubePopup(context, url, title: widget.song.title);
   }
 
   Future<void> _openEdit() async {

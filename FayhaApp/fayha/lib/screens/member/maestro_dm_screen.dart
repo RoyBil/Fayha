@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import '../../services/admin_service.dart';
+import '../../services/alert_counts_service.dart';
 import '../../services/dm_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
@@ -49,6 +50,10 @@ class _MaestroDmScreenState extends State<MaestroDmScreen> {
   void initState() {
     super.initState();
     _load();
+    // Opening the thread counts as "you've read what's there" — drop
+    // the home Messages badge for non-Maestro members and the Maestro
+    // inbox badge for the Maestro.
+    AlertCountsService.markDmsSeen();
   }
 
   @override
