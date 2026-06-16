@@ -15,6 +15,7 @@ import 'testimonials_member_screen.dart';
 import 'gallery_screen.dart';
 import 'qr_check_in_screen.dart';
 import 'admin_panel_screen.dart';
+import 'bus_routes_screen.dart';
 import 'live_locations_map_screen.dart';
 import 'members_directory_screen.dart';
 
@@ -143,6 +144,19 @@ class MemberMoreScreen extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                           builder: (_) => const LiveLocationsMapScreen()),
+                    ),
+                  ),
+                  const _Sep(),
+                  _Tile(
+                    icon: Icons.directions_bus_outlined,
+                    title: 'Bus Routes',
+                    subtitle: m.isAdmin || m.isMaestro
+                        ? 'Manage routes · drive trips · live tracking'
+                        : 'See live bus · request pickup',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const BusRoutesScreen()),
                     ),
                   ),
                 ],

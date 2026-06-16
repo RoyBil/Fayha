@@ -3,6 +3,9 @@ import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'services/bus_route_service.dart';
+import 'services/google_config.dart';
+import 'services/google_places_service.dart';
 import 'services/supabase_config.dart';
 import 'theme/app_theme.dart';
 import 'screens/home_screen.dart';
@@ -21,6 +24,11 @@ Future<void> main() async {
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.anonKey,
   );
+  // Bus Routes feature: real-road polylines + Places search. Both
+  // services degrade gracefully when the key is empty — the editor
+  // falls back to straight-line polylines and search returns nothing.
+  BusRouteService.googleDirectionsApiKey = GoogleConfig.apiKey;
+  GooglePlacesService.apiKey = GoogleConfig.apiKey;
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
