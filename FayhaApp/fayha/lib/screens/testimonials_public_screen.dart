@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../data/mock_data.dart';
 import '../services/testimonials_service.dart';
+import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/avatar.dart';
 import '../widgets/elegant_card.dart';
@@ -75,15 +76,17 @@ class _TestimonialsPublicScreenState extends State<TestimonialsPublicScreen> {
                 );
               },
             ),
-            const SizedBox(height: 28),
-            const SectionHeader(
-              eyebrow: 'From You',
-              title: 'Share Your Story',
-              subtitle:
-                  'Tell us about your experience with the choir. Add a photo if you like.',
-            ),
-            const SizedBox(height: 16),
-            _AudienceSubmitForm(onSubmitted: _reload),
+            if (!AppState.instance.isSignedIn) ...[
+              const SizedBox(height: 28),
+              const SectionHeader(
+                eyebrow: 'From You',
+                title: 'Share Your Story',
+                subtitle:
+                    'Tell us about your experience with the choir. Add a photo if you like.',
+              ),
+              const SizedBox(height: 16),
+              _AudienceSubmitForm(onSubmitted: _reload),
+            ],
           ],
         ),
       ),

@@ -13,6 +13,9 @@ class RepertoireSong {
   final String subtitle;
   final String composers;
   final String lyrics;
+  final String? description;
+  final String? youtubeUrl;
+  final String? audioUrl;
   final List<SongPart> parts;
   final bool hasSheetMusic;
   const RepertoireSong({
@@ -21,6 +24,9 @@ class RepertoireSong {
     required this.subtitle,
     required this.composers,
     required this.lyrics,
+    this.description,
+    this.youtubeUrl,
+    this.audioUrl,
     this.parts = const _StandardParts(),
     this.hasSheetMusic = true,
   });

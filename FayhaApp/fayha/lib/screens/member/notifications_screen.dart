@@ -11,6 +11,7 @@ import '../news_detail_screen.dart';
 import 'maestro_dm_screen.dart';
 import 'messages_screen.dart';
 import 'polls_screen.dart';
+import 'trip_groups_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -29,7 +30,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   static const _filters = [
     'All', 'Unread', 'Starred',
-    'Messages', 'Announcements', 'News', 'Concerts', 'Polls'
+    'Messages', 'Announcements', 'News', 'Concerts', 'Polls', 'Trips'
   ];
 
   @override
@@ -81,6 +82,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return i.kind == 'concert' || i.kind == 'big_rehearsal';
       case 'Polls':
         return i.kind == 'poll';
+      case 'Trips':
+        return i.kind == 'trip_added';
       default:
         return true;
     }
@@ -98,6 +101,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return (icon: Icons.groups, color: AppColors.secondaryDark, label: 'Big rehearsal');
       case 'poll':
         return (icon: Icons.poll_outlined, color: AppColors.primary, label: 'Poll');
+      case 'trip_added':
+        return (icon: Icons.flight_takeoff, color: AppColors.accentDark, label: 'Trip');
       default:
         return (icon: Icons.campaign, color: AppColors.primary, label: 'Announcement');
     }
@@ -135,6 +140,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             MaterialPageRoute(
               builder: (_) => MaestroDmScreen(
                 memberId: memberId,
+                adminId: me.id,
                 title: (i.extra['sender_name'] as String?) ?? 'Member',
               ),
             ),
@@ -182,6 +188,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         await Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const PollsScreen()),
+        );
+        break;
+      case 'trip_added':
+        if (!mounted) return;
+        await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const TripGroupsScreen()),
         );
         break;
       default:

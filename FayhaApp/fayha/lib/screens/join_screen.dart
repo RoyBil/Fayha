@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../data/choir_data.dart';
 import '../services/join_requests_service.dart';
 import '../theme/app_theme.dart';
 
@@ -16,6 +17,7 @@ class _JoinScreenState extends State<JoinScreen> {
   final _phone = TextEditingController();
   final _village = TextEditingController();
   final _notes = TextEditingController();
+  String? _branch;
   bool _submitted = false;
   bool _submitting = false;
 
@@ -38,6 +40,7 @@ class _JoinScreenState extends State<JoinScreen> {
         email: _email.text.trim(),
         phone: _phone.text.trim(),
         village: _village.text.trim(),
+        branch: _branch!,
         notes: _notes.text.trim().isEmpty ? null : _notes.text.trim(),
       );
       if (!mounted) return;
@@ -145,6 +148,18 @@ class _JoinScreenState extends State<JoinScreen> {
             validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
           ),
           const SizedBox(height: 14),
+          DropdownButtonFormField<String>(
+            value: _branch,
+            decoration: const InputDecoration(
+              labelText: 'Which branch would you like to join?',
+            ),
+            items: ChoirData.branches
+                .map((b) => DropdownMenuItem(value: b, child: Text(b)))
+                .toList(),
+            onChanged: (v) => setState(() => _branch = v),
+            validator: (v) => v == null ? 'Required' : null,
+          ),
+          const SizedBox(height: 14),
           TextFormField(
             controller: _notes,
             maxLines: 4,
@@ -156,6 +171,10 @@ class _JoinScreenState extends State<JoinScreen> {
           ),
           const SizedBox(height: 24),
           FilledButton.icon(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.secondary,
+              foregroundColor: AppColors.cream,
+            ),
             onPressed: _submitting ? null : _submit,
             icon: _submitting
                 ? const SizedBox(

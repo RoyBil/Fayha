@@ -8,7 +8,9 @@ import '../services/messages_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/elegant_card.dart';
 import '../widgets/section_header.dart';
+import 'concert_detail_screen.dart';
 import 'news_detail_screen.dart';
+import 'public_map_screen.dart';
 
 class NewsScreen extends StatefulWidget {
   const NewsScreen({super.key});
@@ -396,106 +398,94 @@ class _ConcertCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return ElegantCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ConcertDetailScreen(concert: concert),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  _monthsShort[concert.date.month - 1],
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: AppColors.accentLight,
+                    letterSpacing: 1.5,
+                  ),
                 ),
-                child: Column(
+                const SizedBox(height: 2),
+                Text(
+                  concert.date.day.toString(),
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    color: AppColors.cream,
+                    fontWeight: FontWeight.w600,
+                    height: 1,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  concert.date.year.toString(),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: AppColors.cream.withValues(alpha: 0.7),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(concert.title, style: theme.textTheme.titleMedium),
+                const SizedBox(height: 6),
+                Row(
                   children: [
-                    Text(
-                      _monthsShort[concert.date.month - 1],
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: AppColors.accentLight,
-                        letterSpacing: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      concert.date.day.toString(),
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        color: AppColors.cream,
-                        fontWeight: FontWeight.w600,
-                        height: 1,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      concert.date.year.toString(),
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: AppColors.cream.withValues(alpha: 0.7),
+                    const Icon(Icons.schedule, size: 13, color: AppColors.gray),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        '${_months[concert.date.month - 1]} ${concert.date.day} · ${_time(concert.date)}',
+                        style: theme.textTheme.bodySmall,
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 3),
+                Row(
                   children: [
-                    Text(concert.title, style: theme.textTheme.titleLarge),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        const Icon(Icons.schedule, size: 14, color: AppColors.gray),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            '${_months[concert.date.month - 1]} ${concert.date.day} · ${_time(concert.date)}',
-                            style: theme.textTheme.bodySmall,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.place_outlined, size: 14, color: AppColors.gray),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(concert.location, style: theme.textTheme.bodySmall),
-                        ),
-                      ],
+                    const Icon(Icons.place_outlined, size: 13, color: AppColors.gray),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        concert.location,
+                        style: theme.textTheme.bodySmall,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          const SizedBox(height: 14),
-          Text(
-            concert.description,
-            style: theme.textTheme.bodyMedium?.copyWith(height: 1.55),
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: subscribed
-                    ? FilledButton.icon(
-                        onPressed: onToggle,
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.secondary,
-                          foregroundColor: AppColors.cream,
-                        ),
-                        icon: const Icon(Icons.notifications_active, size: 18),
-                        label: const Text('Reminder On'),
-                      )
-                    : OutlinedButton.icon(
-                        onPressed: onToggle,
-                        icon: const Icon(Icons.notifications_outlined, size: 18),
-                        label: const Text('Remind Me'),
-                      ),
-              ),
-            ],
+          IconButton(
+            onPressed: onToggle,
+            tooltip: subscribed ? 'Reminder on' : 'Remind me',
+            icon: Icon(
+              subscribed ? Icons.notifications_active : Icons.notifications_outlined,
+              color: subscribed ? AppColors.secondary : AppColors.gray,
+              size: 22,
+            ),
           ),
         ],
       ),
@@ -512,6 +502,15 @@ class _RehearsalCard extends StatelessWidget {
     final theme = Theme.of(context);
     return ElegantCard(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => Scaffold(
+            appBar: AppBar(title: Text('${branch.name} Branch')),
+            body: PublicMapScreen(initialBranchName: branch.name),
+          ),
+        ),
+      ),
       child: Row(
         children: [
           Container(
@@ -544,6 +543,7 @@ class _RehearsalCard extends StatelessWidget {
               ],
             ),
           ),
+          const Icon(Icons.chevron_right, color: AppColors.gray),
         ],
       ),
     );

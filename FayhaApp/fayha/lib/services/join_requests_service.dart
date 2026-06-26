@@ -7,6 +7,7 @@ class JoinRequest {
   final String email;
   final String phone;
   final String village;
+  final String? branch;
   final String? notes;
   final String status; // new | contacted | dismissed
   final DateTime createdAt;
@@ -18,6 +19,7 @@ class JoinRequest {
     required this.email,
     required this.phone,
     required this.village,
+    this.branch,
     this.notes,
     required this.status,
     required this.createdAt,
@@ -31,6 +33,7 @@ class JoinRequest {
         email: (r['email'] as String?) ?? '',
         phone: (r['phone'] as String?) ?? '',
         village: (r['village'] as String?) ?? '',
+        branch: r['branch'] as String?,
         notes: r['notes'] as String?,
         status: (r['status'] as String?) ?? 'new',
         createdAt: DateTime.parse(r['created_at'] as String).toLocal(),
@@ -50,6 +53,7 @@ class JoinRequestsService {
     required String email,
     required String phone,
     required String village,
+    required String branch,
     String? notes,
   }) async {
     await _c.from('join_requests').insert({
@@ -57,6 +61,7 @@ class JoinRequestsService {
       'email': email,
       'phone': phone,
       'village': village,
+      'branch': branch,
       'notes': notes,
     });
   }

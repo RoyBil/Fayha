@@ -8,12 +8,17 @@ create table if not exists public.join_requests (
   email       text not null,
   phone       text not null,
   village     text not null,
+  branch      text,                          -- chosen branch (added later)
   notes       text,
   status      text not null default 'new',  -- new | contacted | dismissed
   created_at  timestamptz not null default now(),
   handled_by  uuid references public.members(id) on delete set null,
   handled_at  timestamptz
 );
+
+-- Backfill column on already-deployed tables.
+alter table public.join_requests
+  add column if not exists branch text;
 
 create index if not exists join_requests_status_idx
   on public.join_requests(status, created_at desc);

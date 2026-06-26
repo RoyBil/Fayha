@@ -331,7 +331,9 @@ class _BusRouteEditorScreenState extends State<BusRouteEditorScreen> {
         actions: [
           if (widget.existing != null)
             IconButton(
-              icon: const Icon(Icons.delete_outline),
+              tooltip: 'Delete route',
+              icon: const Icon(Icons.delete_outline,
+                  color: AppColors.primary),
               onPressed: _delete,
             ),
           IconButton(

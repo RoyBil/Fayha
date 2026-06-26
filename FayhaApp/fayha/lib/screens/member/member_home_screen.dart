@@ -1,9 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/choir_data.dart';
 import '../../services/alert_counts_service.dart';
 import '../../services/concerts_service.dart';
 import '../../services/gallery_service.dart';
 import '../../services/live_location_service.dart';
+import '../../services/trip_groups_service.dart';
+import 'trip_group_detail_screen.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/avatar.dart';
@@ -11,6 +16,7 @@ import '../../widgets/elegant_card.dart';
 import '../../widgets/section_header.dart';
 import 'attendance_history_screen.dart';
 import 'attendance_screen.dart';
+import 'bus_routes_screen.dart';
 import 'messages_screen.dart';
 import 'polls_screen.dart';
 import 'testimonials_member_screen.dart';
@@ -30,21 +36,35 @@ class MemberHomeScreen extends StatefulWidget {
 
 class _MemberHomeScreenState extends State<MemberHomeScreen> {
   late Future<List<Concert>> _upcoming;
+  late Future<List<TripGroup>> _myTrips;
   Future<List<GalleryPost>>? _gallery;
   int _unvotedPolls = 0;
   int _unreadDms = 0;
   int _adminInbox = 0;
   int _lastStatsVersion = -1;
   String? _lastMemberId;
+  RealtimeChannel? _pollsChannel;
 
   @override
   void initState() {
     super.initState();
     _upcoming = ConcertsService.fetchUpcoming();
+    _myTrips = TripGroupsService.fetchMine();
     _gallery = GalleryService.list(limit: 12);
     _lastStatsVersion = AppState.instance.statsVersion;
     _reloadAlertCounts();
     AppState.instance.addListener(_onAppStateChange);
+
+    // Realtime: update Polls badge instantly when a new poll is published.
+    _pollsChannel = Supabase.instance.client
+        .channel('home_polls_insert')
+      ..onPostgresChanges(
+        event: PostgresChangeEvent.insert,
+        schema: 'public',
+        table: 'polls',
+        callback: (_) => _reloadAlertCounts(),
+      );
+    _pollsChannel!.subscribe();
   }
 
   Future<void> _reloadAlertCounts() async {
@@ -64,6 +84,9 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
   @override
   void dispose() {
     AppState.instance.removeListener(_onAppStateChange);
+    if (_pollsChannel != null) {
+      Supabase.instance.client.removeChannel(_pollsChannel!);
+    }
     super.dispose();
   }
 
@@ -204,7 +227,7 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
                 ),
                 _Tile(
                   icon: Icons.forum_outlined,
-                  label: m.isMaestro ? 'Messages' : 'Message Maestro',
+                  label: 'Messages',
                   badge: _unreadDms,
                   onTap: () async {
                     // Tapping is "I am opening my messages" — drop the
@@ -235,6 +258,15 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
                         builder: (_) => const MembersDirectoryScreen()),
                   ),
                 ),
+                _Tile(
+                  icon: Icons.directions_bus_outlined,
+                  label: 'Bus Routes',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const BusRoutesScreen()),
+                  ),
+                ),
                 if (m.isAdmin || m.isContentEditor)
                   _Tile(
                     icon: m.isContentEditor && !m.isAdmin
@@ -261,6 +293,18 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
               ],
             ),
             const SizedBox(height: 32),
+            _MyTripsSection(
+              future: _myTrips,
+              onTap: (group) async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => TripGroupDetailScreen(group: group),
+                  ),
+                );
+                setState(() => _myTrips = TripGroupsService.fetchMine());
+              },
+            ),
             _GalleryStrip(future: _gallery ??= GalleryService.list(limit: 12)),
             const SizedBox(height: 28),
             const SectionHeader(
@@ -487,19 +531,21 @@ class _LevelStat extends StatelessWidget {
 
   static String _label(String? v) {
     switch (v) {
-      case 'beginner': return 'Beginner';
-      case 'intermediate': return 'Inter.';
-      case 'professional': return 'Pro';
-      default: return 'Not set';
+      case 'not_on_stage':        return 'Not on Stage';
+      case 'on_stage':            return 'On Stage';
+      case 'assistant_conductor': return 'Asst. Cond.';
+      case 'friend':              return 'Friend';
+      default:                    return 'Not set';
     }
   }
 
   static Color _color(String? v) {
     switch (v) {
-      case 'beginner': return AppColors.gray;
-      case 'intermediate': return AppColors.primary;
-      case 'professional': return AppColors.accentDark;
-      default: return AppColors.gray;
+      case 'not_on_stage':        return AppColors.gray;
+      case 'on_stage':            return AppColors.secondary;
+      case 'assistant_conductor': return AppColors.accentDark;
+      case 'friend':              return AppColors.primary;
+      default:                    return AppColors.gray;
     }
   }
 
@@ -942,5 +988,83 @@ class _GalleryStrip extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+// ── My Trips section (shown on home screen when member has active trips) ──────
+
+class _MyTripsSection extends StatelessWidget {
+  final Future<List<TripGroup>> future;
+  final void Function(TripGroup) onTap;
+
+  const _MyTripsSection({required this.future, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<TripGroup>>(
+      future: future,
+      builder: (context, snap) {
+        if (snap.connectionState != ConnectionState.done) {
+          return const SizedBox.shrink();
+        }
+        final trips = snap.data ?? const <TripGroup>[];
+        if (trips.isEmpty) return const SizedBox.shrink();
+
+        final theme = Theme.of(context);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SectionHeader(eyebrow: 'Travel', title: 'My Trips'),
+            const SizedBox(height: 12),
+            ...trips.map((g) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: ElegantCard(
+                    onTap: () => onTap(g),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 14),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.accentDark.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.flight_takeoff,
+                              color: AppColors.accentDark, size: 22),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(g.name, style: theme.textTheme.titleMedium),
+                              if (g.destination != null)
+                                Text(g.destination!,
+                                    style: theme.textTheme.bodySmall),
+                              if (g.departureDate != null)
+                                Text(
+                                  _dateRange(g.departureDate!, g.returnDate),
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                      color: AppColors.primary),
+                                ),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right, color: AppColors.gray),
+                      ],
+                    ),
+                  ),
+                )),
+            const SizedBox(height: 24),
+          ],
+        );
+      },
+    );
+  }
+
+  String _dateRange(DateTime from, DateTime? to) {
+    String fmt(DateTime d) => '${d.day}/${d.month}/${d.year}';
+    return to != null ? '${fmt(from)} – ${fmt(to)}' : fmt(from);
   }
 }

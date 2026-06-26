@@ -37,7 +37,7 @@ class Member {
   double? houseLng;
   String? houseAddress;
   bool liveLocationEnabled;
-  /// 'beginner' | 'intermediate' | 'professional' | null
+  /// 'not_on_stage' | 'on_stage' | 'assistant_conductor' | 'friend' | null
   String? singerLevel;
 
   Member({

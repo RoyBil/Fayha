@@ -1,4 +1,4 @@
-import 'dart:async';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import '../data/mock_data.dart';
 import '../theme/app_theme.dart';
@@ -13,14 +13,47 @@ class PublicSongPlayerScreen extends StatefulWidget {
 }
 
 class _PublicSongPlayerScreenState extends State<PublicSongPlayerScreen> {
+  final _player = AudioPlayer();
   bool _playing = false;
   Duration _position = Duration.zero;
-  final Duration _total = const Duration(minutes: 3, seconds: 48);
-  Timer? _timer;
+  Duration _total = Duration.zero;
+  bool _loaded = false;
+
+  bool get _hasAudio => widget.song.audioUrl != null;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_hasAudio) {
+      _player.onPlayerStateChanged.listen((s) {
+        if (!mounted) return;
+        setState(() => _playing = s == PlayerState.playing);
+      });
+      _player.onPositionChanged.listen((p) {
+        if (!mounted) return;
+        setState(() => _position = p);
+      });
+      _player.onDurationChanged.listen((d) {
+        if (!mounted) return;
+        setState(() {
+          _total = d;
+          _loaded = true;
+        });
+      });
+      _player.onPlayerComplete.listen((_) {
+        if (!mounted) return;
+        setState(() {
+          _playing = false;
+          _position = Duration.zero;
+        });
+      });
+      _player.setSourceUrl(widget.song.audioUrl!);
+    }
+  }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _player.dispose();
     super.dispose();
   }
 
@@ -30,28 +63,36 @@ class _PublicSongPlayerScreenState extends State<PublicSongPlayerScreen> {
     return '$m:$s';
   }
 
-  void _togglePlay() {
-    setState(() => _playing = !_playing);
+  Future<void> _togglePlay() async {
     if (_playing) {
-      _timer = Timer.periodic(const Duration(milliseconds: 500), (_) {
-        setState(() {
-          _position += const Duration(milliseconds: 500);
-          if (_position >= _total) {
-            _position = Duration.zero;
-            _playing = false;
-            _timer?.cancel();
-          }
-        });
-      });
+      await _player.pause();
     } else {
-      _timer?.cancel();
+      await _player.play(UrlSource(widget.song.audioUrl!));
     }
+  }
+
+  Future<void> _seek(double value) async {
+    final ms = (_total.inMilliseconds * value).round();
+    await _player.seek(Duration(milliseconds: ms));
+  }
+
+  Future<void> _rewind() async {
+    final next = _position - const Duration(seconds: 10);
+    await _player.seek(next < Duration.zero ? Duration.zero : next);
+  }
+
+  Future<void> _forward() async {
+    final next = _position + const Duration(seconds: 10);
+    await _player.seek(next > _total ? _total : next);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final progress = _position.inMilliseconds / _total.inMilliseconds;
+    final progress = _total.inMilliseconds == 0
+        ? 0.0
+        : (_position.inMilliseconds / _total.inMilliseconds).clamp(0.0, 1.0);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Now Playing')),
       body: Column(
@@ -82,7 +123,8 @@ class _PublicSongPlayerScreenState extends State<PublicSongPlayerScreen> {
                 ),
                 const SizedBox(height: 24),
                 Text(widget.song.title,
-                    style: theme.textTheme.headlineSmall?.copyWith(color: AppColors.cream)),
+                    style: theme.textTheme.headlineSmall
+                        ?.copyWith(color: AppColors.cream)),
                 const SizedBox(height: 4),
                 Text(widget.song.subtitle,
                     style: theme.textTheme.titleMedium?.copyWith(
@@ -95,66 +137,81 @@ class _PublicSongPlayerScreenState extends State<PublicSongPlayerScreen> {
           Container(
             color: Colors.white,
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Text(_fmt(_position), style: theme.textTheme.labelMedium),
-                    Expanded(
-                      child: SliderTheme(
-                        data: SliderTheme.of(context).copyWith(
-                          trackHeight: 3,
-                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                        ),
-                        child: Slider(
-                          value: progress.clamp(0, 1),
-                          onChanged: (v) => setState(() {
-                            _position = Duration(
-                                milliseconds: (_total.inMilliseconds * v).round());
-                          }),
-                          activeColor: AppColors.primary,
-                        ),
-                      ),
-                    ),
-                    Text(_fmt(_total), style: theme.textTheme.labelMedium),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      onPressed: () => setState(() => _position = Duration.zero),
-                      icon: const Icon(Icons.replay_10),
-                      iconSize: 26,
-                    ),
-                    const SizedBox(width: 16),
-                    Material(
-                      color: AppColors.primary,
-                      shape: const CircleBorder(),
-                      child: InkWell(
-                        customBorder: const CircleBorder(),
-                        onTap: _togglePlay,
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Icon(
-                            _playing ? Icons.pause : Icons.play_arrow,
-                            color: AppColors.cream,
-                            size: 32,
+            child: _hasAudio
+                ? Column(
+                    children: [
+                      Row(
+                        children: [
+                          Text(_fmt(_position),
+                              style: theme.textTheme.labelMedium),
+                          Expanded(
+                            child: SliderTheme(
+                              data: SliderTheme.of(context).copyWith(
+                                trackHeight: 3,
+                                thumbShape: const RoundSliderThumbShape(
+                                    enabledThumbRadius: 6),
+                              ),
+                              child: Slider(
+                                value: progress,
+                                onChanged: _loaded ? _seek : null,
+                                activeColor: AppColors.primary,
+                              ),
+                            ),
                           ),
-                        ),
+                          Text(_fmt(_total),
+                              style: theme.textTheme.labelMedium),
+                        ],
                       ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          IconButton(
+                            onPressed: _loaded ? _rewind : null,
+                            icon: const Icon(Icons.replay_10),
+                            iconSize: 26,
+                          ),
+                          const SizedBox(width: 16),
+                          Material(
+                            color: AppColors.primary,
+                            shape: const CircleBorder(),
+                            child: InkWell(
+                              customBorder: const CircleBorder(),
+                              onTap: _loaded ? _togglePlay : null,
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Icon(
+                                  _playing ? Icons.pause : Icons.play_arrow,
+                                  color: AppColors.cream,
+                                  size: 32,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          IconButton(
+                            onPressed: _loaded ? _forward : null,
+                            icon: const Icon(Icons.forward_10),
+                            iconSize: 26,
+                          ),
+                        ],
+                      ),
+                    ],
+                  )
+                : Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.volume_off_outlined,
+                            color: AppColors.gray, size: 20),
+                        const SizedBox(width: 8),
+                        Text('No audio available for this song.',
+                            style: theme.textTheme.bodySmall
+                                ?.copyWith(color: AppColors.gray)),
+                      ],
                     ),
-                    const SizedBox(width: 16),
-                    IconButton(
-                      onPressed: () => setState(() => _position = _total),
-                      icon: const Icon(Icons.forward_10),
-                      iconSize: 26,
-                    ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
           ),
           Expanded(
             child: ListView(

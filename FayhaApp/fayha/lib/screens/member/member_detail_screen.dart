@@ -63,19 +63,21 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
 
   static String _singerLevelLabel(String v) {
     switch (v) {
-      case 'beginner': return 'Beginner';
-      case 'intermediate': return 'Intermediate';
-      case 'professional': return 'Professional';
-      default: return v;
+      case 'not_on_stage':        return 'Not on Stage';
+      case 'on_stage':            return 'On Stage';
+      case 'assistant_conductor': return 'Assistant Conductor';
+      case 'friend':              return 'Friend';
+      default:                    return v;
     }
   }
 
   static Color _singerLevelColor(String v) {
     switch (v) {
-      case 'beginner': return AppColors.gray;
-      case 'intermediate': return AppColors.primary;
-      case 'professional': return AppColors.accentDark;
-      default: return AppColors.gray;
+      case 'not_on_stage':        return AppColors.gray;
+      case 'on_stage':            return AppColors.secondary;
+      case 'assistant_conductor': return AppColors.accentDark;
+      case 'friend':              return AppColors.primary;
+      default:                    return AppColors.gray;
     }
   }
 

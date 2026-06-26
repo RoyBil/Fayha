@@ -32,6 +32,7 @@ class AudienceData {
               subtitle: (r['subtitle'] as String?) ?? '',
               composers: (r['composers'] as String?) ?? '',
               lyrics: (r['lyrics'] as String?) ?? '',
+              audioUrl: r['audio_url'] as String?,
             ))
         .toList();
   }

@@ -95,7 +95,8 @@ class _BusRoutesScreenState extends State<BusRoutesScreen> {
       appBar: AppBar(title: const Text('Bus Routes')),
       floatingActionButton: canEdit
           ? FloatingActionButton.extended(
-              backgroundColor: AppColors.primary,
+              // Green = add/create per app-wide convention.
+              backgroundColor: AppColors.secondary,
               foregroundColor: AppColors.cream,
               icon: const Icon(Icons.add),
               label: const Text('New Route'),

@@ -17,11 +17,17 @@ class MemberSignUpScreen extends StatefulWidget {
 
 class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _name = TextEditingController();
+  final _firstName = TextEditingController();
+  final _lastName = TextEditingController();
   final _email = TextEditingController();
   final _phone = TextEditingController();
   final _password = TextEditingController();
   final _confirmPassword = TextEditingController();
+
+  String get _fullName =>
+      [_firstName.text.trim(), _lastName.text.trim()]
+          .where((s) => s.isNotEmpty)
+          .join(' ');
 
   String? _branch;
   String? _voice;
@@ -69,7 +75,8 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
 
   @override
   void dispose() {
-    _name.dispose();
+    _firstName.dispose();
+    _lastName.dispose();
     _email.dispose();
     _phone.dispose();
     _password.dispose();
@@ -108,8 +115,12 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    if (!_isMaestroEmail && (_branch == null || _voice == null)) {
-      _toast('Please select your branch and voice section');
+    if (!_isMaestroEmail && _branch == null) {
+      _toast('Please choose your branch');
+      return;
+    }
+    if (_isReturning && _voice == null) {
+      _toast('Please select your voice section');
       return;
     }
     if (_isReturning && _joinDate == null) {
@@ -126,7 +137,7 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
       await AuthService.signUp(
         email: _email.text.trim(),
         password: _password.text,
-        name: _name.text.trim(),
+        name: _fullName,
         phone: _phone.text.trim(),
         branch: _branch ?? 'Tripoli',
         voiceSection: _voice ?? 'Soprano',
@@ -239,7 +250,7 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
                     )
                   else
                     Avatar(
-                      name: _name.text.isEmpty ? 'New Member' : _name.text,
+                      name: _fullName.isEmpty ? 'New Member' : _fullName,
                       size: 84,
                     ),
                   Material(
@@ -266,14 +277,34 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
             ),
             const SizedBox(height: 20),
 
-            TextFormField(
-              controller: _name,
-              decoration: const InputDecoration(
-                labelText: 'Full name',
-                prefixIcon: Icon(Icons.person_outline),
-              ),
-              onChanged: (_) => setState(() {}),
-              validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _firstName,
+                    decoration: const InputDecoration(
+                      labelText: 'First name',
+                      prefixIcon: Icon(Icons.person_outline),
+                    ),
+                    onChanged: (_) => setState(() {}),
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty) ? 'Required' : null,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextFormField(
+                    controller: _lastName,
+                    decoration: const InputDecoration(
+                      labelText: 'Last name',
+                    ),
+                    onChanged: (_) => setState(() {}),
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty) ? 'Required' : null,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 14),
             TextFormField(
@@ -339,26 +370,13 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
               DropdownButtonFormField<String>(
                 value: _branch,
                 decoration: const InputDecoration(
-                  labelText: 'Branch',
+                  labelText: 'Choose your branch',
                   prefixIcon: Icon(Icons.location_city_outlined),
                 ),
                 items: ChoirData.branches
                     .map((b) => DropdownMenuItem(value: b, child: Text(b)))
                     .toList(),
                 onChanged: (v) => setState(() => _branch = v),
-                validator: (v) => v == null ? 'Required' : null,
-              ),
-              const SizedBox(height: 14),
-              DropdownButtonFormField<String>(
-                value: _voice,
-                decoration: const InputDecoration(
-                  labelText: 'Voice section',
-                  prefixIcon: Icon(Icons.music_note_outlined),
-                ),
-                items: ChoirData.voiceSections
-                    .map((v) => DropdownMenuItem(value: v, child: Text(v)))
-                    .toList(),
-                onChanged: (v) => setState(() => _voice = v),
                 validator: (v) => v == null ? 'Required' : null,
               ),
             ],
@@ -419,6 +437,23 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
                     Text('Your history with the choir',
                         style: theme.textTheme.titleSmall),
                     const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      value: _voice,
+                      decoration: const InputDecoration(
+                        labelText: 'Voice section',
+                        prefixIcon: Icon(Icons.music_note_outlined),
+                        filled: true,
+                        fillColor: Colors.white,
+                      ),
+                      items: ChoirData.voiceSections
+                          .map((v) =>
+                              DropdownMenuItem(value: v, child: Text(v)))
+                          .toList(),
+                      onChanged: (v) => setState(() => _voice = v),
+                      validator: (v) =>
+                          _isReturning && v == null ? 'Required' : null,
+                    ),
+                    const SizedBox(height: 12),
                     _dateTile(
                       label: 'When did you join Fayha?',
                       value: _joinDate,
@@ -453,6 +488,10 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
 
             const SizedBox(height: 24),
             FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.secondary,
+                foregroundColor: AppColors.cream,
+              ),
               onPressed: _submitting ? null : _submit,
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),

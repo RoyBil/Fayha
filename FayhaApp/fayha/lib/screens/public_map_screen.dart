@@ -10,7 +10,11 @@ import '../widgets/section_header.dart';
 import 'branch_detail_screen.dart';
 
 class PublicMapScreen extends StatefulWidget {
-  const PublicMapScreen({super.key});
+  /// When set, the Branches tab auto-focuses on this branch and
+  /// opens its info sheet as soon as the map loads. Used by the
+  /// "Where We Rehearse" cards on the Events page.
+  final String? initialBranchName;
+  const PublicMapScreen({super.key, this.initialBranchName});
 
   @override
   State<PublicMapScreen> createState() => _PublicMapScreenState();
@@ -52,9 +56,9 @@ class _PublicMapScreenState extends State<PublicMapScreen>
         Expanded(
           child: TabBarView(
             controller: _tabs,
-            children: const [
-              _BranchesTab(),
-              _VenuesTab(),
+            children: [
+              _BranchesTab(initialBranchName: widget.initialBranchName),
+              const _VenuesTab(),
             ],
           ),
         ),
@@ -481,7 +485,8 @@ void _showInfo(BuildContext context, Widget sheet) {
 // ============ Tabs ============
 
 class _BranchesTab extends StatefulWidget {
-  const _BranchesTab();
+  final String? initialBranchName;
+  const _BranchesTab({this.initialBranchName});
 
   @override
   State<_BranchesTab> createState() => _BranchesTabState();
@@ -493,11 +498,30 @@ class _BranchesTabState extends State<_BranchesTab> with TickerProviderStateMixi
   static const double _focusZoom = 15.0;
   final MapController _ctrl = MapController();
   late Future<List<BranchLocation>> _branches;
+  bool _autoFocused = false;
 
   @override
   void initState() {
     super.initState();
     _branches = AudienceData.fetchBranches();
+    final target = widget.initialBranchName;
+    if (target != null) {
+      _branches.then((list) {
+        if (!mounted || _autoFocused) return;
+        BranchLocation? match;
+        for (final b in list) {
+          if (b.name.toLowerCase() == target.toLowerCase()) {
+            match = b;
+            break;
+          }
+        }
+        if (match == null) return;
+        _autoFocused = true;
+        // Defer until after the map widget has built so the controller
+        // is attached and the sheet can show without context issues.
+        WidgetsBinding.instance.addPostFrameCallback((_) => _focus(match!));
+      });
+    }
   }
 
   Future<void> _focus(BranchLocation b) async {

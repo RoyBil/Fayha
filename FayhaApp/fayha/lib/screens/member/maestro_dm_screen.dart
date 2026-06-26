@@ -16,11 +16,15 @@ import '../../widgets/branded_background.dart';
 import '../../widgets/fayha_map.dart' show MapInfoSheet, MapFact;
 
 class MaestroDmScreen extends StatefulWidget {
+  /// Member side of the conversation.
   final String memberId;
+  /// Admin (or Maestro) side of the conversation.
+  final String adminId;
   final String title;
   const MaestroDmScreen({
     super.key,
     required this.memberId,
+    required this.adminId,
     required this.title,
   });
 
@@ -43,8 +47,11 @@ class _MaestroDmScreenState extends State<MaestroDmScreen> {
   Timer? _recordTimer;
   Duration _recordDuration = Duration.zero;
 
-  bool get _iAmMaestro =>
-      AppState.instance.currentMember?.role == 'superAdmin';
+  /// True when the signed-in user is the admin side of this thread —
+  /// either the Maestro or any branch admin whose id is on the
+  /// admin side of the conversation.
+  bool get _iAmAdminSide =>
+      AppState.instance.currentMember?.id == widget.adminId;
 
   @override
   void initState() {
@@ -67,7 +74,10 @@ class _MaestroDmScreenState extends State<MaestroDmScreen> {
 
   Future<void> _load() async {
     try {
-      final msgs = await DmService.thread(widget.memberId);
+      final msgs = await DmService.thread(
+        memberId: widget.memberId,
+        adminId: widget.adminId,
+      );
       if (!mounted) return;
       setState(() {
         _messages = msgs;
@@ -97,8 +107,9 @@ class _MaestroDmScreenState extends State<MaestroDmScreen> {
     try {
       await DmService.send(
         memberId: widget.memberId,
+        adminId: widget.adminId,
         body: text,
-        fromMaestro: _iAmMaestro,
+        fromAdmin: _iAmAdminSide,
       );
       _controller.clear();
       await _load();
@@ -207,7 +218,8 @@ class _MaestroDmScreenState extends State<MaestroDmScreen> {
       final url = await DmService.uploadVoice(bytes: bytes, fileExtension: ext);
       await DmService.send(
         memberId: widget.memberId,
-        fromMaestro: _iAmMaestro,
+        adminId: widget.adminId,
+        fromAdmin: _iAmAdminSide,
         audioUrl: url,
         audioDurationMs: duration.inMilliseconds,
       );
@@ -260,7 +272,7 @@ class _MaestroDmScreenState extends State<MaestroDmScreen> {
         out.add(_DateDivider(label: _dayLabel(day)));
         lastDay = day;
       }
-      final mine = _iAmMaestro ? msg.fromMaestro : !msg.fromMaestro;
+      final mine = _iAmAdminSide ? msg.fromMaestro : !msg.fromMaestro;
       out.add(_Bubble(
         message: msg,
         mine: mine,
@@ -271,7 +283,7 @@ class _MaestroDmScreenState extends State<MaestroDmScreen> {
   }
 
   Future<void> _showPersonInfo() async {
-    if (_iAmMaestro) {
+    if (_iAmAdminSide) {
       final m = await AdminService.fetchMember(widget.memberId);
       if (!mounted || m == null) return;
       final years = DateTime.now().year - m.joinDate.year;
@@ -451,7 +463,7 @@ class _MaestroDmScreenState extends State<MaestroDmScreen> {
                         child: Padding(
                           padding: const EdgeInsets.all(32),
                           child: Text(
-                            _iAmMaestro
+                            _iAmAdminSide
                                 ? 'No messages yet from this member.'
                                 : 'Start the conversation with the Maestro.',
                             textAlign: TextAlign.center,

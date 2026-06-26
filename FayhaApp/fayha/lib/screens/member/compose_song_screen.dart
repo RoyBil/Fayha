@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
+import '../../data/mock_data.dart';
 import '../../services/admin_service.dart';
 import '../../services/choir_songs_service.dart';
 import '../../theme/app_theme.dart';
@@ -8,11 +9,11 @@ import '../../theme/app_theme.dart';
 enum _SongTarget { audience, choir }
 
 class ComposeSongScreen extends StatefulWidget {
-  /// When non-null, the screen runs in edit mode for an existing
-  /// choir song (the audience/choir toggle is hidden, fields are
-  /// pre-filled, and uploads replace existing files only if picked).
+  /// Edit mode for an existing choir library song.
   final ChoirSong? existing;
-  const ComposeSongScreen({super.key, this.existing});
+  /// Edit mode for an existing audience (public) song.
+  final RepertoireSong? existingAudience;
+  const ComposeSongScreen({super.key, this.existing, this.existingAudience});
 
   @override
   State<ComposeSongScreen> createState() => _ComposeSongScreenState();
@@ -42,8 +43,10 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
   String? _progress;
   final List<_PickedAudio?> _parts =
       List<_PickedAudio?>.filled(choirVoiceParts.length, null);
+  _PickedAudio? _audienceAudio;
 
   bool get _isEdit => widget.existing != null;
+  bool get _isAudienceEdit => widget.existingAudience != null;
 
   @override
   void initState() {
@@ -58,6 +61,16 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
       _youtube.text = e.youtubeUrl ?? '';
       _target = _SongTarget.choir;
     }
+    final ea = widget.existingAudience;
+    if (ea != null) {
+      _title.text = ea.title;
+      _subtitle.text = ea.subtitle;
+      _composers.text = ea.composers;
+      _description.text = ea.description ?? '';
+      _lyrics.text = ea.lyrics;
+      _youtube.text = ea.youtubeUrl ?? '';
+      _target = _SongTarget.audience;
+    }
   }
 
   @override
@@ -69,6 +82,21 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
     _lyrics.dispose();
     _youtube.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickAudienceAudio() async {
+    const typeGroup = XTypeGroup(
+      label: 'Audio',
+      extensions: ['m4a', 'mp3', 'wav', 'aac', 'ogg'],
+    );
+    final file = await openFile(acceptedTypeGroups: [typeGroup]);
+    if (file == null) return;
+    final bytes = await file.readAsBytes();
+    final name = file.name;
+    final ext = name.contains('.') ? name.split('.').last.toLowerCase() : 'mp3';
+    setState(() {
+      _audienceAudio = _PickedAudio(filename: name, extension: ext, bytes: bytes);
+    });
   }
 
   Future<void> _pickAudio(int index) async {
@@ -113,15 +141,37 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
     });
     try {
       if (_target == _SongTarget.audience) {
-        await AdminService.addSong(
-          title: _title.text.trim(),
-          subtitle: _subtitle.text.trim(),
-          composers: _composers.text.trim(),
-          description: _description.text.trim(),
-          lyrics: _lyrics.text.trim(),
-          youtubeUrl:
-              _youtube.text.trim().isEmpty ? null : _youtube.text.trim(),
-        );
+        String? audioUrl;
+        if (_audienceAudio != null) {
+          setState(() => _progress = 'Uploading audio…');
+          audioUrl = await AdminService.uploadSongAudio(
+            bytes: Uint8List.fromList(_audienceAudio!.bytes),
+            fileExtension: _audienceAudio!.extension,
+          );
+        }
+        setState(() => _progress = 'Saving…');
+        if (_isAudienceEdit) {
+          await AdminService.updateSong(
+            id: widget.existingAudience!.id,
+            title: _title.text.trim(),
+            subtitle: _subtitle.text.trim().isEmpty ? null : _subtitle.text.trim(),
+            composers: _composers.text.trim().isEmpty ? null : _composers.text.trim(),
+            description: _description.text.trim().isEmpty ? null : _description.text.trim(),
+            lyrics: _lyrics.text.trim().isEmpty ? null : _lyrics.text.trim(),
+            youtubeUrl: _youtube.text.trim().isEmpty ? null : _youtube.text.trim(),
+            audioUrl: audioUrl,
+          );
+        } else {
+          await AdminService.addSong(
+            title: _title.text.trim(),
+            subtitle: _subtitle.text.trim().isEmpty ? null : _subtitle.text.trim(),
+            composers: _composers.text.trim().isEmpty ? null : _composers.text.trim(),
+            description: _description.text.trim().isEmpty ? null : _description.text.trim(),
+            lyrics: _lyrics.text.trim().isEmpty ? null : _lyrics.text.trim(),
+            youtubeUrl: _youtube.text.trim().isEmpty ? null : _youtube.text.trim(),
+            audioUrl: audioUrl,
+          );
+        }
       } else if (_isEdit) {
         // ===== EDIT MODE =====
         final existing = widget.existing!;
@@ -210,7 +260,7 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_isEdit ? 'Edit Song' : 'Add a Song')),
+      appBar: AppBar(title: Text(_isEdit || _isAudienceEdit ? 'Edit Song' : 'Add a Song')),
       body: AbsorbPointer(
         absorbing: _saving,
         child: Form(
@@ -218,7 +268,7 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
             children: [
-              if (!_isEdit) ...[
+              if (!_isEdit && !_isAudienceEdit) ...[
                 Text('Where does this song go?',
                     style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
@@ -236,7 +286,7 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
                     Expanded(
                       child: _targetChoice(
                         label: 'Audience page',
-                        sub: 'Public · YouTube only',
+                        sub: 'Public · with audio',
                         icon: Icons.public,
                         value: _SongTarget.audience,
                       ),
@@ -257,6 +307,22 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
               const SizedBox(height: 14),
               _field(_youtube, 'YouTube link (optional)',
                   Icons.play_circle_outline),
+              if (_target == _SongTarget.audience) ...[
+                const SizedBox(height: 22),
+                Text(
+                  'Audio file',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _isAudienceEdit
+                      ? 'Pick a new file to replace the existing audio, or leave empty to keep it.'
+                      : 'Upload an mp3, m4a or wav file so visitors can listen to the song.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 10),
+                _audienceAudioRow(),
+              ],
               if (_target == _SongTarget.choir) ...[
                 const SizedBox(height: 26),
                 Text(
@@ -294,12 +360,63 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: AppColors.cream),
                       )
-                    : Icon(_isEdit ? Icons.save : Icons.add, size: 18),
-                label: Text(_isEdit ? 'Save Changes' : 'Add Song'),
+                    : Icon((_isEdit || _isAudienceEdit) ? Icons.save : Icons.add, size: 18),
+                label: Text((_isEdit || _isAudienceEdit) ? 'Save Changes' : 'Add Song'),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _audienceAudioRow() {
+    final picked = _audienceAudio != null;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: picked ? AppColors.secondary : AppColors.offWhite,
+          width: picked ? 1.5 : 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            alignment: Alignment.center,
+            child: const Icon(Icons.audiotrack, color: AppColors.primary, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              picked
+                  ? _audienceAudio!.filename
+                  : (_isAudienceEdit
+                      ? 'Current audio kept — tap Replace to change'
+                      : 'No file selected'),
+              style: Theme.of(context).textTheme.bodySmall,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          TextButton.icon(
+            onPressed: _pickAudienceAudio,
+            icon: Icon(
+              (picked || _isAudienceEdit) ? Icons.swap_horiz : Icons.upload_file,
+              size: 16,
+            ),
+            label: Text((picked || _isAudienceEdit) ? 'Replace' : 'Upload'),
+          ),
+        ],
       ),
     );
   }

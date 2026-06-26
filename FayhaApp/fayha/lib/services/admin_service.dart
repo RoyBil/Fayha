@@ -58,6 +58,7 @@ class AdminService {
     String? description,
     String? lyrics,
     String? youtubeUrl,
+    String? audioUrl,
   }) async {
     final ms = DateTime.now().millisecondsSinceEpoch;
     await _c.from('songs').insert({
@@ -68,8 +69,63 @@ class AdminService {
       'description': description,
       'lyrics': lyrics,
       'youtube_url': youtubeUrl,
+      'audio_url': audioUrl,
       'sort_order': ms ~/ 1000,
     });
+  }
+
+  static Future<void> updateSong({
+    required String id,
+    required String title,
+    String? subtitle,
+    String? composers,
+    String? description,
+    String? lyrics,
+    String? youtubeUrl,
+    String? audioUrl,
+  }) async {
+    await _c.from('songs').update({
+      'title': title,
+      'subtitle': subtitle,
+      'composers': composers,
+      'description': description,
+      'lyrics': lyrics,
+      'youtube_url': youtubeUrl,
+      if (audioUrl != null) 'audio_url': audioUrl,
+    }).eq('id', id);
+  }
+
+  static Future<void> deleteSong(String id) async {
+    await _c.from('songs').delete().eq('id', id);
+  }
+
+  static Future<List<Map<String, dynamic>>> fetchAudienceSongs() async {
+    final rows = await _c
+        .from('songs')
+        .select()
+        .order('sort_order');
+    return (rows as List).cast<Map<String, dynamic>>();
+  }
+
+  /// Uploads an audio file for a public audience song.
+  /// Returns the public URL.
+  static Future<String> uploadSongAudio({
+    required Uint8List bytes,
+    required String fileExtension,
+  }) async {
+    final ext = fileExtension.isEmpty ? 'mp3' : fileExtension;
+    // m4a files are MPEG-4 audio containers — correct MIME is audio/mp4.
+    final mime = ext == 'm4a' ? 'audio/mp4' : 'audio/$ext';
+    final path = 'song_${DateTime.now().millisecondsSinceEpoch}.$ext';
+    await _c.storage.from('song_audio').uploadBinary(
+          path,
+          bytes,
+          fileOptions: FileOptions(
+            upsert: false,
+            contentType: mime,
+          ),
+        );
+    return _c.storage.from('song_audio').getPublicUrl(path);
   }
 
   static Future<void> addEvent({

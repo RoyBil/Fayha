@@ -21,6 +21,8 @@ import 'compose_poll_screen.dart';
 import 'compose_message_screen.dart';
 import 'compose_news_screen.dart';
 import 'compose_song_screen.dart';
+import 'bus_routes_screen.dart';
+import 'trip_groups_screen.dart';
 
 class AdminPanelScreen extends StatefulWidget {
   const AdminPanelScreen({super.key});
@@ -626,12 +628,13 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
     final picked = await showDialog<String>(
       context: context,
       builder: (_) => SimpleDialog(
-        title: Text('${m.name} — singer level'),
+        title: Text('${m.name} — choir role'),
         children: [
           for (final entry in const [
-            ('beginner', 'Beginner'),
-            ('intermediate', 'Intermediate'),
-            ('professional', 'Professional'),
+            ('not_on_stage', 'Not on Stage'),
+            ('on_stage', 'On Stage'),
+            ('assistant_conductor', 'Assistant Conductor'),
+            ('friend', 'Friend'),
           ])
             SimpleDialogOption(
               onPressed: () => Navigator.pop(context, entry.$1),
@@ -847,6 +850,40 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               }
             },
           ),
+          const SizedBox(height: 12),
+          _ComposeCard(
+            icon: Icons.flight_takeoff,
+            color: AppColors.accentDark,
+            colorAlpha: 0.12,
+            title: 'Trip Groups',
+            subtitle: 'Create trip groups, assign members, share visa/hotel/ticket info',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const TripGroupsScreen()),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _ComposeCard(
+            icon: Icons.directions_bus_outlined,
+            color: AppColors.secondary,
+            colorAlpha: 0.12,
+            title: 'Bus Routes',
+            subtitle: 'Manage bus routes, stops, and live trip tracking for your branch',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const BusRoutesScreen()),
+            ),
+          ),
+          const SizedBox(height: 28),
+          Text('Manage audience songs',
+              style: theme.textTheme.titleMedium),
+          const SizedBox(height: 4),
+          Text(
+            'Tap any song to edit its details or replace the audio file.',
+            style: theme.textTheme.bodySmall,
+          ),
+          const SizedBox(height: 12),
+          const _ManageAudienceSongsList(),
         ],
         if (_isAdmin && _isEditor) const SizedBox(height: 12),
         if (_isEditor) ...[
@@ -1087,7 +1124,8 @@ class _ManageNewsListState extends State<_ManageNewsList> {
   }
 
   void _reload() {
-    setState(() => _future = AdminService.listNews());
+    final f = AdminService.listNews();
+    setState(() { _future = f; });
   }
 
   Future<void> _confirmDelete(Map<String, dynamic> row) async {
@@ -1249,7 +1287,8 @@ class _ManageEventsListState extends State<_ManageEventsList> {
   }
 
   void _reload() {
-    setState(() => _future = AdminService.listEvents());
+    final f = AdminService.listEvents();
+    setState(() { _future = f; });
   }
 
   Future<void> _confirmDelete(Map<String, dynamic> row) async {
@@ -1657,6 +1696,180 @@ class _TestimonialAdminCard extends StatelessWidget {
       side: BorderSide(color: color.withValues(alpha: 0.4)),
       visualDensity: VisualDensity.compact,
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    );
+  }
+}
+
+/// Admin/SuperAdmin: list of audience songs with tap-to-edit + delete.
+class _ManageAudienceSongsList extends StatefulWidget {
+  const _ManageAudienceSongsList();
+
+  @override
+  State<_ManageAudienceSongsList> createState() =>
+      _ManageAudienceSongsListState();
+}
+
+class _ManageAudienceSongsListState extends State<_ManageAudienceSongsList> {
+  late Future<List<Map<String, dynamic>>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _reload();
+  }
+
+  void _reload() {
+    final f = AdminService.fetchAudienceSongs();
+    setState(() { _future = f; });
+  }
+
+  Future<void> _confirmDelete(Map<String, dynamic> row) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Delete this song?'),
+        content: Text('"${row['title']}" will be removed permanently.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel')),
+          FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Delete')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await AdminService.deleteSong(row['id'] as String);
+      _reload();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not delete: $e')),
+      );
+    }
+  }
+
+  Future<void> _openEdit(Map<String, dynamic> row) async {
+    final song = RepertoireSong(
+      id: row['id'] as String,
+      title: (row['title'] as String?) ?? '',
+      subtitle: (row['subtitle'] as String?) ?? '',
+      composers: (row['composers'] as String?) ?? '',
+      lyrics: (row['lyrics'] as String?) ?? '',
+      description: row['description'] as String?,
+      youtubeUrl: row['youtube_url'] as String?,
+      audioUrl: row['audio_url'] as String?,
+    );
+    final saved = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+          builder: (_) => ComposeSongScreen(existingAudience: song)),
+    );
+    if (saved == true) _reload();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _future,
+      builder: (context, snap) {
+        if (snap.connectionState != ConnectionState.done) {
+          return const Padding(
+            padding: EdgeInsets.all(20),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snap.hasError) {
+          return Padding(
+            padding: const EdgeInsets.only(top: 8, bottom: 8),
+            child: Text('Error loading songs: ${snap.error}',
+                style: theme.textTheme.bodySmall?.copyWith(color: Colors.red)),
+          );
+        }
+        final rows = snap.data ?? const [];
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text('Audience Songs',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: AppColors.primary,
+                    letterSpacing: 0.8,
+                  )),
+            ),
+            if (rows.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4, bottom: 8),
+                child: Text('No audience songs yet.',
+                    style: theme.textTheme.bodySmall),
+              )
+            else
+              ...rows.map((r) => Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: ElegantCard(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              (r['audio_url'] as String?) != null
+                                  ? Icons.audiotrack
+                                  : Icons.music_note_outlined,
+                              color: AppColors.primary,
+                              size: 22,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text((r['title'] as String?) ?? '',
+                                    style: theme.textTheme.titleSmall,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis),
+                                if ((r['subtitle'] as String?)?.isNotEmpty ==
+                                    true)
+                                  Text(
+                                    r['subtitle'] as String,
+                                    style: theme.textTheme.labelSmall,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.edit_outlined,
+                                color: AppColors.primary),
+                            visualDensity: VisualDensity.compact,
+                            onPressed: () => _openEdit(r),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline,
+                                color: AppColors.gray),
+                            visualDensity: VisualDensity.compact,
+                            onPressed: () => _confirmDelete(r),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )),
+          ],
+        );
+      },
     );
   }
 }

@@ -18,6 +18,7 @@ import 'admin_panel_screen.dart';
 import 'bus_routes_screen.dart';
 import 'live_locations_map_screen.dart';
 import 'members_directory_screen.dart';
+import 'trip_groups_screen.dart';
 
 class MemberMoreScreen extends StatelessWidget {
   const MemberMoreScreen({super.key});
@@ -88,10 +89,10 @@ class MemberMoreScreen extends StatelessWidget {
                   const _Sep(),
                   _Tile(
                     icon: Icons.forum_outlined,
-                    title: m.isMaestro ? 'Messages' : 'Message Maestro',
+                    title: 'Messages',
                     subtitle: m.isMaestro
                         ? 'Inbox of every member'
-                        : 'Direct chat with Maestro Barkev',
+                        : 'Chat with admins and Maestro',
                     onTap: () => Navigator.push(context,
                         MaterialPageRoute(builder: (_) => const MessagesScreen())),
                   ),
@@ -107,7 +108,7 @@ class MemberMoreScreen extends StatelessWidget {
                   _Tile(
                     icon: Icons.format_quote,
                     title: 'Testimonials',
-                    subtitle: 'Share your story · view others',
+                    subtitle: 'View members\' stories',
                     onTap: () => Navigator.push(context,
                         MaterialPageRoute(builder: (_) => const TestimonialsMemberScreen())),
                   ),
@@ -157,6 +158,19 @@ class MemberMoreScreen extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                           builder: (_) => const BusRoutesScreen()),
+                    ),
+                  ),
+                  const _Sep(),
+                  _Tile(
+                    icon: Icons.flight_takeoff_outlined,
+                    title: 'Trip Groups',
+                    subtitle: m.isAdmin
+                        ? 'Manage trip groups · assign members · share info'
+                        : 'View your trip details and upload documents',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const TripGroupsScreen()),
                     ),
                   ),
                 ],

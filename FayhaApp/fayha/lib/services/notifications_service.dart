@@ -40,6 +40,17 @@ class NotificationsService {
     final nowIso = DateTime.now().toUtc().toIso8601String();
     final isMaestro =
         AppState.instance.currentMember?.role == 'superAdmin';
+    final myId = _c.auth.currentUser?.id ?? '';
+    final memberNotifsFuture = myId.isNotEmpty
+        ? _c
+            .from('member_notifications')
+            .select()
+            .eq('member_id', myId)
+            .order('created_at', ascending: false)
+            .then((r) => r as List<dynamic>)
+            .catchError((_) => <dynamic>[])
+        : Future.value(<dynamic>[]);
+
     final results = await Future.wait([
       _c.from('messages').select('id,title,body,created_at,sender_name')
           .order('created_at', ascending: false),
@@ -53,10 +64,11 @@ class NotificationsService {
           .order('created_at', ascending: false),
       _c.from('polls').select('id,question,created_by_name,created_at')
           .order('created_at', ascending: false),
+      memberNotifsFuture,
     ]);
 
     final items = <FeedItem>[];
-    for (final m in results[0] as List) {
+    for (final m in results[0]) {
       items.add(FeedItem(
         id: 'msg:${m['id']}',
         kind: 'announcement',
@@ -68,7 +80,7 @@ class NotificationsService {
         },
       ));
     }
-    for (final n in results[1] as List) {
+    for (final n in results[1]) {
       items.add(FeedItem(
         id: 'news:${n['id']}',
         kind: 'news',
@@ -81,7 +93,7 @@ class NotificationsService {
         },
       ));
     }
-    for (final c in results[2] as List) {
+    for (final c in results[2]) {
       final starts = DateTime.parse(c['starts_at'] as String).toLocal();
       final announced = c['created_at'] != null
           ? DateTime.parse(c['created_at'] as String).toLocal()
@@ -104,7 +116,7 @@ class NotificationsService {
       ));
     }
     // Direct messages received (skip own sent ones).
-    for (final d in results[3] as List) {
+    for (final d in results[3]) {
       final fromMaestro = d['from_maestro'] as bool;
       if (isMaestro == fromMaestro) continue;
       final senderName = fromMaestro
@@ -118,12 +130,12 @@ class NotificationsService {
         body: (d['body'] as String?) ?? '🎙 Voice message',
         date: DateTime.parse(d['created_at'] as String).toLocal(),
         extra: {
-          'member_id': d['member_id'],   // for Maestro to open the right thread
+          'member_id': d['member_id'],
           'sender_name': senderName,
         },
       ));
     }
-    for (final p in results[4] as List) {
+    for (final p in results[4]) {
       items.add(FeedItem(
         id: 'poll:${p['id']}',
         kind: 'poll',
@@ -131,6 +143,21 @@ class NotificationsService {
         body: 'From ${p['created_by_name'] ?? 'an admin'} — tap to vote',
         date: DateTime.parse(p['created_at'] as String).toLocal(),
       ));
+    }
+    // Personal notifications (trip added, etc.)
+    if (results.length > 5) {
+      for (final n in results[5]) {
+        items.add(FeedItem(
+          id: 'notif:${n['id']}',
+          kind: n['kind'] as String,
+          title: n['title'] as String,
+          body: n['body'] as String,
+          date: DateTime.parse(n['created_at'] as String).toLocal(),
+          extra: {
+            'source_id': n['source_id'],
+          },
+        ));
+      }
     }
     items.sort((a, b) => b.date.compareTo(a.date));
     return items;
