@@ -26,26 +26,24 @@ class SectionHeader extends StatelessWidget {
       children: [
         Text(
           eyebrow.toUpperCase(),
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: eyebrowColor,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.labelSmall?.copyWith(color: eyebrowColor),
         ),
         const SizedBox(height: 8),
         Text(
           title,
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: titleColor,
-                height: 1.15,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineMedium?.copyWith(color: titleColor, height: 1.15),
         ),
         if (subtitle != null) ...[
           const SizedBox(height: 10),
           Text(
             subtitle!,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: subtitleColor,
-                  height: 1.5,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: subtitleColor, height: 1.5),
           ),
         ],
         const SizedBox(height: 4),

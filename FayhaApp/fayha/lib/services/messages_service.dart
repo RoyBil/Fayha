@@ -23,15 +23,15 @@ class ChoirMessage {
   });
 
   factory ChoirMessage.fromMap(Map<String, dynamic> r) => ChoirMessage(
-        id: r['id'] as String,
-        title: r['title'] as String,
-        body: r['body'] as String,
-        audience: r['audience'] as String,
-        branch: r['branch'] as String?,
-        voiceSection: r['voice_section'] as String?,
-        senderName: r['sender_name'] as String?,
-        createdAt: DateTime.parse(r['created_at'] as String).toLocal(),
-      );
+    id: r['id'] as String,
+    title: r['title'] as String,
+    body: r['body'] as String,
+    audience: r['audience'] as String,
+    branch: r['branch'] as String?,
+    voiceSection: r['voice_section'] as String?,
+    senderName: r['sender_name'] as String?,
+    createdAt: DateTime.parse(r['created_at'] as String).toLocal(),
+  );
 
   String get audienceLabel {
     switch (audience) {

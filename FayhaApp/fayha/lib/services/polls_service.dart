@@ -44,7 +44,7 @@ class Poll {
   final DateTime createdAt;
   final DateTime? closesAt;
   final List<PollOption> options;
-  final Set<String> myVotes;     // option_ids the current member voted for
+  final Set<String> myVotes; // option_ids the current member voted for
   final int totalVotes;
 
   const Poll({
@@ -62,8 +62,7 @@ class Poll {
     required this.totalVotes,
   });
 
-  bool get isClosed =>
-      closesAt != null && DateTime.now().isAfter(closesAt!);
+  bool get isClosed => closesAt != null && DateTime.now().isAfter(closesAt!);
   bool get hasVoted => myVotes.isNotEmpty;
 }
 
@@ -83,9 +82,7 @@ class PollsService {
         .order('created_at', ascending: false);
     if ((pollRows as List).isEmpty) return [];
 
-    final pollIds = pollRows
-        .map((r) => r['id'] as String)
-        .toList();
+    final pollIds = pollRows.map((r) => r['id'] as String).toList();
 
     final tallies = await _c
         .from('poll_tallies')
@@ -99,8 +96,10 @@ class PollsService {
     // All votes with member info, for the per-option voter list.
     final allVotes = await _c
         .from('poll_votes')
-        .select('poll_id, option_id, member_id, '
-            'members(id,name,photo_url,branch,voice_section,role)')
+        .select(
+          'poll_id, option_id, member_id, '
+          'members(id,name,photo_url,branch,voice_section,role)',
+        )
         .inFilter('poll_id', pollIds);
 
     final tallyByPoll = <String, List<Map<String, dynamic>>>{};
@@ -138,16 +137,21 @@ class PollsService {
       final m = r;
       final id = m['id'] as String;
       final opts = (tallyByPoll[id] ?? <Map<String, dynamic>>[])
-        ..sort((a, b) => (a['sort_order'] as int).compareTo(b['sort_order'] as int));
+        ..sort(
+          (a, b) => (a['sort_order'] as int).compareTo(b['sort_order'] as int),
+        );
       final options = opts
-          .map((o) => PollOption(
-                id: o['option_id'] as String,
-                text: (o['option_text'] as String?) ?? '',
-                sortOrder: (o['sort_order'] as int?) ?? 0,
-                voteCount: (o['vote_count'] as int?) ?? 0,
-                voters: votersByOption[o['option_id'] as String] ??
-                    const <PollVoter>[],
-              ))
+          .map(
+            (o) => PollOption(
+              id: o['option_id'] as String,
+              text: (o['option_text'] as String?) ?? '',
+              sortOrder: (o['sort_order'] as int?) ?? 0,
+              voteCount: (o['vote_count'] as int?) ?? 0,
+              voters:
+                  votersByOption[o['option_id'] as String] ??
+                  const <PollVoter>[],
+            ),
+          )
           .toList();
       final total = options.fold<int>(0, (s, o) => s + o.voteCount);
       return Poll(
@@ -196,11 +200,7 @@ class PollsService {
     final pollId = inserted['id'] as String;
     final optRows = <Map<String, dynamic>>[];
     for (var i = 0; i < options.length; i++) {
-      optRows.add({
-        'poll_id': pollId,
-        'text': options[i],
-        'sort_order': i,
-      });
+      optRows.add({'poll_id': pollId, 'text': options[i], 'sort_order': i});
     }
     if (optRows.isNotEmpty) {
       await _c.from('poll_options').insert(optRows);

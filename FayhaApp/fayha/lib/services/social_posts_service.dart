@@ -25,7 +25,9 @@ class SocialPostsService {
   }
 
   static Future<void> setImportance(
-      String id, SocialImportance importance) async {
+    String id,
+    SocialImportance importance,
+  ) async {
     await _c
         .from('social_posts')
         .update({'importance': importance.name})

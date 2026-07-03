@@ -13,8 +13,7 @@ class NewsletterSubscriber {
       NewsletterSubscriber(
         id: m['id'] as String,
         email: m['email'] as String,
-        subscribedAt:
-            DateTime.parse(m['subscribed_at'] as String).toLocal(),
+        subscribedAt: DateTime.parse(m['subscribed_at'] as String).toLocal(),
       );
 }
 

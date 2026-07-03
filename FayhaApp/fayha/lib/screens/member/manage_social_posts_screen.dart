@@ -54,26 +54,28 @@ class _ManageSocialPostsScreenState extends State<ManageSocialPostsScreen> {
       if (!mounted) return;
       setState(() {
         _posts = _posts
-            ?.map((x) => x.id == p.id
-                ? SocialPost(
-                    id: x.id,
-                    platform: x.platform,
-                    author: x.author,
-                    body: x.body,
-                    postedAgo: x.postedAgo,
-                    permalink: x.permalink,
-                    mediaUrl: x.mediaUrl,
-                    mediaType: x.mediaType,
-                    importance: i,
-                  )
-                : x)
+            ?.map(
+              (x) => x.id == p.id
+                  ? SocialPost(
+                      id: x.id,
+                      platform: x.platform,
+                      author: x.author,
+                      body: x.body,
+                      postedAgo: x.postedAgo,
+                      permalink: x.permalink,
+                      mediaUrl: x.mediaUrl,
+                      mediaType: x.mediaType,
+                      importance: i,
+                    )
+                  : x,
+            )
             .toList();
       });
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not update: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not update: $e')));
     } finally {
       if (mounted) setState(() => _busyId = null);
     }
@@ -86,14 +88,17 @@ class _ManageSocialPostsScreenState extends State<ManageSocialPostsScreen> {
       builder: (_) => AlertDialog(
         title: const Text('Delete this post?'),
         content: const Text(
-            'It will be re-fetched on the next sync unless the source post is also removed.'),
+          'It will be re-fetched on the next sync unless the source post is also removed.',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Delete')),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
@@ -104,17 +109,16 @@ class _ManageSocialPostsScreenState extends State<ManageSocialPostsScreen> {
       setState(() => _posts = _posts?.where((x) => x.id != p.id).toList());
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not delete: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not delete: $e')));
     }
   }
 
   Future<void> _openSource(String? url) async {
     if (url == null || url.isEmpty) return;
     try {
-      await launchUrl(Uri.parse(url),
-          mode: LaunchMode.externalApplication);
+      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     } catch (_) {}
   }
 
@@ -160,14 +164,17 @@ class _ManageSocialPostsScreenState extends State<ManageSocialPostsScreen> {
                     children: [
                       _filterChip('all', 'All (${all.length})'),
                       _filterChip(
-                          'important',
-                          'Important (${all.where((p) => p.importance == SocialImportance.important).length})'),
+                        'important',
+                        'Important (${all.where((p) => p.importance == SocialImportance.important).length})',
+                      ),
                       _filterChip(
-                          'normal',
-                          'Normal (${all.where((p) => p.importance == SocialImportance.normal).length})'),
+                        'normal',
+                        'Normal (${all.where((p) => p.importance == SocialImportance.normal).length})',
+                      ),
                       _filterChip(
-                          'hidden',
-                          'Hidden (${all.where((p) => p.importance == SocialImportance.hidden).length})'),
+                        'hidden',
+                        'Hidden (${all.where((p) => p.importance == SocialImportance.hidden).length})',
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -185,10 +192,12 @@ class _ManageSocialPostsScreenState extends State<ManageSocialPostsScreen> {
                       ),
                     )
                   else
-                    ...filtered.map((p) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _postCard(p),
-                        )),
+                    ...filtered.map(
+                      (p) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _postCard(p),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -212,17 +221,21 @@ class _ManageSocialPostsScreenState extends State<ManageSocialPostsScreen> {
         children: [
           Row(
             children: [
-              Icon(isInsta ? Icons.camera_alt_outlined : Icons.facebook,
-                  size: 18, color: tone),
+              Icon(
+                isInsta ? Icons.camera_alt_outlined : Icons.facebook,
+                size: 18,
+                color: tone,
+              ),
               const SizedBox(width: 6),
-              Text(p.platform.toUpperCase(),
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: tone,
-                        letterSpacing: 0.8,
-                      )),
+              Text(
+                p.platform.toUpperCase(),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: tone,
+                  letterSpacing: 0.8,
+                ),
+              ),
               const Spacer(),
-              Text(p.postedAgo,
-                  style: Theme.of(context).textTheme.labelSmall),
+              Text(p.postedAgo, style: Theme.of(context).textTheme.labelSmall),
               IconButton(
                 tooltip: 'Open original',
                 icon: const Icon(Icons.open_in_new, size: 16),
@@ -241,8 +254,10 @@ class _ManageSocialPostsScreenState extends State<ManageSocialPostsScreen> {
           ),
           Padding(
             padding: const EdgeInsets.only(top: 4, bottom: 6),
-            child: Text(p.author,
-                style: Theme.of(context).textTheme.titleSmall),
+            child: Text(
+              p.author,
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
           ),
           if ((p.mediaUrl ?? '').isNotEmpty) ...[
             const SizedBox(height: 8),
@@ -259,20 +274,37 @@ class _ManageSocialPostsScreenState extends State<ManageSocialPostsScreen> {
             const SizedBox(height: 8),
           ],
           if (p.body.isNotEmpty)
-            Text(p.body,
-                style: Theme.of(context).textTheme.bodyMedium,
-                maxLines: 4,
-                overflow: TextOverflow.ellipsis),
+            Text(
+              p.body,
+              style: Theme.of(context).textTheme.bodyMedium,
+              maxLines: 4,
+              overflow: TextOverflow.ellipsis,
+            ),
           const SizedBox(height: 12),
           Wrap(
             spacing: 6,
             children: [
-              _importanceChip(p, 'Important', Icons.star_rounded,
-                  SocialImportance.important, AppColors.accentDark),
-              _importanceChip(p, 'Normal', Icons.check_circle_outline,
-                  SocialImportance.normal, AppColors.secondaryDark),
-              _importanceChip(p, 'Hidden', Icons.visibility_off_outlined,
-                  SocialImportance.hidden, AppColors.gray),
+              _importanceChip(
+                p,
+                'Important',
+                Icons.star_rounded,
+                SocialImportance.important,
+                AppColors.accentDark,
+              ),
+              _importanceChip(
+                p,
+                'Normal',
+                Icons.check_circle_outline,
+                SocialImportance.normal,
+                AppColors.secondaryDark,
+              ),
+              _importanceChip(
+                p,
+                'Hidden',
+                Icons.visibility_off_outlined,
+                SocialImportance.hidden,
+                AppColors.gray,
+              ),
             ],
           ),
         ],
@@ -294,12 +326,14 @@ class _ManageSocialPostsScreenState extends State<ManageSocialPostsScreen> {
         children: [
           Icon(icon, size: 14, color: selected ? Colors.white : color),
           const SizedBox(width: 4),
-          Text(label,
-              style: TextStyle(
-                fontSize: 12,
-                color: selected ? Colors.white : color,
-                fontWeight: FontWeight.w600,
-              )),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: selected ? Colors.white : color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
       selected: selected,

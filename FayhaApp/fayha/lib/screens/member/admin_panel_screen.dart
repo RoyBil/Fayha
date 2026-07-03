@@ -15,6 +15,7 @@ import '../../widgets/empty_state.dart';
 import '../../widgets/section_header.dart';
 import 'compose_event_screen.dart';
 import 'compose_gallery_post_screen.dart';
+import 'gallery_permissions_screen.dart';
 import 'newsletter_subscribers_screen.dart';
 import 'manage_social_posts_screen.dart';
 import 'compose_poll_screen.dart';
@@ -42,12 +43,12 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
   int _pendingCount = 0;
   int _newJoinsCount = 0;
 
-  bool get _isSuper =>
-      AppState.instance.currentMember?.role == 'superAdmin';
+  bool get _isSuper => AppState.instance.currentMember?.role == 'superAdmin';
   bool get _isAdmin {
     final r = AppState.instance.currentMember?.role;
     return r == 'admin' || r == 'superAdmin';
   }
+
   bool get _isEditor {
     final r = AppState.instance.currentMember?.role;
     return r == 'editor' || r == 'superAdmin';
@@ -56,13 +57,13 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
   /// Tabs the current user can see, in left-to-right order.
   /// Each tuple is (label, builder).
   List<(String, Widget Function())> get _availableTabs => [
-        if (_isSuper) ('Approvals', _approvalsTab),
-        if (_isAdmin) ('Join Requests', _joinRequestsTab),
-        if (_isAdmin) ('Members', _membersTab),
-        if (_isAdmin) ('Stats', () => const AttendanceStatsBody()),
-        if (_isEditor) ('Messages', _messagesTab),
-        if (_isEditor || _isAdmin) ('Content', _contentTab),
-      ];
+    if (_isSuper) ('Approvals', _approvalsTab),
+    if (_isAdmin) ('Join Requests', _joinRequestsTab),
+    if (_isAdmin) ('Members', _membersTab),
+    if (_isAdmin) ('Stats', () => const AttendanceStatsBody()),
+    if (_isEditor) ('Messages', _messagesTab),
+    if (_isEditor || _isAdmin) ('Content', _contentTab),
+  ];
 
   @override
   void initState() {
@@ -78,15 +79,20 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       _messages = MessagesService.fetch();
       _joinRequests = JoinRequestsService.fetchAll();
     });
-    _pending.then((list) {
-      if (!mounted) return;
-      setState(() => _pendingCount = list.length);
-    }).catchError((_) {});
-    _joinRequests.then((list) {
-      if (!mounted) return;
-      setState(() =>
-          _newJoinsCount = list.where((r) => r.status == 'new').length);
-    }).catchError((_) {});
+    _pending
+        .then((list) {
+          if (!mounted) return;
+          setState(() => _pendingCount = list.length);
+        })
+        .catchError((_) {});
+    _joinRequests
+        .then((list) {
+          if (!mounted) return;
+          setState(
+            () => _newJoinsCount = list.where((r) => r.status == 'new').length,
+          );
+        })
+        .catchError((_) {});
   }
 
   @override
@@ -100,15 +106,15 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
     try {
       await action();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(okMessage)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(okMessage)));
       _reload();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed: $e')));
     } finally {
       if (mounted) setState(() => _working = false);
     }
@@ -128,9 +134,13 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
           tabs: [
             for (final (label, _) in _availableTabs)
               if (label == 'Approvals')
-                Tab(child: _TabLabel(text: label, badge: _pendingCount))
+                Tab(
+                  child: _TabLabel(text: label, badge: _pendingCount),
+                )
               else if (label == 'Join Requests')
-                Tab(child: _TabLabel(text: label, badge: _newJoinsCount))
+                Tab(
+                  child: _TabLabel(text: label, badge: _newJoinsCount),
+                )
               else
                 Tab(text: label),
           ],
@@ -140,9 +150,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
         children: [
           TabBarView(
             controller: _tabs,
-            children: [
-              for (final (_, build) in _availableTabs) build(),
-            ],
+            children: [for (final (_, build) in _availableTabs) build()],
           ),
           if (_working)
             Container(
@@ -175,7 +183,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                 EmptyState(
                   icon: Icons.how_to_reg,
                   title: 'No pending sign-ups',
-                  message: 'New member registrations will appear here for approval.',
+                  message:
+                      'New member registrations will appear here for approval.',
                 ),
               ],
             );
@@ -183,12 +192,17 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
           return ListView(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
             children: [
-              const SectionHeader(eyebrow: 'Pending', title: 'Awaiting Approval'),
+              const SectionHeader(
+                eyebrow: 'Pending',
+                title: 'Awaiting Approval',
+              ),
               const SizedBox(height: 14),
-              ...pending.map((m) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _pendingCard(m),
-                  )),
+              ...pending.map(
+                (m) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _pendingCard(m),
+                ),
+              ),
             ],
           );
         },
@@ -211,8 +225,10 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(m.name, style: theme.textTheme.titleMedium),
-                    Text('${m.voiceSection} · ${m.branch}',
-                        style: theme.textTheme.labelMedium),
+                    Text(
+                      '${m.voiceSection} · ${m.branch}',
+                      style: theme.textTheme.labelMedium,
+                    ),
                   ],
                 ),
               ),
@@ -316,22 +332,21 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
         children: [
           Row(
             children: [
-              Expanded(
-                child: Text(r.name, style: theme.textTheme.titleMedium),
-              ),
+              Expanded(child: Text(r.name, style: theme.textTheme.titleMedium)),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: statusColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text(statusLabel,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: statusColor,
-                    )),
+                child: Text(
+                  statusLabel,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: statusColor,
+                  ),
+                ),
               ),
             ],
           ),
@@ -353,8 +368,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             ),
           ],
           const SizedBox(height: 10),
-          Text(_relativeDate(r.createdAt),
-              style: theme.textTheme.labelSmall),
+          Text(_relativeDate(r.createdAt), style: theme.textTheme.labelSmall),
           const SizedBox(height: 10),
           Row(
             children: [
@@ -384,10 +398,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               if (r.status != 'new')
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () => _run(
-                      () => JoinRequestsService.remove(r.id),
-                      'Removed',
-                    ),
+                    onPressed: () =>
+                        _run(() => JoinRequestsService.remove(r.id), 'Removed'),
                     icon: const Icon(Icons.delete_outline, size: 16),
                     label: const Text('Remove'),
                   ),
@@ -437,10 +449,12 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
           return ListView(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
             children: roster
-                .map((m) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _rosterCard(m),
-                    ))
+                .map(
+                  (m) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _rosterCard(m),
+                  ),
+                )
                 .toList(),
           );
         },
@@ -468,11 +482,16 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               children: [
                 Row(
                   children: [
-                    Flexible(child: Text(m.name, style: theme.textTheme.titleMedium)),
+                    Flexible(
+                      child: Text(m.name, style: theme.textTheme.titleMedium),
+                    ),
                     if (m.role != 'member') ...[
                       const SizedBox(width: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.accent.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(4),
@@ -489,16 +508,19 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                     ],
                   ],
                 ),
-                Text('${m.voiceSection} · ${m.branch}',
-                    style: theme.textTheme.labelMedium),
+                Text(
+                  '${m.voiceSection} · ${m.branch}',
+                  style: theme.textTheme.labelMedium,
+                ),
               ],
             ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-              color: (active ? AppColors.secondary : AppColors.gray)
-                  .withValues(alpha: 0.12),
+              color: (active ? AppColors.secondary : AppColors.gray).withValues(
+                alpha: 0.12,
+              ),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
@@ -516,64 +538,100 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               onSelected: (action) {
                 switch (action) {
                   case 'pause':
-                    _run(() => AdminService.deactivate(m.id), 'Paused ${m.name}');
+                    _run(
+                      () => AdminService.deactivate(m.id),
+                      'Paused ${m.name}',
+                    );
                   case 'reactivate':
-                    _run(() => AdminService.reactivate(m.id), 'Reactivated ${m.name}');
+                    _run(
+                      () => AdminService.reactivate(m.id),
+                      'Reactivated ${m.name}',
+                    );
                   case 'remove':
                     _confirmRemove(m);
                   case 'makeAdmin':
-                    _run(() => AdminService.setRole(m.id, 'admin'),
-                        '${m.name} is now an admin');
+                    _run(
+                      () => AdminService.setRole(m.id, 'admin'),
+                      '${m.name} is now an admin',
+                    );
                   case 'removeAdmin':
-                    _run(() => AdminService.setRole(m.id, 'member'),
-                        '${m.name} is no longer an admin');
+                    _run(
+                      () => AdminService.setRole(m.id, 'member'),
+                      '${m.name} is no longer an admin',
+                    );
                   case 'makeSuper':
                     _confirmMakeSuper(m);
                   case 'demoteSuper':
-                    _run(() => AdminService.setRole(m.id, 'admin'),
-                        '${m.name} is no longer a super admin');
+                    _run(
+                      () => AdminService.setRole(m.id, 'admin'),
+                      '${m.name} is no longer a super admin',
+                    );
                   case 'makeEditor':
-                    _run(() => AdminService.setRole(m.id, 'editor'),
-                        '${m.name} is now an editor');
+                    _run(
+                      () => AdminService.setRole(m.id, 'editor'),
+                      '${m.name} is now an editor',
+                    );
                   case 'removeEditor':
-                    _run(() => AdminService.setRole(m.id, 'member'),
-                        '${m.name} is no longer an editor');
+                    _run(
+                      () => AdminService.setRole(m.id, 'member'),
+                      '${m.name} is no longer an editor',
+                    );
                   case 'setLevel':
                     _pickSingerLevel(m);
                 }
               },
               itemBuilder: (_) => [
                 const PopupMenuItem(
-                    value: 'setLevel', child: Text('Set singer level')),
+                  value: 'setLevel',
+                  child: Text('Set singer level'),
+                ),
                 if (_isSuper) const PopupMenuDivider(),
                 if (_isSuper && m.role == 'member')
                   const PopupMenuItem(
-                      value: 'makeAdmin', child: Text('Make admin'))
+                    value: 'makeAdmin',
+                    child: Text('Make admin'),
+                  )
                 else if (_isSuper && m.role == 'admin')
                   const PopupMenuItem(
-                      value: 'removeAdmin', child: Text('Remove admin')),
+                    value: 'removeAdmin',
+                    child: Text('Remove admin'),
+                  ),
                 if (_isSuper && m.role != 'editor' && m.role != 'superAdmin')
                   const PopupMenuItem(
-                      value: 'makeEditor', child: Text('Make editor'))
+                    value: 'makeEditor',
+                    child: Text('Make editor'),
+                  )
                 else if (_isSuper && m.role == 'editor')
                   const PopupMenuItem(
-                      value: 'removeEditor', child: Text('Remove editor')),
+                    value: 'removeEditor',
+                    child: Text('Remove editor'),
+                  ),
                 if (_isSuper && m.role != 'superAdmin')
                   const PopupMenuItem(
-                      value: 'makeSuper', child: Text('Make super admin'))
+                    value: 'makeSuper',
+                    child: Text('Make super admin'),
+                  )
                 else if (_isSuper)
                   const PopupMenuItem(
-                      value: 'demoteSuper',
-                      child: Text('Remove super admin')),
+                    value: 'demoteSuper',
+                    child: Text('Remove super admin'),
+                  ),
                 if (_isSuper) const PopupMenuDivider(),
                 if (_isSuper && active)
-                  const PopupMenuItem(value: 'pause', child: Text('Pause account'))
+                  const PopupMenuItem(
+                    value: 'pause',
+                    child: Text('Pause account'),
+                  )
                 else if (_isSuper)
                   const PopupMenuItem(
-                      value: 'reactivate', child: Text('Reactivate account')),
+                    value: 'reactivate',
+                    child: Text('Reactivate account'),
+                  ),
                 if (_isSuper)
                   const PopupMenuItem(
-                      value: 'remove', child: Text('Remove from choir')),
+                    value: 'remove',
+                    child: Text('Remove from choir'),
+                  ),
               ],
             ),
         ],
@@ -588,9 +646,13 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       builder: (_) => AlertDialog(
         title: const Text('Deny this sign-up?'),
         content: Text(
-            '${m.name} will not be able to access the members area. They can register again later.'),
+          '${m.name} will not be able to access the members area. They can register again later.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             onPressed: () {
               Navigator.pop(context);
@@ -609,9 +671,13 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       builder: (_) => AlertDialog(
         title: const Text('Remove from choir?'),
         content: Text(
-            '${m.name} will lose access to the members area. This marks them as "left the choir".'),
+          '${m.name} will lose access to the members area. This marks them as "left the choir".',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             onPressed: () {
               Navigator.pop(context);
@@ -657,8 +723,10 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
           const Divider(),
           SimpleDialogOption(
             onPressed: () => Navigator.pop(context, '__clear__'),
-            child: const Text('Clear (not set)',
-                style: TextStyle(color: AppColors.gray)),
+            child: const Text(
+              'Clear (not set)',
+              style: TextStyle(color: AppColors.gray),
+            ),
           ),
         ],
       ),
@@ -677,16 +745,20 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       builder: (_) => AlertDialog(
         title: const Text('Promote to super admin?'),
         content: Text(
-            '${m.name} will gain full super admin permissions: approvals, role changes, live locations — everything you can do.'),
+          '${m.name} will gain full super admin permissions: approvals, role changes, live locations — everything you can do.',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             onPressed: () {
               Navigator.pop(context);
-              _run(() => AdminService.setRole(m.id, 'superAdmin'),
-                  '${m.name} is now a super admin');
+              _run(
+                () => AdminService.setRole(m.id, 'superAdmin'),
+                '${m.name} is now a super admin',
+              );
             },
             child: const Text('Promote'),
           ),
@@ -716,7 +788,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                     EmptyState(
                       icon: Icons.campaign_outlined,
                       title: 'No messages yet',
-                      message: 'Tap "New message" to send your first announcement.',
+                      message:
+                          'Tap "New message" to send your first announcement.',
                     ),
                   ],
                 );
@@ -752,14 +825,20 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Text(m.audienceLabel,
-                      style: theme.textTheme.labelMedium
-                          ?.copyWith(color: AppColors.primary)),
+                  child: Text(
+                    m.audienceLabel,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: AppColors.primary,
+                    ),
+                  ),
                 ),
                 const Spacer(),
                 IconButton(
@@ -775,7 +854,10 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             const SizedBox(height: 4),
             Text(m.title, style: theme.textTheme.titleLarge),
             const SizedBox(height: 6),
-            Text(m.body, style: theme.textTheme.bodyMedium?.copyWith(height: 1.5)),
+            Text(
+              m.body,
+              style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
+            ),
             const SizedBox(height: 8),
             Text(
               '${m.senderName ?? 'Admin'} · ${m.createdAt.day}/${m.createdAt.month}/${m.createdAt.year}',
@@ -794,9 +876,9 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
     );
     if (sent == true) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Message sent')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Message sent')));
       _reload();
     }
   }
@@ -822,13 +904,14 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             title: 'Add a Song',
             subtitle: 'Title, lyrics, composers, YouTube link',
             onTap: () async {
-              final added = await Navigator.push<bool>(context,
-                  MaterialPageRoute(
-                      builder: (_) => const ComposeSongScreen()));
+              final added = await Navigator.push<bool>(
+                context,
+                MaterialPageRoute(builder: (_) => const ComposeSongScreen()),
+              );
               if (added == true && mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Song added')),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('Song added')));
               }
             },
           ),
@@ -840,13 +923,14 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             title: 'New Poll',
             subtitle: 'Ask members a question with up to 8 options',
             onTap: () async {
-              final added = await Navigator.push<bool>(context,
-                  MaterialPageRoute(
-                      builder: (_) => const ComposePollScreen()));
+              final added = await Navigator.push<bool>(
+                context,
+                MaterialPageRoute(builder: (_) => const ComposePollScreen()),
+              );
               if (added == true && mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Poll published')),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('Poll published')));
               }
             },
           ),
@@ -856,7 +940,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             color: AppColors.accentDark,
             colorAlpha: 0.12,
             title: 'Trip Groups',
-            subtitle: 'Create trip groups, assign members, share visa/hotel/ticket info',
+            subtitle:
+                'Create trip groups, assign members, share visa/hotel/ticket info',
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const TripGroupsScreen()),
@@ -868,15 +953,15 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             color: AppColors.secondary,
             colorAlpha: 0.12,
             title: 'Bus Routes',
-            subtitle: 'Manage bus routes, stops, and live trip tracking for your branch',
+            subtitle:
+                'Manage bus routes, stops, and live trip tracking for your branch',
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const BusRoutesScreen()),
             ),
           ),
           const SizedBox(height: 28),
-          Text('Manage audience songs',
-              style: theme.textTheme.titleMedium),
+          Text('Manage audience songs', style: theme.textTheme.titleMedium),
           const SizedBox(height: 4),
           Text(
             'Tap any song to edit its details or replace the audio file.',
@@ -893,13 +978,14 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             title: 'Post News',
             subtitle: 'A headline and article for the News tab',
             onTap: () async {
-              final added = await Navigator.push<bool>(context,
-                  MaterialPageRoute(
-                      builder: (_) => const ComposeNewsScreen()));
+              final added = await Navigator.push<bool>(
+                context,
+                MaterialPageRoute(builder: (_) => const ComposeNewsScreen()),
+              );
               if (added == true && mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('News published')),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('News published')));
                 _reload();
               }
             },
@@ -912,13 +998,14 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             title: 'Add Event',
             subtitle: 'A concert or big rehearsal — shows under "Coming Up"',
             onTap: () async {
-              final added = await Navigator.push<bool>(context,
-                  MaterialPageRoute(
-                      builder: (_) => const ComposeEventScreen()));
+              final added = await Navigator.push<bool>(
+                context,
+                MaterialPageRoute(builder: (_) => const ComposeEventScreen()),
+              );
               if (added == true && mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Event added')),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('Event added')));
                 _reload();
               }
             },
@@ -929,17 +1016,34 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             color: AppColors.secondaryDark,
             colorAlpha: 0.15,
             title: 'New Gallery Post',
-            subtitle: 'A photo + caption for members’ gallery',
+            subtitle: "A photo + caption for members' gallery",
             onTap: () async {
-              final added = await Navigator.push<bool>(context,
-                  MaterialPageRoute(
-                      builder: (_) => const ComposeGalleryPostScreen()));
+              final added = await Navigator.push<bool>(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const ComposeGalleryPostScreen(),
+                ),
+              );
               if (added == true && mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Posted to gallery')),
                 );
               }
             },
+          ),
+          const SizedBox(height: 12),
+          _ComposeCard(
+            icon: Icons.lock_person_outlined,
+            color: AppColors.primary,
+            colorAlpha: 0.12,
+            title: 'Gallery Upload Permissions',
+            subtitle: 'Grant or revoke gallery upload access for members',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const GalleryPermissionsScreen(),
+              ),
+            ),
           ),
 
           // ===== Manage existing =====
@@ -962,12 +1066,12 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             color: AppColors.primaryDark,
             colorAlpha: 0.12,
             title: 'Newsletter Subscribers',
-            subtitle:
-                'See every email submitted from the audience homepage',
+            subtitle: 'See every email submitted from the audience homepage',
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (_) => const NewsletterSubscribersScreen()),
+                builder: (_) => const NewsletterSubscribersScreen(),
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -981,7 +1085,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (_) => const ManageSocialPostsScreen()),
+                builder: (_) => const ManageSocialPostsScreen(),
+              ),
             ),
           ),
         ],
@@ -1000,22 +1105,19 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
         ),
         const SizedBox(height: 16),
         Center(
-          child: OutlinedButton(
-            onPressed: _reload,
-            child: const Text('Retry'),
-          ),
+          child: OutlinedButton(onPressed: _reload, child: const Text('Retry')),
         ),
       ],
     );
   }
 
   Widget _infoRow(IconData icon, String text) => Row(
-        children: [
-          Icon(icon, size: 14, color: AppColors.gray),
-          const SizedBox(width: 6),
-          Expanded(child: Text(text, style: Theme.of(context).textTheme.bodySmall)),
-        ],
-      );
+    children: [
+      Icon(icon, size: 14, color: AppColors.gray),
+      const SizedBox(width: 6),
+      Expanded(child: Text(text, style: Theme.of(context).textTheme.bodySmall)),
+    ],
+  );
 }
 
 /// Tab label with an optional little count pill next to the text.
@@ -1125,7 +1227,9 @@ class _ManageNewsListState extends State<_ManageNewsList> {
 
   void _reload() {
     final f = AdminService.listNews();
-    setState(() { _future = f; });
+    setState(() {
+      _future = f;
+    });
   }
 
   Future<void> _confirmDelete(Map<String, dynamic> row) async {
@@ -1136,11 +1240,13 @@ class _ManageNewsListState extends State<_ManageNewsList> {
         content: Text('"${row['title']}" will be removed permanently.'),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Delete')),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
@@ -1151,17 +1257,16 @@ class _ManageNewsListState extends State<_ManageNewsList> {
       widget.onChanged();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not delete: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not delete: $e')));
     }
   }
 
   Future<void> _openEdit(Map<String, dynamic> row) async {
     final saved = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(
-          builder: (_) => ComposeNewsScreen(existing: row)),
+      MaterialPageRoute(builder: (_) => ComposeNewsScreen(existing: row)),
     );
     if (saved == true) {
       _reload();
@@ -1187,76 +1292,92 @@ class _ManageNewsListState extends State<_ManageNewsList> {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Text('News',
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: AppColors.secondary,
-                    letterSpacing: 0.8,
-                  )),
+              child: Text(
+                'News',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: AppColors.secondary,
+                  letterSpacing: 0.8,
+                ),
+              ),
             ),
             if (rows.isEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 4, bottom: 8),
-                child: Text('No news posts yet.',
-                    style: theme.textTheme.bodySmall),
+                child: Text(
+                  'No news posts yet.',
+                  style: theme.textTheme.bodySmall,
+                ),
               )
             else
-              ...rows.map((r) => Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: ElegantCard(
-                      onTap: () => _openEdit(r),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 10),
-                      child: Row(
-                        children: [
-                          if ((r['poster_url'] as String?)?.isNotEmpty == true)
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(6),
-                              child: Image.network(
-                                r['poster_url'] as String,
-                                width: 50, height: 50,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => const SizedBox(
-                                  width: 50, height: 50),
-                              ),
-                            )
-                          else
-                            Container(
-                              width: 50, height: 50,
-                              decoration: BoxDecoration(
-                                color: AppColors.secondary
-                                    .withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: const Icon(Icons.newspaper,
-                                  color: AppColors.secondary),
-                            ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
-                              children: [
-                                Text((r['title'] as String?) ?? '',
-                                    style: theme.textTheme.titleSmall,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis),
-                                Text(
-                                  (r['date_label'] as String?) ?? '',
-                                  style: theme.textTheme.labelSmall,
-                                ),
-                              ],
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline,
-                                color: AppColors.gray),
-                            visualDensity: VisualDensity.compact,
-                            onPressed: () => _confirmDelete(r),
-                          ),
-                        ],
-                      ),
+              ...rows.map(
+                (r) => Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: ElegantCard(
+                    onTap: () => _openEdit(r),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
                     ),
-                  )),
+                    child: Row(
+                      children: [
+                        if ((r['poster_url'] as String?)?.isNotEmpty == true)
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: Image.network(
+                              r['poster_url'] as String,
+                              width: 50,
+                              height: 50,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) =>
+                                  const SizedBox(width: 50, height: 50),
+                            ),
+                          )
+                        else
+                          Container(
+                            width: 50,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: AppColors.secondary.withValues(
+                                alpha: 0.12,
+                              ),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Icon(
+                              Icons.newspaper,
+                              color: AppColors.secondary,
+                            ),
+                          ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                (r['title'] as String?) ?? '',
+                                style: theme.textTheme.titleSmall,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                (r['date_label'] as String?) ?? '',
+                                style: theme.textTheme.labelSmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: AppColors.gray,
+                          ),
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () => _confirmDelete(r),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
           ],
         );
       },
@@ -1277,7 +1398,18 @@ class _ManageEventsListState extends State<_ManageEventsList> {
   late Future<List<Map<String, dynamic>>> _future;
 
   static const _months = [
-    'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
 
   @override
@@ -1288,7 +1420,9 @@ class _ManageEventsListState extends State<_ManageEventsList> {
 
   void _reload() {
     final f = AdminService.listEvents();
-    setState(() { _future = f; });
+    setState(() {
+      _future = f;
+    });
   }
 
   Future<void> _confirmDelete(Map<String, dynamic> row) async {
@@ -1299,11 +1433,13 @@ class _ManageEventsListState extends State<_ManageEventsList> {
         content: Text('"${row['title']}" will be removed permanently.'),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Delete')),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
@@ -1314,17 +1450,16 @@ class _ManageEventsListState extends State<_ManageEventsList> {
       widget.onChanged();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not delete: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not delete: $e')));
     }
   }
 
   Future<void> _openEdit(Map<String, dynamic> row) async {
     final saved = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(
-          builder: (_) => ComposeEventScreen(existing: row)),
+      MaterialPageRoute(builder: (_) => ComposeEventScreen(existing: row)),
     );
     if (saved == true) {
       _reload();
@@ -1350,17 +1485,18 @@ class _ManageEventsListState extends State<_ManageEventsList> {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Text('Events',
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: AppColors.accentDark,
-                    letterSpacing: 0.8,
-                  )),
+              child: Text(
+                'Events',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: AppColors.accentDark,
+                  letterSpacing: 0.8,
+                ),
+              ),
             ),
             if (rows.isEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
-                child: Text('No events yet.',
-                    style: theme.textTheme.bodySmall),
+                child: Text('No events yet.', style: theme.textTheme.bodySmall),
               )
             else
               ...rows.map((r) {
@@ -1371,13 +1507,14 @@ class _ManageEventsListState extends State<_ManageEventsList> {
                   child: ElegantCard(
                     onTap: () => _openEdit(r),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 10),
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     child: Row(
                       children: [
                         Container(
                           width: 46,
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 6),
+                          padding: const EdgeInsets.symmetric(vertical: 6),
                           decoration: BoxDecoration(
                             color: isRehearsal
                                 ? AppColors.secondaryDark
@@ -1393,26 +1530,29 @@ class _ManageEventsListState extends State<_ManageEventsList> {
                                   fontSize: 10,
                                 ),
                               ),
-                              Text('${d.day}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w700,
-                                    height: 1,
-                                  )),
+                              Text(
+                                '${d.day}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1,
+                                ),
+                              ),
                             ],
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text((r['title'] as String?) ?? '',
-                                  style: theme.textTheme.titleSmall,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis),
+                              Text(
+                                (r['title'] as String?) ?? '',
+                                style: theme.textTheme.titleSmall,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                               Text(
                                 '${isRehearsal ? "Rehearsal" : "Concert"} · ${(r['location'] as String?) ?? ''}',
                                 style: theme.textTheme.labelSmall,
@@ -1423,8 +1563,10 @@ class _ManageEventsListState extends State<_ManageEventsList> {
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.delete_outline,
-                              color: AppColors.gray),
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: AppColors.gray,
+                          ),
                           visualDensity: VisualDensity.compact,
                           onPressed: () => _confirmDelete(r),
                         ),
@@ -1477,8 +1619,7 @@ class _ManageTestimonialsListState extends State<_ManageTestimonialsList> {
     }
   }
 
-  Future<void> _setImportance(
-      Testimonial t, TestimonialImportance i) async {
+  Future<void> _setImportance(Testimonial t, TestimonialImportance i) async {
     if (t.id == null || t.importance == i || _busyId != null) return;
     // Optimistic update: flip the chip instantly so the UI feels snappy.
     setState(() {
@@ -1489,9 +1630,9 @@ class _ManageTestimonialsListState extends State<_ManageTestimonialsList> {
       await TestimonialsService.setImportance(t.id!, i);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not update: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not update: $e')));
       // Revert by re-fetching the row.
       await _load();
     } finally {
@@ -1525,9 +1666,9 @@ class _ManageTestimonialsListState extends State<_ManageTestimonialsList> {
       setState(() => _rows = _rows?.where((r) => r.id != t.id).toList());
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not delete: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not delete: $e')));
     }
   }
 
@@ -1557,18 +1698,22 @@ class _ManageTestimonialsListState extends State<_ManageTestimonialsList> {
         if (rows.isEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 4),
-            child: Text('No testimonials yet.',
-                style: theme.textTheme.bodySmall),
+            child: Text(
+              'No testimonials yet.',
+              style: theme.textTheme.bodySmall,
+            ),
           )
         else
-          ...rows.map((t) => Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: _TestimonialAdminCard(
-                  t: t,
-                  onSetImportance: (i) => _setImportance(t, i),
-                  onDelete: () => _confirmDelete(t),
-                ),
-              )),
+          ...rows.map(
+            (t) => Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: _TestimonialAdminCard(
+                t: t,
+                onSetImportance: (i) => _setImportance(t, i),
+                onDelete: () => _confirmDelete(t),
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -1607,21 +1752,24 @@ class _TestimonialAdminCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(t.author,
-                        style: theme.textTheme.titleSmall,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
+                    Text(
+                      t.author,
+                      style: theme.textTheme.titleSmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     if ((t.email ?? '').isNotEmpty)
-                      Text(t.email!,
-                          style: theme.textTheme.labelSmall,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis),
+                      Text(
+                        t.email!,
+                        style: theme.textTheme.labelSmall,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                   ],
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.delete_outline,
-                    color: AppColors.gray),
+                icon: const Icon(Icons.delete_outline, color: AppColors.gray),
                 visualDensity: VisualDensity.compact,
                 onPressed: onDelete,
               ),
@@ -1678,15 +1826,16 @@ class _TestimonialAdminCard extends StatelessWidget {
       label: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14,
-              color: selected ? Colors.white : color),
+          Icon(icon, size: 14, color: selected ? Colors.white : color),
           const SizedBox(width: 4),
-          Text(label,
-              style: TextStyle(
-                fontSize: 12,
-                color: selected ? Colors.white : color,
-                fontWeight: FontWeight.w600,
-              )),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: selected ? Colors.white : color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
       selected: selected,
@@ -1720,7 +1869,9 @@ class _ManageAudienceSongsListState extends State<_ManageAudienceSongsList> {
 
   void _reload() {
     final f = AdminService.fetchAudienceSongs();
-    setState(() { _future = f; });
+    setState(() {
+      _future = f;
+    });
   }
 
   Future<void> _confirmDelete(Map<String, dynamic> row) async {
@@ -1731,12 +1882,14 @@ class _ManageAudienceSongsListState extends State<_ManageAudienceSongsList> {
         content: Text('"${row['title']}" will be removed permanently.'),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: Colors.red),
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Delete')),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
@@ -1746,9 +1899,9 @@ class _ManageAudienceSongsListState extends State<_ManageAudienceSongsList> {
       _reload();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not delete: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not delete: $e')));
     }
   }
 
@@ -1766,7 +1919,8 @@ class _ManageAudienceSongsListState extends State<_ManageAudienceSongsList> {
     final saved = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-          builder: (_) => ComposeSongScreen(existingAudience: song)),
+        builder: (_) => ComposeSongScreen(existingAudience: song),
+      ),
     );
     if (saved == true) _reload();
   }
@@ -1786,8 +1940,10 @@ class _ManageAudienceSongsListState extends State<_ManageAudienceSongsList> {
         if (snap.hasError) {
           return Padding(
             padding: const EdgeInsets.only(top: 8, bottom: 8),
-            child: Text('Error loading songs: ${snap.error}',
-                style: theme.textTheme.bodySmall?.copyWith(color: Colors.red)),
+            child: Text(
+              'Error loading songs: ${snap.error}',
+              style: theme.textTheme.bodySmall?.copyWith(color: Colors.red),
+            ),
           );
         }
         final rows = snap.data ?? const [];
@@ -1796,77 +1952,91 @@ class _ManageAudienceSongsListState extends State<_ManageAudienceSongsList> {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Text('Audience Songs',
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: AppColors.primary,
-                    letterSpacing: 0.8,
-                  )),
+              child: Text(
+                'Audience Songs',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: AppColors.primary,
+                  letterSpacing: 0.8,
+                ),
+              ),
             ),
             if (rows.isEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 4, bottom: 8),
-                child: Text('No audience songs yet.',
-                    style: theme.textTheme.bodySmall),
+                child: Text(
+                  'No audience songs yet.',
+                  style: theme.textTheme.bodySmall,
+                ),
               )
             else
-              ...rows.map((r) => Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: ElegantCard(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 10),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              (r['audio_url'] as String?) != null
-                                  ? Icons.audiotrack
-                                  : Icons.music_note_outlined,
-                              color: AppColors.primary,
-                              size: 22,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text((r['title'] as String?) ?? '',
-                                    style: theme.textTheme.titleSmall,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis),
-                                if ((r['subtitle'] as String?)?.isNotEmpty ==
-                                    true)
-                                  Text(
-                                    r['subtitle'] as String,
-                                    style: theme.textTheme.labelSmall,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                              ],
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.edit_outlined,
-                                color: AppColors.primary),
-                            visualDensity: VisualDensity.compact,
-                            onPressed: () => _openEdit(r),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline,
-                                color: AppColors.gray),
-                            visualDensity: VisualDensity.compact,
-                            onPressed: () => _confirmDelete(r),
-                          ),
-                        ],
-                      ),
+              ...rows.map(
+                (r) => Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: ElegantCard(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
                     ),
-                  )),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            (r['audio_url'] as String?) != null
+                                ? Icons.audiotrack
+                                : Icons.music_note_outlined,
+                            color: AppColors.primary,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                (r['title'] as String?) ?? '',
+                                style: theme.textTheme.titleSmall,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if ((r['subtitle'] as String?)?.isNotEmpty ==
+                                  true)
+                                Text(
+                                  r['subtitle'] as String,
+                                  style: theme.textTheme.labelSmall,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(
+                            Icons.edit_outlined,
+                            color: AppColors.primary,
+                          ),
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () => _openEdit(r),
+                        ),
+                        IconButton(
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: AppColors.gray,
+                          ),
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () => _confirmDelete(r),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
           ],
         );
       },

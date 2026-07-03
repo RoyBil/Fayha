@@ -74,8 +74,10 @@ class LiveTrackingService {
   }
 
   /// Snapshot of recent events for a route (newest first).
-  static Future<List<TripEvent>> recentEvents(String routeId,
-      {int limit = 30}) async {
+  static Future<List<TripEvent>> recentEvents(
+    String routeId, {
+    int limit = 30,
+  }) async {
     final rows = await _c
         .from('bus_trip_events')
         .select()
@@ -91,8 +93,10 @@ class LiveTrackingService {
   /// Use this for the bus marker so it glues to the road (no jitter,
   /// no over-water artifacts on coastal routes).
   static Future<TripPosition?> snappedPosition(String tripId) async {
-    final res = await _c
-        .rpc('bus_snapped_position', params: {'p_trip': tripId});
+    final res = await _c.rpc(
+      'bus_snapped_position',
+      params: {'p_trip': tripId},
+    );
     if (res == null) return null;
     final list = res as List;
     if (list.isEmpty) return null;

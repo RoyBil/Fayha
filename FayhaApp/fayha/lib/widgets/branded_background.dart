@@ -34,8 +34,10 @@ class BrandedBackground extends StatelessWidget {
           child: IgnorePointer(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final w =
-                    (constraints.maxWidth * widthFraction).clamp(120.0, maxWidth);
+                final w = (constraints.maxWidth * widthFraction).clamp(
+                  120.0,
+                  maxWidth,
+                );
                 return Center(
                   child: Opacity(
                     opacity: opacity,

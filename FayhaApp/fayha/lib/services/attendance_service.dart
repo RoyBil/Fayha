@@ -20,6 +20,7 @@ class HistoryItem {
   final String title;
   final String subtitle;
   final DateTime date;
+
   /// 0 = on time, >0 = how many minutes late (rehearsals only).
   final int lateMinutes;
   const HistoryItem({
@@ -43,7 +44,7 @@ class AttendanceService {
     'Chouf': [1, 2, 3], // Monday, Tuesday, Wednesday
     'Aley': [3, 4, 5], // Wednesday, Thursday, Friday
   };
-  static const sessionTime = '6:00 – 9:00 PM';
+  static const sessionTime = '5:55 – 9:00 PM';
 
   static List<int> daysFor(String branch) => branchDays[branch] ?? const [6];
 
@@ -54,8 +55,10 @@ class AttendanceService {
   ///  • upcoming sessions from today forward that aren't recorded yet
   ///  • sessions recorded within the last 24 hours
   /// A recorded session drops off the list 24h after it was recorded.
-  static Future<List<SessionInfo>> displaySessions(String branch,
-      {int weeks = 6}) async {
+  static Future<List<SessionInfo>> displaySessions(
+    String branch, {
+    int weeks = 6,
+  }) async {
     final days = daysFor(branch);
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -82,9 +85,11 @@ class AttendanceService {
     final seen = <String>{};
 
     // Upcoming rehearsal dates (today → +weeks).
-    for (var d = today;
-        !d.isAfter(today.add(Duration(days: weeks * 7)));
-        d = d.add(const Duration(days: 1))) {
+    for (
+      var d = today;
+      !d.isAfter(today.add(Duration(days: weeks * 7)));
+      d = d.add(const Duration(days: 1))
+    ) {
       if (!days.contains(d.weekday)) continue;
       final k = _d(d);
       seen.add(k);
@@ -92,7 +97,9 @@ class AttendanceService {
       if (rec == null) {
         result.add(SessionInfo(d, null, null)); // pending
       } else if (withinDay(rec.at)) {
-        result.add(SessionInfo(d, rec.status, rec.at)); // recorded, still in 24h
+        result.add(
+          SessionInfo(d, rec.status, rec.at),
+        ); // recorded, still in 24h
       }
       // recorded & older than 24h → hidden
     }
@@ -101,8 +108,9 @@ class AttendanceService {
     for (final e in recorded.entries) {
       if (seen.contains(e.key)) continue;
       if (withinDay(e.value.at)) {
-        result.add(SessionInfo(
-            DateTime.parse(e.key), e.value.status, e.value.at));
+        result.add(
+          SessionInfo(DateTime.parse(e.key), e.value.status, e.value.at),
+        );
       }
     }
 
@@ -126,11 +134,9 @@ class AttendanceService {
   /// Loads the saved sheet for one session — present flags + how many
   /// minutes each member was late (0 = on time).
   static Future<
-      ({
-        String? status,
-        Map<String, bool> present,
-        Map<String, int> lateMinutes,
-      })> loadSheet(String branch, DateTime date) async {
+    ({String? status, Map<String, bool> present, Map<String, int> lateMinutes})
+  >
+  loadSheet(String branch, DateTime date) async {
     final reh = await _c
         .from('rehearsals')
         .select('id,status')
@@ -231,7 +237,8 @@ class AttendanceService {
       final attRows = await _c
           .from('attendance')
           .select(
-              'rehearsal_id, present, late_minutes, rehearsals(branch, session_date, status)')
+            'rehearsal_id, present, late_minutes, rehearsals(branch, session_date, status)',
+          )
           .eq('member_id', me.id)
           .eq('present', true)
           .limit(limit);
@@ -241,13 +248,15 @@ class AttendanceService {
         final dateStr = reh['session_date'] as String?;
         if (dateStr == null) continue;
         final lm = (r['late_minutes'] as int?) ?? 0;
-        items.add(HistoryItem(
-          kind: 'rehearsal',
-          title: 'Rehearsal · ${reh['branch']}',
-          subtitle: lm > 0 ? '$sessionTime · Late $lm min' : sessionTime,
-          date: DateTime.parse(dateStr),
-          lateMinutes: lm,
-        ));
+        items.add(
+          HistoryItem(
+            kind: 'rehearsal',
+            title: 'Rehearsal · ${reh['branch']}',
+            subtitle: lm > 0 ? '$sessionTime · Late $lm min' : sessionTime,
+            date: DateTime.parse(dateStr),
+            lateMinutes: lm,
+          ),
+        );
       }
     } catch (_) {
       // ignore — table may be missing on a fresh install
@@ -266,13 +275,15 @@ class AttendanceService {
         final starts = DateTime.parse(e['starts_at'] as String).toLocal();
         final kind = (e['kind'] as String?) ?? 'concert';
         final isRehearsal = kind == 'rehearsal' || kind == 'big_rehearsal';
-        items.add(HistoryItem(
-          kind: isRehearsal ? 'big_rehearsal' : 'concert',
-          title:
-              '${isRehearsal ? "Big rehearsal" : "Concert"} · ${e['title']}',
-          subtitle: (e['location'] as String?) ?? '',
-          date: starts,
-        ));
+        items.add(
+          HistoryItem(
+            kind: isRehearsal ? 'big_rehearsal' : 'concert',
+            title:
+                '${isRehearsal ? "Big rehearsal" : "Concert"} · ${e['title']}',
+            subtitle: (e['location'] as String?) ?? '',
+            date: starts,
+          ),
+        );
       }
     } catch (_) {
       // ignore
@@ -291,26 +302,31 @@ class AttendanceService {
     Map<String, int> lateMinutes = const {},
   }) async {
     final me = AppState.instance.currentMember;
-    final reh = await _c.from('rehearsals').upsert({
-      'branch': branch,
-      'session_date': _d(date),
-      'status': cancelled ? 'cancelled' : 'held',
-      'recorded_by': me?.id,
-      'recorded_by_name': me?.name,
-      'recorded_at': DateTime.now().toUtc().toIso8601String(),
-    }, onConflict: 'branch,session_date').select('id').single();
+    final reh = await _c
+        .from('rehearsals')
+        .upsert({
+          'branch': branch,
+          'session_date': _d(date),
+          'status': cancelled ? 'cancelled' : 'held',
+          'recorded_by': me?.id,
+          'recorded_by_name': me?.name,
+          'recorded_at': DateTime.now().toUtc().toIso8601String(),
+        }, onConflict: 'branch,session_date')
+        .select('id')
+        .single();
 
     if (cancelled) return;
     final rehId = reh['id'] as String;
     final rows = present.entries
-        .map((e) => {
-              'rehearsal_id': rehId,
-              'member_id': e.key,
-              'present': e.value,
-              // Only meaningful for present members; absent rows get null.
-              'late_minutes':
-                  e.value ? (lateMinutes[e.key] ?? 0) : null,
-            })
+        .map(
+          (e) => {
+            'rehearsal_id': rehId,
+            'member_id': e.key,
+            'present': e.value,
+            // Only meaningful for present members; absent rows get null.
+            'late_minutes': e.value ? (lateMinutes[e.key] ?? 0) : null,
+          },
+        )
         .toList();
     if (rows.isNotEmpty) {
       await _c

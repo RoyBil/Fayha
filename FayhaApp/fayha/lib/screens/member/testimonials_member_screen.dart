@@ -48,8 +48,9 @@ class _TestimonialCard extends StatelessWidget {
                     Text(t.author, style: theme.textTheme.titleMedium),
                     Text(
                       t.voiceSection,
-                      style: theme.textTheme.labelMedium
-                          ?.copyWith(color: AppColors.primary),
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: AppColors.primary,
+                      ),
                     ),
                   ],
                 ),
@@ -60,8 +61,9 @@ class _TestimonialCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.only(left: 12),
             decoration: const BoxDecoration(
-              border:
-                  Border(left: BorderSide(color: AppColors.accent, width: 3)),
+              border: Border(
+                left: BorderSide(color: AppColors.accent, width: 3),
+              ),
             ),
             child: Text(
               t.body,

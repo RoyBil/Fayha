@@ -46,22 +46,24 @@ class _SongLibraryScreenState extends State<SongLibraryScreen> {
                 return const Center(child: CircularProgressIndicator());
               }
               if (snap.hasError) {
-                return ListView(children: [
-                  const SizedBox(height: 80),
-                  EmptyState(
-                    icon: Icons.error_outline,
-                    title: 'Could not load songs',
-                    message: '${snap.error}',
-                  ),
-                ]);
+                return ListView(
+                  children: [
+                    const SizedBox(height: 80),
+                    EmptyState(
+                      icon: Icons.error_outline,
+                      title: 'Could not load songs',
+                      message: '${snap.error}',
+                    ),
+                  ],
+                );
               }
               final all = snap.data ?? const <ChoirSong>[];
               final filtered = all.where((s) {
                 if (_query.isNotEmpty &&
                     !s.title.toLowerCase().contains(_query.toLowerCase()) &&
-                    !(s.subtitle ?? '')
-                        .toLowerCase()
-                        .contains(_query.toLowerCase())) {
+                    !(s.subtitle ?? '').toLowerCase().contains(
+                      _query.toLowerCase(),
+                    )) {
                   return false;
                 }
                 if (_onlyMemorized && !m.memorizedSongIds.contains(s.id)) {
@@ -73,8 +75,7 @@ class _SongLibraryScreenState extends State<SongLibraryScreen> {
               Future<void> openSong(ChoirSong s) async {
                 final changed = await Navigator.push<bool>(
                   context,
-                  MaterialPageRoute(
-                      builder: (_) => SongDetailScreen(song: s)),
+                  MaterialPageRoute(builder: (_) => SongDetailScreen(song: s)),
                 );
                 if (changed == true) await _reload();
               }
@@ -97,8 +98,7 @@ class _SongLibraryScreenState extends State<SongLibraryScreen> {
                       FilterChip(
                         label: const Text('Only memorized'),
                         selected: _onlyMemorized,
-                        onSelected: (v) =>
-                            setState(() => _onlyMemorized = v),
+                        onSelected: (v) => setState(() => _onlyMemorized = v),
                       ),
                     ],
                   ),
@@ -124,14 +124,16 @@ class _SongLibraryScreenState extends State<SongLibraryScreen> {
                       ),
                     )
                   else
-                    ...filtered.map((s) => Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: _SongTile(
-                            song: s,
-                            memorized: m.memorizedSongIds.contains(s.id),
-                            onTap: () => openSong(s),
-                          ),
-                        )),
+                    ...filtered.map(
+                      (s) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _SongTile(
+                          song: s,
+                          memorized: m.memorizedSongIds.contains(s.id),
+                          onTap: () => openSong(s),
+                        ),
+                      ),
+                    ),
                 ],
               );
             },
@@ -181,9 +183,12 @@ class _SongTile extends StatelessWidget {
               children: [
                 Text(song.title, style: theme.textTheme.titleMedium),
                 if ((song.subtitle ?? '').isNotEmpty)
-                  Text(song.subtitle!,
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(fontStyle: FontStyle.italic)),
+                  Text(
+                    song.subtitle!,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
               ],
             ),
           ),

@@ -37,7 +37,8 @@ class AdminService {
     await _c.from('members').update({'status': status}).eq('id', memberId);
   }
 
-  static Future<void> approve(String memberId) => _setStatus(memberId, 'active');
+  static Future<void> approve(String memberId) =>
+      _setStatus(memberId, 'active');
   static Future<void> deny(String memberId) => _setStatus(memberId, 'deleted');
   static Future<void> deactivate(String memberId) =>
       _setStatus(memberId, 'deactivated');
@@ -47,6 +48,16 @@ class AdminService {
 
   static Future<void> setRole(String memberId, String role) async {
     await _c.from('members').update({'role': role}).eq('id', memberId);
+  }
+
+  static Future<void> setGalleryUploadPermission(
+    String memberId,
+    bool value,
+  ) async {
+    await _c
+        .from('members')
+        .update({'can_upload_gallery': value})
+        .eq('id', memberId);
   }
 
   // ===== Content =====
@@ -84,15 +95,18 @@ class AdminService {
     String? youtubeUrl,
     String? audioUrl,
   }) async {
-    await _c.from('songs').update({
-      'title': title,
-      'subtitle': subtitle,
-      'composers': composers,
-      'description': description,
-      'lyrics': lyrics,
-      'youtube_url': youtubeUrl,
-      if (audioUrl != null) 'audio_url': audioUrl,
-    }).eq('id', id);
+    await _c
+        .from('songs')
+        .update({
+          'title': title,
+          'subtitle': subtitle,
+          'composers': composers,
+          'description': description,
+          'lyrics': lyrics,
+          'youtube_url': youtubeUrl,
+          if (audioUrl != null) 'audio_url': audioUrl,
+        })
+        .eq('id', id);
   }
 
   static Future<void> deleteSong(String id) async {
@@ -100,10 +114,7 @@ class AdminService {
   }
 
   static Future<List<Map<String, dynamic>>> fetchAudienceSongs() async {
-    final rows = await _c
-        .from('songs')
-        .select()
-        .order('sort_order');
+    final rows = await _c.from('songs').select().order('sort_order');
     return (rows as List).cast<Map<String, dynamic>>();
   }
 
@@ -117,33 +128,39 @@ class AdminService {
     // m4a files are MPEG-4 audio containers — correct MIME is audio/mp4.
     final mime = ext == 'm4a' ? 'audio/mp4' : 'audio/$ext';
     final path = 'song_${DateTime.now().millisecondsSinceEpoch}.$ext';
-    await _c.storage.from('song_audio').uploadBinary(
+    await _c.storage
+        .from('song_audio')
+        .uploadBinary(
           path,
           bytes,
-          fileOptions: FileOptions(
-            upsert: false,
-            contentType: mime,
-          ),
+          fileOptions: FileOptions(upsert: false, contentType: mime),
         );
     return _c.storage.from('song_audio').getPublicUrl(path);
   }
 
-  static Future<void> addEvent({
+  static Future<String> addEvent({
     required String title,
     required String location,
     required DateTime startsAt,
     required String kind, // concert | rehearsal
     String? description,
     String? posterUrl,
+    String? mapsUrl,
   }) async {
-    await _c.from('concerts').insert({
-      'title': title,
-      'location': location,
-      'starts_at': startsAt.toUtc().toIso8601String(),
-      'kind': kind,
-      'description': description,
-      'poster_url': posterUrl,
-    });
+    final row = await _c
+        .from('concerts')
+        .insert({
+          'title': title,
+          'location': location,
+          'starts_at': startsAt.toUtc().toIso8601String(),
+          'kind': kind,
+          'description': description,
+          'poster_url': posterUrl,
+          if (mapsUrl != null && mapsUrl.isNotEmpty) 'maps_url': mapsUrl,
+        })
+        .select('id')
+        .single();
+    return row['id'] as String;
   }
 
   /// Uploads an event poster to the `event_posters` bucket and
@@ -154,13 +171,12 @@ class AdminService {
   }) async {
     final ext = fileExtension.isEmpty ? 'jpg' : fileExtension;
     final path = 'event_${DateTime.now().millisecondsSinceEpoch}.$ext';
-    await _c.storage.from('event_posters').uploadBinary(
+    await _c.storage
+        .from('event_posters')
+        .uploadBinary(
           path,
           bytes,
-          fileOptions: FileOptions(
-            upsert: false,
-            contentType: 'image/$ext',
-          ),
+          fileOptions: FileOptions(upsert: false, contentType: 'image/$ext'),
         );
     return _c.storage.from('event_posters').getPublicUrl(path);
   }
@@ -226,6 +242,8 @@ class AdminService {
     String? kind,
     String? description,
     String? posterUrl,
+    String? mapsUrl,
+    bool clearMapsUrl = false,
   }) async {
     final patch = <String, dynamic>{};
     if (title != null) patch['title'] = title;
@@ -236,6 +254,8 @@ class AdminService {
     if (kind != null) patch['kind'] = kind;
     if (description != null) patch['description'] = description;
     if (posterUrl != null) patch['poster_url'] = posterUrl;
+    if (mapsUrl != null) patch['maps_url'] = mapsUrl.isEmpty ? null : mapsUrl;
+    if (clearMapsUrl) patch['maps_url'] = null;
     if (patch.isEmpty) return;
     await _c.from('concerts').update(patch).eq('id', id);
   }

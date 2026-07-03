@@ -18,8 +18,7 @@ class LiveLocationsMapScreen extends StatefulWidget {
   const LiveLocationsMapScreen({super.key});
 
   @override
-  State<LiveLocationsMapScreen> createState() =>
-      _LiveLocationsMapScreenState();
+  State<LiveLocationsMapScreen> createState() => _LiveLocationsMapScreenState();
 }
 
 class _LiveLocationsMapScreenState extends State<LiveLocationsMapScreen>
@@ -48,8 +47,13 @@ class _LiveLocationsMapScreenState extends State<LiveLocationsMapScreen>
   }
 
   Future<void> _focus(LiveMemberLocation m) async {
-    await smoothMove(this, _ctrl, LatLng(m.lat, m.lng), 16.0,
-        duration: const Duration(milliseconds: 1000));
+    await smoothMove(
+      this,
+      _ctrl,
+      LatLng(m.lat, m.lng),
+      16.0,
+      duration: const Duration(milliseconds: 1000),
+    );
     if (!mounted) return;
     showModalBottomSheet(
       context: context,
@@ -80,34 +84,39 @@ class _LiveLocationsMapScreenState extends State<LiveLocationsMapScreen>
             return const Center(child: CircularProgressIndicator());
           }
           if (snap.hasError) {
-            return ListView(children: [
-              const SizedBox(height: 80),
-              EmptyState(
-                icon: Icons.error_outline,
-                title: 'Could not load',
-                message: '${snap.error}',
-              ),
-            ]);
+            return ListView(
+              children: [
+                const SizedBox(height: 80),
+                EmptyState(
+                  icon: Icons.error_outline,
+                  title: 'Could not load',
+                  message: '${snap.error}',
+                ),
+              ],
+            );
           }
           final locations = snap.data ?? const <LiveMemberLocation>[];
           final pins = locations
-              .map((m) => MapPin(
-                    point: LatLng(m.lat, m.lng),
-                    color: MapData.colorFor(m.branch),
-                    label: m.name.split(' ').first,
-                    icon: Icons.person_pin_circle,
-                    onTap: () => _focus(m),
-                  ))
+              .map(
+                (m) => MapPin(
+                  point: LatLng(m.lat, m.lng),
+                  color: MapData.colorFor(m.branch),
+                  label: m.name.split(' ').first,
+                  icon: Icons.person_pin_circle,
+                  onTap: () => _focus(m),
+                ),
+              )
               .toList();
           return ListView(
             padding: const EdgeInsets.only(bottom: 24),
             children: [
               const SizedBox(height: 16),
               FayhaMap(
-                  controller: _ctrl,
-                  pins: pins,
-                  center: _center,
-                  zoom: _zoom),
+                controller: _ctrl,
+                pins: pins,
+                center: _center,
+                zoom: _zoom,
+              ),
               const SizedBox(height: 14),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -136,17 +145,18 @@ class _LiveLocationsMapScreenState extends State<LiveLocationsMapScreen>
                       onTap: () => _focus(m),
                       child: Row(
                         children: [
-                          Avatar(
-                              name: m.name, size: 40, photoUrl: m.photoUrl),
+                          Avatar(name: m.name, size: 40, photoUrl: m.photoUrl),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(m.name,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium),
+                                Text(
+                                  m.name,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleMedium,
+                                ),
                                 const SizedBox(height: 2),
                                 Row(
                                   children: [
@@ -154,29 +164,36 @@ class _LiveLocationsMapScreenState extends State<LiveLocationsMapScreen>
                                       width: 8,
                                       height: 8,
                                       decoration: BoxDecoration(
-                                          color: color,
-                                          shape: BoxShape.circle),
+                                        color: color,
+                                        shape: BoxShape.circle,
+                                      ),
                                     ),
                                     const SizedBox(width: 6),
-                                    Text('${m.branch} · ${m.voiceSection}',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall),
+                                    Text(
+                                      '${m.branch} · ${m.voiceSection}',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall,
+                                    ),
                                   ],
                                 ),
                                 if (m.at != null)
                                   Padding(
                                     padding: const EdgeInsets.only(top: 2),
-                                    child: Text(_ago(m.at!),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .labelSmall),
+                                    child: Text(
+                                      _ago(m.at!),
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.labelSmall,
+                                    ),
                                   ),
                               ],
                             ),
                           ),
-                          const Icon(Icons.chevron_right,
-                              color: AppColors.gray),
+                          const Icon(
+                            Icons.chevron_right,
+                            color: AppColors.gray,
+                          ),
                         ],
                       ),
                     ),
@@ -232,11 +249,15 @@ class _LiveMemberSheet extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(member.name,
-                          style: Theme.of(context).textTheme.titleLarge),
+                      Text(
+                        member.name,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
                       const SizedBox(height: 4),
-                      Text('${member.branch} · ${member.voiceSection}',
-                          style: Theme.of(context).textTheme.bodyMedium),
+                      Text(
+                        '${member.branch} · ${member.voiceSection}',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
                     ],
                   ),
                 ),

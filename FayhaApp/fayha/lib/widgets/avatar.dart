@@ -19,8 +19,10 @@ class Avatar extends StatelessWidget {
   String get _initials {
     final parts = name.trim().split(RegExp(r'\s+'));
     if (parts.isEmpty) return '?';
-    if (parts.length == 1) return parts.first.characters.take(2).toString().toUpperCase();
-    return (parts.first.characters.first + parts.last.characters.first).toUpperCase();
+    if (parts.length == 1)
+      return parts.first.characters.take(2).toString().toUpperCase();
+    return (parts.first.characters.first + parts.last.characters.first)
+        .toUpperCase();
   }
 
   @override
@@ -32,12 +34,12 @@ class Avatar extends StatelessWidget {
       decoration: BoxDecoration(
         color: background ?? AppColors.primary,
         shape: BoxShape.circle,
-        border: Border.all(color: AppColors.accent.withValues(alpha: 0.4), width: 1.5),
+        border: Border.all(
+          color: AppColors.accent.withValues(alpha: 0.4),
+          width: 1.5,
+        ),
         image: hasPhoto
-            ? DecorationImage(
-                image: NetworkImage(photoUrl!),
-                fit: BoxFit.cover,
-              )
+            ? DecorationImage(image: NetworkImage(photoUrl!), fit: BoxFit.cover)
             : null,
       ),
       alignment: Alignment.center,

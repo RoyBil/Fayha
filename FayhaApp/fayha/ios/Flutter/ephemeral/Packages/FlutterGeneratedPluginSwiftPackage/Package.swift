@@ -23,6 +23,8 @@ let package = Package(
         .package(name: "app_links", path: "../.packages/app_links-6.4.1"),
         .package(name: "image_picker_ios", path: "../.packages/image_picker_ios-0.8.13"),
         .package(name: "geolocator_apple", path: "../.packages/geolocator_apple-2.3.13"),
+        .package(name: "firebase_messaging", path: "../.packages/firebase_messaging-15.2.10"),
+        .package(name: "firebase_core", path: "../.packages/firebase_core-3.15.2"),
         .package(name: "file_selector_ios", path: "../.packages/file_selector_ios-0.5.3+2"),
         .package(name: "audioplayers_darwin", path: "../.packages/audioplayers_darwin-6.4.0"),
         .package(name: "FlutterFramework", path: "../.packages/FlutterFramework")
@@ -39,6 +41,8 @@ let package = Package(
                 .product(name: "app-links", package: "app_links"),
                 .product(name: "image-picker-ios", package: "image_picker_ios"),
                 .product(name: "geolocator-apple", package: "geolocator_apple"),
+                .product(name: "firebase-messaging", package: "firebase_messaging"),
+                .product(name: "firebase-core", package: "firebase_core"),
                 .product(name: "file-selector-ios", package: "file_selector_ios"),
                 .product(name: "audioplayers-darwin", package: "audioplayers_darwin"),
                 .product(name: "FlutterFramework", package: "FlutterFramework")

@@ -118,19 +118,27 @@ class _PublicSongPlayerScreenState extends State<PublicSongPlayerScreen> {
                     border: Border.all(color: AppColors.accent, width: 1.5),
                   ),
                   alignment: Alignment.center,
-                  child: const Icon(Icons.music_note,
-                      size: 80, color: AppColors.accentLight),
+                  child: const Icon(
+                    Icons.music_note,
+                    size: 80,
+                    color: AppColors.accentLight,
+                  ),
                 ),
                 const SizedBox(height: 24),
-                Text(widget.song.title,
-                    style: theme.textTheme.headlineSmall
-                        ?.copyWith(color: AppColors.cream)),
+                Text(
+                  widget.song.title,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    color: AppColors.cream,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text(widget.song.subtitle,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: AppColors.accentLight,
-                      fontStyle: FontStyle.italic,
-                    )),
+                Text(
+                  widget.song.subtitle,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: AppColors.accentLight,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
               ],
             ),
           ),
@@ -142,14 +150,17 @@ class _PublicSongPlayerScreenState extends State<PublicSongPlayerScreen> {
                     children: [
                       Row(
                         children: [
-                          Text(_fmt(_position),
-                              style: theme.textTheme.labelMedium),
+                          Text(
+                            _fmt(_position),
+                            style: theme.textTheme.labelMedium,
+                          ),
                           Expanded(
                             child: SliderTheme(
                               data: SliderTheme.of(context).copyWith(
                                 trackHeight: 3,
                                 thumbShape: const RoundSliderThumbShape(
-                                    enabledThumbRadius: 6),
+                                  enabledThumbRadius: 6,
+                                ),
                               ),
                               child: Slider(
                                 value: progress,
@@ -158,8 +169,10 @@ class _PublicSongPlayerScreenState extends State<PublicSongPlayerScreen> {
                               ),
                             ),
                           ),
-                          Text(_fmt(_total),
-                              style: theme.textTheme.labelMedium),
+                          Text(
+                            _fmt(_total),
+                            style: theme.textTheme.labelMedium,
+                          ),
                         ],
                       ),
                       const SizedBox(height: 4),
@@ -203,12 +216,18 @@ class _PublicSongPlayerScreenState extends State<PublicSongPlayerScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.volume_off_outlined,
-                            color: AppColors.gray, size: 20),
+                        const Icon(
+                          Icons.volume_off_outlined,
+                          color: AppColors.gray,
+                          size: 20,
+                        ),
                         const SizedBox(width: 8),
-                        Text('No audio available for this song.',
-                            style: theme.textTheme.bodySmall
-                                ?.copyWith(color: AppColors.gray)),
+                        Text(
+                          'No audio available for this song.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.gray,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -221,11 +240,13 @@ class _PublicSongPlayerScreenState extends State<PublicSongPlayerScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Lyrics',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: AppColors.accentDark,
-                            letterSpacing: 1.4,
-                          )),
+                      Text(
+                        'Lyrics',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: AppColors.accentDark,
+                          letterSpacing: 1.4,
+                        ),
+                      ),
                       const SizedBox(height: 6),
                       Container(height: 2, width: 32, color: AppColors.accent),
                       const SizedBox(height: 14),
@@ -241,10 +262,12 @@ class _PublicSongPlayerScreenState extends State<PublicSongPlayerScreen> {
                         ),
                       ),
                       const SizedBox(height: 14),
-                      Text(widget.song.composers,
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: AppColors.primaryDark,
-                          )),
+                      Text(
+                        widget.song.composers,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: AppColors.primaryDark,
+                        ),
+                      ),
                     ],
                   ),
                 ),

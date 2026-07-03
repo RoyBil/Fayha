@@ -128,8 +128,10 @@ class _BusRouteLiveScreenState extends State<BusRouteLiveScreen>
       }
     });
     _etaTimer?.cancel();
-    _etaTimer =
-        Timer.periodic(const Duration(seconds: 15), (_) => _refreshEta());
+    _etaTimer = Timer.periodic(
+      const Duration(seconds: 15),
+      (_) => _refreshEta(),
+    );
   }
 
   Future<void> _refreshEta() async {
@@ -174,20 +176,34 @@ class _BusRouteLiveScreenState extends State<BusRouteLiveScreen>
   void _zoom(double delta) {
     final c = _mapCtrl.camera;
     final z = (c.zoom + delta).clamp(2.0, 18.0);
-    smoothMove(this, _mapCtrl, c.center, z,
-        duration: const Duration(milliseconds: 350));
+    smoothMove(
+      this,
+      _mapCtrl,
+      c.center,
+      z,
+      duration: const Duration(milliseconds: 350),
+    );
   }
 
   void _recenter() {
     smoothMove(
-        this, _mapCtrl, _position?.location ?? widget.route.startPoint, 13);
+      this,
+      _mapCtrl,
+      _position?.location ?? widget.route.startPoint,
+      13,
+    );
   }
 
   // ── Info sheet launchers ────────────────────────────────────────────
 
   Future<void> _focusBranch(BranchLocation b) async {
-    await smoothMove(this, _mapCtrl, LatLng(b.lat, b.lng), 14.5,
-        duration: const Duration(milliseconds: 800));
+    await smoothMove(
+      this,
+      _mapCtrl,
+      LatLng(b.lat, b.lng),
+      14.5,
+      duration: const Duration(milliseconds: 800),
+    );
     if (!mounted) return;
     showModalBottomSheet(
       context: context,
@@ -207,16 +223,23 @@ class _BusRouteLiveScreenState extends State<BusRouteLiveScreen>
         description: b.description.isNotEmpty ? b.description : null,
         mapUrl: b.mapUrl.isNotEmpty ? b.mapUrl : null,
         onOpenMap: b.mapUrl.isNotEmpty
-            ? () => launchUrl(Uri.parse(b.mapUrl),
-                mode: LaunchMode.externalApplication)
+            ? () => launchUrl(
+                Uri.parse(b.mapUrl),
+                mode: LaunchMode.externalApplication,
+              )
             : null,
       ),
     );
   }
 
   Future<void> _focusHouse(MemberHouse h) async {
-    await smoothMove(this, _mapCtrl, LatLng(h.lat, h.lng), 15.5,
-        duration: const Duration(milliseconds: 800));
+    await smoothMove(
+      this,
+      _mapCtrl,
+      LatLng(h.lat, h.lng),
+      15.5,
+      duration: const Duration(milliseconds: 800),
+    );
     if (!mounted) return;
     showModalBottomSheet(
       context: context,
@@ -227,8 +250,13 @@ class _BusRouteLiveScreenState extends State<BusRouteLiveScreen>
   }
 
   Future<void> _focusLive(LiveMemberLocation m) async {
-    await smoothMove(this, _mapCtrl, LatLng(m.lat, m.lng), 15.5,
-        duration: const Duration(milliseconds: 800));
+    await smoothMove(
+      this,
+      _mapCtrl,
+      LatLng(m.lat, m.lng),
+      15.5,
+      duration: const Duration(milliseconds: 800),
+    );
     if (!mounted) return;
     showModalBottomSheet(
       context: context,
@@ -240,17 +268,22 @@ class _BusRouteLiveScreenState extends State<BusRouteLiveScreen>
 
   Future<void> _requestPickup() async {
     try {
-      final req =
-          await BusPickupService.requestFromCurrentLocation(widget.route.id);
+      final req = await BusPickupService.requestFromCurrentLocation(
+        widget.route.id,
+      );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(
-            'Pickup requested · ${req.distanceToRouteM.toStringAsFixed(0)} m from route'),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Pickup requested · ${req.distanceToRouteM.toStringAsFixed(0)} m from route',
+          ),
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Pickup failed: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Pickup failed: $e')));
     }
   }
 
@@ -266,15 +299,17 @@ class _BusRouteLiveScreenState extends State<BusRouteLiveScreen>
           point: r.startPoint,
           width: 32,
           height: 32,
-          child:
-              const Icon(Icons.flag, color: AppColors.secondary, size: 28),
+          child: const Icon(Icons.flag, color: AppColors.secondary, size: 28),
         ),
         Marker(
           point: r.endPoint,
           width: 32,
           height: 32,
-          child: const Icon(Icons.location_on,
-              color: AppColors.primary, size: 28),
+          child: const Icon(
+            Icons.location_on,
+            color: AppColors.primary,
+            size: 28,
+          ),
         ),
         for (var i = 0; i < r.stops.length; i++)
           Marker(
@@ -291,9 +326,10 @@ class _BusRouteLiveScreenState extends State<BusRouteLiveScreen>
               child: Text(
                 '${i + 1}',
                 style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold),
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
@@ -309,14 +345,18 @@ class _BusRouteLiveScreenState extends State<BusRouteLiveScreen>
                 border: Border.all(color: Colors.white, width: 3),
                 boxShadow: const [
                   BoxShadow(
-                      color: Colors.black38,
-                      blurRadius: 6,
-                      offset: Offset(0, 2)),
+                    color: Colors.black38,
+                    blurRadius: 6,
+                    offset: Offset(0, 2),
+                  ),
                 ],
               ),
               alignment: Alignment.center,
-              child: const Icon(Icons.directions_bus,
-                  color: Colors.white, size: 22),
+              child: const Icon(
+                Icons.directions_bus,
+                color: Colors.white,
+                size: 22,
+              ),
             ),
           ),
       ]);
@@ -324,57 +364,64 @@ class _BusRouteLiveScreenState extends State<BusRouteLiveScreen>
 
     if (_showBranches) {
       for (final b in _branches) {
-        markers.add(Marker(
-          point: LatLng(b.lat, b.lng),
-          width: 140,
-          height: 60,
-          alignment: Alignment.center,
-          child: GestureDetector(
-            onTap: () => _focusBranch(b),
-            child: _LayerPin(
+        markers.add(
+          Marker(
+            point: LatLng(b.lat, b.lng),
+            width: 140,
+            height: 60,
+            alignment: Alignment.center,
+            child: GestureDetector(
+              onTap: () => _focusBranch(b),
+              child: _LayerPin(
                 label: b.name,
                 color: b.color,
-                icon: Icons.location_city),
+                icon: Icons.location_city,
+              ),
+            ),
           ),
-        ));
+        );
       }
     }
 
     if (_showHouses) {
       for (final h in _houses) {
-        markers.add(Marker(
-          point: LatLng(h.lat, h.lng),
-          width: 130,
-          height: 55,
-          alignment: Alignment.center,
-          child: GestureDetector(
-            onTap: () => _focusHouse(h),
-            child: _LayerPin(
-              label: h.name.split(' ').first,
-              color: MapData.colorFor(h.branch),
-              icon: Icons.home,
+        markers.add(
+          Marker(
+            point: LatLng(h.lat, h.lng),
+            width: 130,
+            height: 55,
+            alignment: Alignment.center,
+            child: GestureDetector(
+              onTap: () => _focusHouse(h),
+              child: _LayerPin(
+                label: h.name.split(' ').first,
+                color: MapData.colorFor(h.branch),
+                icon: Icons.home,
+              ),
             ),
           ),
-        ));
+        );
       }
     }
 
     if (_showLive) {
       for (final m in _liveMembers) {
-        markers.add(Marker(
-          point: LatLng(m.lat, m.lng),
-          width: 130,
-          height: 55,
-          alignment: Alignment.center,
-          child: GestureDetector(
-            onTap: () => _focusLive(m),
-            child: _LayerPin(
-              label: m.name.split(' ').first,
-              color: const Color(0xFF2E7D32),
-              icon: Icons.person_pin,
+        markers.add(
+          Marker(
+            point: LatLng(m.lat, m.lng),
+            width: 130,
+            height: 55,
+            alignment: Alignment.center,
+            child: GestureDetector(
+              onTap: () => _focusLive(m),
+              child: _LayerPin(
+                label: m.name.split(' ').first,
+                color: const Color(0xFF2E7D32),
+                icon: Icons.person_pin,
+              ),
             ),
           ),
-        ));
+        );
       }
     }
 
@@ -392,9 +439,11 @@ class _BusRouteLiveScreenState extends State<BusRouteLiveScreen>
         actions: [
           IconButton(
             tooltip: _subscribed ? 'Unsubscribe' : 'Subscribe',
-            icon: Icon(_subscribed
-                ? Icons.notifications_active
-                : Icons.notifications_none),
+            icon: Icon(
+              _subscribed
+                  ? Icons.notifications_active
+                  : Icons.notifications_none,
+            ),
             onPressed: () async {
               try {
                 if (_subscribed) {
@@ -444,7 +493,8 @@ class _BusRouteLiveScreenState extends State<BusRouteLiveScreen>
                     minZoom: 2,
                     maxZoom: 18,
                     interactionOptions: const InteractionOptions(
-                      flags: InteractiveFlag.pinchZoom |
+                      flags:
+                          InteractiveFlag.pinchZoom |
                           InteractiveFlag.doubleTapZoom |
                           InteractiveFlag.drag |
                           InteractiveFlag.flingAnimation |
@@ -460,13 +510,15 @@ class _BusRouteLiveScreenState extends State<BusRouteLiveScreen>
                       additionalOptions: const {'r': ''},
                     ),
                     if (_showRoute && r.polyline.length >= 2)
-                      PolylineLayer(polylines: [
-                        Polyline(
-                          points: r.polyline,
-                          color: AppColors.primary,
-                          strokeWidth: 4,
-                        ),
-                      ]),
+                      PolylineLayer(
+                        polylines: [
+                          Polyline(
+                            points: r.polyline,
+                            color: AppColors.primary,
+                            strokeWidth: 4,
+                          ),
+                        ],
+                      ),
                     MarkerLayer(markers: _buildMarkers()),
                     const RichAttributionWidget(
                       attributions: [
@@ -482,11 +534,9 @@ class _BusRouteLiveScreenState extends State<BusRouteLiveScreen>
                     children: [
                       _ZoomBtn(icon: Icons.add, onTap: () => _zoom(1)),
                       const SizedBox(height: 8),
-                      _ZoomBtn(
-                          icon: Icons.remove, onTap: () => _zoom(-1)),
+                      _ZoomBtn(icon: Icons.remove, onTap: () => _zoom(-1)),
                       const SizedBox(height: 8),
-                      _ZoomBtn(
-                          icon: Icons.my_location, onTap: _recenter),
+                      _ZoomBtn(icon: Icons.my_location, onTap: _recenter),
                     ],
                   ),
                 ),
@@ -542,8 +592,7 @@ class _LayerFilterBar extends StatelessWidget {
       color: AppColors.cream,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         children: [
           _FilterChip(
             label: 'Route',
@@ -602,29 +651,25 @@ class _FilterChip extends StatelessWidget {
       onTap: () => onChanged(!selected),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: selected
-              ? color.withValues(alpha: 0.12)
-              : Colors.transparent,
+          color: selected ? color.withValues(alpha: 0.12) : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-              color: selected ? color : AppColors.lightGray,
-              width: 1.5),
+            color: selected ? color : AppColors.lightGray,
+            width: 1.5,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon,
-                size: 14, color: selected ? color : AppColors.gray),
+            Icon(icon, size: 14, color: selected ? color : AppColors.gray),
             const SizedBox(width: 5),
             Text(
               label,
               style: TextStyle(
                 fontSize: 12,
-                fontWeight:
-                    selected ? FontWeight.w600 : FontWeight.normal,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
                 color: selected ? color : AppColors.charcoal,
               ),
             ),
@@ -664,9 +709,10 @@ class _LayerPin extends StatelessWidget {
             border: Border.all(color: Colors.white, width: 2.5),
             boxShadow: const [
               BoxShadow(
-                  color: Colors.black38,
-                  blurRadius: 3,
-                  offset: Offset(0, 1)),
+                color: Colors.black38,
+                blurRadius: 3,
+                offset: Offset(0, 1),
+              ),
             ],
           ),
           child: Icon(icon, color: Colors.white, size: 13),
@@ -674,26 +720,26 @@ class _LayerPin extends StatelessWidget {
         Positioned(
           top: -1,
           child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(4),
-              border: Border.all(
-                  color: color.withValues(alpha: 0.6), width: 1),
+              border: Border.all(color: color.withValues(alpha: 0.6), width: 1),
               boxShadow: const [
                 BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 2,
-                    offset: Offset(0, 1)),
+                  color: Colors.black26,
+                  blurRadius: 2,
+                  offset: Offset(0, 1),
+                ),
               ],
             ),
             child: Text(
               label,
               style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w700,
-                  color: color),
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
             ),
           ),
         ),
@@ -730,44 +776,51 @@ class _HouseSheet extends StatelessWidget {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                    color: AppColors.lightGray,
-                    borderRadius: BorderRadius.circular(2)),
+                  color: AppColors.lightGray,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
             const SizedBox(height: 16),
             Row(
               children: [
-                Avatar(
-                    name: house.name, size: 52, photoUrl: house.photoUrl),
+                Avatar(name: house.name, size: 52, photoUrl: house.photoUrl),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(house.name,
-                          style: Theme.of(context).textTheme.titleLarge),
+                      Text(
+                        house.name,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
                       const SizedBox(height: 4),
-                      Row(children: [
-                        Container(
+                      Row(
+                        children: [
+                          Container(
                             width: 8,
                             height: 8,
                             decoration: BoxDecoration(
-                                color: color, shape: BoxShape.circle)),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            '${house.branch} · ${house.voiceSection}',
-                            style:
-                                Theme.of(context).textTheme.bodyMedium,
+                              color: color,
+                              shape: BoxShape.circle,
+                            ),
                           ),
-                        ),
-                      ]),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              '${house.branch} · ${house.voiceSection}',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ),
+                        ],
+                      ),
                       if (house.address != null &&
                           house.address!.isNotEmpty) ...[
                         const SizedBox(height: 4),
-                        Text(house.address!,
-                            style:
-                                Theme.of(context).textTheme.bodySmall),
+                        Text(
+                          house.address!,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
                       ],
                     ],
                   ),
@@ -812,8 +865,9 @@ class _LiveMemberSheet extends StatelessWidget {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                    color: AppColors.lightGray,
-                    borderRadius: BorderRadius.circular(2)),
+                  color: AppColors.lightGray,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -822,9 +876,10 @@ class _LiveMemberSheet extends StatelessWidget {
                 Stack(
                   children: [
                     Avatar(
-                        name: member.name,
-                        size: 52,
-                        photoUrl: member.photoUrl),
+                      name: member.name,
+                      size: 52,
+                      photoUrl: member.photoUrl,
+                    ),
                     Positioned(
                       bottom: 0,
                       right: 0,
@@ -834,8 +889,7 @@ class _LiveMemberSheet extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: const Color(0xFF2E7D32),
                           shape: BoxShape.circle,
-                          border:
-                              Border.all(color: Colors.white, width: 2),
+                          border: Border.all(color: Colors.white, width: 2),
                         ),
                       ),
                     ),
@@ -846,33 +900,36 @@ class _LiveMemberSheet extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(member.name,
-                          style: Theme.of(context).textTheme.titleLarge),
+                      Text(
+                        member.name,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
                       const SizedBox(height: 4),
-                      Row(children: [
-                        Container(
+                      Row(
+                        children: [
+                          Container(
                             width: 8,
                             height: 8,
                             decoration: BoxDecoration(
-                                color: color, shape: BoxShape.circle)),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            '${member.branch} · ${member.voiceSection}',
-                            style:
-                                Theme.of(context).textTheme.bodyMedium,
+                              color: color,
+                              shape: BoxShape.circle,
+                            ),
                           ),
-                        ),
-                      ]),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              '${member.branch} · ${member.voiceSection}',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ),
+                        ],
+                      ),
                       if (member.at != null) ...[
                         const SizedBox(height: 4),
                         Text(
                           _ago(member.at!),
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelSmall
-                              ?.copyWith(
-                                  color: const Color(0xFF2E7D32)),
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(color: const Color(0xFF2E7D32)),
                         ),
                       ],
                     ],
@@ -972,17 +1029,14 @@ class _BottomActions extends StatelessWidget {
                     final updated = await Navigator.push<bool>(
                       context,
                       MaterialPageRoute(
-                        builder: (_) =>
-                            BusTripDriverScreen(route: route),
+                        builder: (_) => BusTripDriverScreen(route: route),
                       ),
                     );
                     if (updated == true) {
-                      final t =
-                          await TripService.activeForRoute(route.id);
+                      final t = await TripService.activeForRoute(route.id);
                       onTripChanged(t);
                     } else {
-                      final t =
-                          await TripService.activeForRoute(route.id);
+                      final t = await TripService.activeForRoute(route.id);
                       onTripChanged(t);
                     }
                   },
@@ -1002,14 +1056,11 @@ class _BottomActions extends StatelessWidget {
                     await Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => BusTripDriverScreen(
-                          route: route,
-                          resumeTrip: trip,
-                        ),
+                        builder: (_) =>
+                            BusTripDriverScreen(route: route, resumeTrip: trip),
                       ),
                     );
-                    final t =
-                        await TripService.activeForRoute(route.id);
+                    final t = await TripService.activeForRoute(route.id);
                     onTripChanged(t);
                   },
                   icon: const Icon(Icons.directions_bus),
@@ -1070,13 +1121,12 @@ class _StatusBanner extends StatelessWidget {
     final etaLabel = eta == null
         ? null
         : eta!.inMinutes >= 1
-            ? '${eta!.inMinutes} min'
-            : '<1 min';
+        ? '${eta!.inMinutes} min'
+        : '<1 min';
     final remainKm = remainingM == null
         ? null
         : '${(remainingM! / 1000).toStringAsFixed(1)} km left';
-    final eventLabel =
-        latestEvent != null ? _eventLabel(latestEvent!) : null;
+    final eventLabel = latestEvent != null ? _eventLabel(latestEvent!) : null;
 
     return _bar(
       bg: AppColors.secondary,
@@ -1137,16 +1187,22 @@ class _StatusBanner extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
-                    style: TextStyle(
-                        color: textColor,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13)),
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: textColor,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
                 if (subtitle.isNotEmpty)
-                  Text(subtitle,
-                      style: TextStyle(
-                          color: textColor.withValues(alpha: 0.85),
-                          fontSize: 12)),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: textColor.withValues(alpha: 0.85),
+                      fontSize: 12,
+                    ),
+                  ),
               ],
             ),
           ),

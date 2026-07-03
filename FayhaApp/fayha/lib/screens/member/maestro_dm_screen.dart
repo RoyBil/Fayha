@@ -18,6 +18,7 @@ import '../../widgets/fayha_map.dart' show MapInfoSheet, MapFact;
 class MaestroDmScreen extends StatefulWidget {
   /// Member side of the conversation.
   final String memberId;
+
   /// Admin (or Maestro) side of the conversation.
   final String adminId;
   final String title;
@@ -87,8 +88,9 @@ class _MaestroDmScreenState extends State<MaestroDmScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Could not load: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not load: $e')));
     }
   }
 
@@ -115,8 +117,9 @@ class _MaestroDmScreenState extends State<MaestroDmScreen> {
       await _load();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Could not send: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not send: $e')));
     } finally {
       if (mounted) setState(() => _sending = false);
     }
@@ -153,17 +156,18 @@ class _MaestroDmScreenState extends State<MaestroDmScreen> {
       _recordTimer?.cancel();
       _recordTimer = Timer.periodic(const Duration(milliseconds: 200), (_) {
         if (!mounted || _recordStart == null) return;
-        setState(() => _recordDuration =
-            DateTime.now().difference(_recordStart!));
+        setState(
+          () => _recordDuration = DateTime.now().difference(_recordStart!),
+        );
         // Hard cap at 2 minutes.
         if (_recordDuration.inSeconds >= 120) _stopAndSend();
       });
       setState(() => _recording = true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not start recording: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not start recording: $e')));
     }
   }
 
@@ -250,7 +254,18 @@ class _MaestroDmScreenState extends State<MaestroDmScreen> {
   }
 
   static const _months = [
-    'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
 
   String _dayLabel(DateTime day) {
@@ -267,17 +282,16 @@ class _MaestroDmScreenState extends State<MaestroDmScreen> {
     DateTime? lastDay;
     for (final msg in _messages) {
       final day = DateTime(
-          msg.createdAt.year, msg.createdAt.month, msg.createdAt.day);
+        msg.createdAt.year,
+        msg.createdAt.month,
+        msg.createdAt.day,
+      );
       if (lastDay == null || day != lastDay) {
         out.add(_DateDivider(label: _dayLabel(day)));
         lastDay = day;
       }
       final mine = _iAmAdminSide ? msg.fromMaestro : !msg.fromMaestro;
-      out.add(_Bubble(
-        message: msg,
-        mine: mine,
-        time: _time(msg.createdAt),
-      ));
+      out.add(_Bubble(message: msg, mine: mine, time: _time(msg.createdAt)));
     }
     return out;
   }
@@ -302,11 +316,17 @@ class _MaestroDmScreenState extends State<MaestroDmScreen> {
             MapFact(Icons.location_city_outlined, 'Branch', m.branch),
             MapFact(Icons.music_note, 'Voice section', m.voiceSection),
             MapFact(Icons.event_outlined, 'Joined', '${m.joinDate.year}'),
-            MapFact(Icons.timer_outlined, 'Years with choir',
-                '$years ${years == 1 ? 'year' : 'years'}'),
+            MapFact(
+              Icons.timer_outlined,
+              'Years with choir',
+              '$years ${years == 1 ? 'year' : 'years'}',
+            ),
             MapFact(Icons.theater_comedy, 'Concerts', '${m.concertsCount}'),
-            MapFact(Icons.phone_outlined, 'Phone',
-                m.phone.isEmpty ? '—' : m.phone),
+            MapFact(
+              Icons.phone_outlined,
+              'Phone',
+              m.phone.isEmpty ? '—' : m.phone,
+            ),
           ],
         ),
       );
@@ -360,9 +380,13 @@ class _MaestroDmScreenState extends State<MaestroDmScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text('Recording  ${_fmtRec(_recordDuration)}',
-                    style: const TextStyle(
-                        color: AppColors.dark, fontWeight: FontWeight.w600)),
+                Text(
+                  'Recording  ${_fmtRec(_recordDuration)}',
+                  style: const TextStyle(
+                    color: AppColors.dark,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
             ),
           ),
@@ -385,8 +409,10 @@ class _MaestroDmScreenState extends State<MaestroDmScreen> {
     return Row(
       children: [
         IconButton(
-          icon: Icon(_uploadingVoice ? Icons.cloud_upload_outlined : Icons.mic_none,
-              color: AppColors.primary),
+          icon: Icon(
+            _uploadingVoice ? Icons.cloud_upload_outlined : Icons.mic_none,
+            color: AppColors.primary,
+          ),
           tooltip: 'Record voice',
           onPressed: _uploadingVoice ? null : _toggleRecord,
         ),
@@ -398,8 +424,10 @@ class _MaestroDmScreenState extends State<MaestroDmScreen> {
             onSubmitted: (_) => _send(),
             decoration: const InputDecoration(
               hintText: 'Write a message…',
-              contentPadding:
-                  EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 10,
+              ),
             ),
           ),
         ),
@@ -414,9 +442,13 @@ class _MaestroDmScreenState extends State<MaestroDmScreen> {
               padding: const EdgeInsets.all(10),
               child: _sending
                   ? const SizedBox(
-                      height: 18, width: 18,
+                      height: 18,
+                      width: 18,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: AppColors.cream))
+                        strokeWidth: 2,
+                        color: AppColors.cream,
+                      ),
+                    )
                   : const Icon(Icons.send, size: 18, color: AppColors.cream),
             ),
           ),
@@ -441,8 +473,10 @@ class _MaestroDmScreenState extends State<MaestroDmScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(widget.title, style: const TextStyle(fontSize: 16)),
-                    const Text('Tap for info',
-                        style: TextStyle(fontSize: 11, color: AppColors.gray)),
+                    const Text(
+                      'Tap for info',
+                      style: TextStyle(fontSize: 11, color: AppColors.gray),
+                    ),
                   ],
                 ),
               ),
@@ -454,39 +488,39 @@ class _MaestroDmScreenState extends State<MaestroDmScreen> {
       ),
       body: BrandedBackground(
         child: Column(
-        children: [
-          Expanded(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator())
-                : _messages.isEmpty
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(32),
-                          child: Text(
-                            _iAmAdminSide
-                                ? 'No messages yet from this member.'
-                                : 'Start the conversation with the Maestro.',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
+          children: [
+            Expanded(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _messages.isEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Text(
+                          _iAmAdminSide
+                              ? 'No messages yet from this member.'
+                              : 'Start the conversation with the Maestro.',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodyMedium,
                         ),
-                      )
-                    : ListView(
-                        controller: _scroll,
-                        padding: const EdgeInsets.fromLTRB(14, 16, 14, 16),
-                        children: _chatChildren(),
                       ),
-          ),
-          Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(top: BorderSide(color: AppColors.offWhite)),
+                    )
+                  : ListView(
+                      controller: _scroll,
+                      padding: const EdgeInsets.fromLTRB(14, 16, 14, 16),
+                      children: _chatChildren(),
+                    ),
             ),
-            padding: const EdgeInsets.fromLTRB(10, 8, 10, 12),
-            child: SafeArea(top: false, child: _composer()),
-          ),
-        ],
-      ),
+            Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                border: Border(top: BorderSide(color: AppColors.offWhite)),
+              ),
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 12),
+              child: SafeArea(top: false, child: _composer()),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -525,7 +559,11 @@ class _Bubble extends StatelessWidget {
   final DmMessage message;
   final bool mine;
   final String time;
-  const _Bubble({required this.message, required this.mine, required this.time});
+  const _Bubble({
+    required this.message,
+    required this.mine,
+    required this.time,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -534,7 +572,9 @@ class _Bubble extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
-        mainAxisAlignment: mine ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: mine
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         children: [
           Flexible(
             child: Container(
@@ -561,15 +601,20 @@ class _Bubble extends StatelessWidget {
                     ),
                   if ((message.body ?? '').isNotEmpty) ...[
                     if (message.hasAudio) const SizedBox(height: 6),
-                    Text(message.body!,
-                        style: TextStyle(color: fg, fontSize: 14, height: 1.4)),
+                    Text(
+                      message.body!,
+                      style: TextStyle(color: fg, fontSize: 14, height: 1.4),
+                    ),
                   ],
                   const SizedBox(height: 4),
-                  Text(time,
-                      style: TextStyle(
-                          color: fg.withValues(alpha: 0.7),
-                          fontSize: 10,
-                          fontWeight: FontWeight.w500)),
+                  Text(
+                    time,
+                    style: TextStyle(
+                      color: fg.withValues(alpha: 0.7),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ],
               ),
             ),

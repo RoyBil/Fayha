@@ -28,6 +28,7 @@ class DmThread {
   final String adminName;
   final String lastBody;
   final DateTime lastAt;
+
   /// True when the current user is on the member_id side of this thread
   /// (i.e. they initiated the conversation towards another admin).
   final bool iAmOnMemberSide;
@@ -73,14 +74,16 @@ class DmService {
         .eq('admin_id', adminId)
         .order('created_at', ascending: true);
     return (rows as List)
-        .map((r) => DmMessage(
-              id: r['id'] as String,
-              body: r['body'] as String?,
-              fromMaestro: r['from_maestro'] as bool,
-              createdAt: DateTime.parse(r['created_at'] as String).toLocal(),
-              audioUrl: r['audio_url'] as String?,
-              audioDurationMs: r['audio_duration_ms'] as int?,
-            ))
+        .map(
+          (r) => DmMessage(
+            id: r['id'] as String,
+            body: r['body'] as String?,
+            fromMaestro: r['from_maestro'] as bool,
+            createdAt: DateTime.parse(r['created_at'] as String).toLocal(),
+            audioUrl: r['audio_url'] as String?,
+            audioDurationMs: r['audio_duration_ms'] as int?,
+          ),
+        )
         .toList();
   }
 
@@ -122,7 +125,9 @@ class DmService {
       'wav' => 'audio/wav',
       _ => 'audio/$fileExtension',
     };
-    await _c.storage.from('voice_messages').uploadBinary(
+    await _c.storage
+        .from('voice_messages')
+        .uploadBinary(
           path,
           bytes,
           fileOptions: FileOptions(upsert: false, contentType: contentType),
@@ -136,7 +141,8 @@ class DmService {
     final rows = await _c
         .from('direct_messages')
         .select(
-            'member_id,admin_id,body,audio_url,created_at,members!direct_messages_member_id_fkey(name)')
+          'member_id,admin_id,body,audio_url,created_at,members!direct_messages_member_id_fkey(name)',
+        )
         .eq('admin_id', adminId)
         .order('created_at', ascending: false);
     final seen = <String>{};
@@ -146,17 +152,20 @@ class DmService {
       if (seen.contains(id)) continue;
       seen.add(id);
       final member = r['members'] as Map<String, dynamic>?;
-      final body = (r['body'] as String?) ??
+      final body =
+          (r['body'] as String?) ??
           ((r['audio_url'] as String?) != null ? '🎙 Voice message' : '');
-      threads.add(DmThread(
-        memberId: id,
-        memberName: (member?['name'] as String?) ?? 'Member',
-        adminId: adminId,
-        adminName: 'You',
-        lastBody: body,
-        lastAt: DateTime.parse(r['created_at'] as String).toLocal(),
-        iAmOnMemberSide: false,
-      ));
+      threads.add(
+        DmThread(
+          memberId: id,
+          memberName: (member?['name'] as String?) ?? 'Member',
+          adminId: adminId,
+          adminName: 'You',
+          lastBody: body,
+          lastAt: DateTime.parse(r['created_at'] as String).toLocal(),
+          iAmOnMemberSide: false,
+        ),
+      );
     }
     return threads;
   }
@@ -167,7 +176,8 @@ class DmService {
     final rows = await _c
         .from('direct_messages')
         .select(
-            'member_id,admin_id,body,audio_url,created_at,members!direct_messages_admin_id_fkey(name)')
+          'member_id,admin_id,body,audio_url,created_at,members!direct_messages_admin_id_fkey(name)',
+        )
         .eq('member_id', memberId)
         .order('created_at', ascending: false);
     final seen = <String>{};
@@ -177,17 +187,20 @@ class DmService {
       if (seen.contains(aid)) continue;
       seen.add(aid);
       final admin = r['members'] as Map<String, dynamic>?;
-      final body = (r['body'] as String?) ??
+      final body =
+          (r['body'] as String?) ??
           ((r['audio_url'] as String?) != null ? '🎙 Voice message' : '');
-      threads.add(DmThread(
-        memberId: memberId,
-        memberName: AppState.instance.currentMember?.name ?? 'You',
-        adminId: aid,
-        adminName: (admin?['name'] as String?) ?? 'Admin',
-        lastBody: body,
-        lastAt: DateTime.parse(r['created_at'] as String).toLocal(),
-        iAmOnMemberSide: true,
-      ));
+      threads.add(
+        DmThread(
+          memberId: memberId,
+          memberName: AppState.instance.currentMember?.name ?? 'You',
+          adminId: aid,
+          adminName: (admin?['name'] as String?) ?? 'Admin',
+          lastBody: body,
+          lastAt: DateTime.parse(r['created_at'] as String).toLocal(),
+          iAmOnMemberSide: true,
+        ),
+      );
     }
     return threads;
   }
@@ -221,13 +234,15 @@ class DmService {
         .order('role', ascending: false) // superAdmin first
         .order('name');
     return (rows as List)
-        .map((r) => AdminContact(
-              id: r['id'] as String,
-              name: (r['name'] as String?) ?? 'Admin',
-              role: r['role'] as String,
-              branch: (r['branch'] as String?) ?? '',
-              photoUrl: r['photo_url'] as String?,
-            ))
+        .map(
+          (r) => AdminContact(
+            id: r['id'] as String,
+            name: (r['name'] as String?) ?? 'Admin',
+            role: r['role'] as String,
+            branch: (r['branch'] as String?) ?? '',
+            photoUrl: r['photo_url'] as String?,
+          ),
+        )
         .where((a) => a.id != me)
         .toList();
   }

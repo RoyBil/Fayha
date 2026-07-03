@@ -22,11 +22,20 @@ class _AttendanceStatsScreenState extends State<AttendanceStatsScreen> {
   late String _branch;
   late Future<List<DayStats>> _future;
 
-  static const _weekdays = [
-    'Mon','Tue','Wed','Thu','Fri','Sat','Sun'
-  ];
+  static const _weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   static const _months = [
-    'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
 
   @override
@@ -96,9 +105,20 @@ class _AttendanceStatsBodyState extends State<AttendanceStatsBody> {
       branch: _branch,
       future: _future,
       onSwitchBranch: _switchBranch,
-      weekdays: const ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+      weekdays: const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
       months: const [
-        'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
       ],
     );
   }
@@ -147,26 +167,30 @@ class _StatsBody extends StatelessWidget {
                 return const Center(child: CircularProgressIndicator());
               }
               if (snap.hasError) {
-                return ListView(children: [
-                  const SizedBox(height: 80),
-                  EmptyState(
-                    icon: Icons.error_outline,
-                    title: 'Could not load stats',
-                    message: '${snap.error}',
-                  ),
-                ]);
+                return ListView(
+                  children: [
+                    const SizedBox(height: 80),
+                    EmptyState(
+                      icon: Icons.error_outline,
+                      title: 'Could not load stats',
+                      message: '${snap.error}',
+                    ),
+                  ],
+                );
               }
               final days = snap.data ?? const <DayStats>[];
               if (days.isEmpty) {
-                return ListView(children: const [
-                  SizedBox(height: 80),
-                  EmptyState(
-                    icon: Icons.bar_chart,
-                    title: 'No data yet',
-                    message:
-                        'Once attendance is recorded for this branch, stats will appear here.',
-                  ),
-                ]);
+                return ListView(
+                  children: const [
+                    SizedBox(height: 80),
+                    EmptyState(
+                      icon: Icons.bar_chart,
+                      title: 'No data yet',
+                      message:
+                          'Once attendance is recorded for this branch, stats will appear here.',
+                    ),
+                  ],
+                );
               }
               final weeks = AttendanceStatsService.rollupWeeks(days);
               final summary = _summary(days);
@@ -205,32 +229,33 @@ class _StatsBody extends StatelessWidget {
                   const SizedBox(height: 20),
 
                   // === Per week ===
-                  const SectionHeader(
-                      eyebrow: 'Weekly', title: 'By week'),
+                  const SectionHeader(eyebrow: 'Weekly', title: 'By week'),
                   const SizedBox(height: 10),
-                  ...weeks.map((w) => _WeekRow(
-                        week: w,
-                        months: months,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => WeekDetailScreen(
-                              week: w,
-                              branch: branch,
-                            ),
-                          ),
+                  ...weeks.map(
+                    (w) => _WeekRow(
+                      week: w,
+                      months: months,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              WeekDetailScreen(week: w, branch: branch),
                         ),
-                      )),
+                      ),
+                    ),
+                  ),
 
                   const SizedBox(height: 22),
 
                   // === Per day ===
                   const SectionHeader(
-                      eyebrow: 'Daily',
-                      title: 'Every recorded session'),
+                    eyebrow: 'Daily',
+                    title: 'Every recorded session',
+                  ),
                   const SizedBox(height: 10),
-                  ...days.map((d) =>
-                      _DayRow(day: d, weekdays: weekdays, months: months)),
+                  ...days.map(
+                    (d) => _DayRow(day: d, weekdays: weekdays, months: months),
+                  ),
                 ],
               );
             },
@@ -245,7 +270,8 @@ class _StatsBody extends StatelessWidget {
     if (held.isEmpty) {
       return const _Summary(avgPresentRate: 0, avgLateMinutes: 0);
     }
-    final presentRate = held
+    final presentRate =
+        held
             .map((d) => d.presentRate + (d.late > 0 ? d.late / d.total : 0))
             .reduce((a, b) => a + b) /
         held.length;
@@ -266,10 +292,7 @@ class _StatsBody extends StatelessWidget {
 class _Summary {
   final double avgPresentRate;
   final int avgLateMinutes;
-  const _Summary({
-    required this.avgPresentRate,
-    required this.avgLateMinutes,
-  });
+  const _Summary({required this.avgPresentRate, required this.avgLateMinutes});
 }
 
 class _StatPill extends StatelessWidget {
@@ -293,15 +316,19 @@ class _StatPill extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Text(value,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(color: color, fontWeight: FontWeight.w700)),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           const SizedBox(height: 2),
-          Text(label,
-              style: Theme.of(context).textTheme.labelSmall,
-              textAlign: TextAlign.center),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelSmall,
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );
@@ -312,11 +339,7 @@ class _WeekRow extends StatelessWidget {
   final WeekStats week;
   final List<String> months;
   final VoidCallback? onTap;
-  const _WeekRow({
-    required this.week,
-    required this.months,
-    this.onTap,
-  });
+  const _WeekRow({required this.week, required this.months, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -325,8 +348,7 @@ class _WeekRow extends StatelessWidget {
     final label =
         'Week of ${week.weekStart.day} ${months[week.weekStart.month - 1]} — '
         '${end.day} ${months[end.month - 1]}';
-    final total =
-        week.presentTotal + week.lateTotal + week.absentTotal;
+    final total = week.presentTotal + week.lateTotal + week.absentTotal;
     final attendRate = total == 0
         ? 0.0
         : (week.presentTotal + week.lateTotal) / total;
@@ -340,9 +362,7 @@ class _WeekRow extends StatelessWidget {
           children: [
             Row(
               children: [
-                Expanded(
-                  child: Text(label, style: theme.textTheme.titleSmall),
-                ),
+                Expanded(child: Text(label, style: theme.textTheme.titleSmall)),
                 if (onTap != null)
                   const Icon(Icons.chevron_right, color: AppColors.gray),
               ],
@@ -362,16 +382,19 @@ class _WeekRow extends StatelessWidget {
             Row(
               children: [
                 _Legend(
-                    color: AppColors.secondaryDark,
-                    label: 'Present ${week.presentTotal}'),
+                  color: AppColors.secondaryDark,
+                  label: 'Present ${week.presentTotal}',
+                ),
                 const SizedBox(width: 10),
                 _Legend(
-                    color: AppColors.accentDark,
-                    label: 'Late ${week.lateTotal}'),
+                  color: AppColors.accentDark,
+                  label: 'Late ${week.lateTotal}',
+                ),
                 const SizedBox(width: 10),
                 _Legend(
-                    color: AppColors.gray,
-                    label: 'Absent ${week.absentTotal}'),
+                  color: AppColors.gray,
+                  label: 'Absent ${week.absentTotal}',
+                ),
               ],
             ),
           ],
@@ -405,9 +428,12 @@ class _DayRow extends StatelessWidget {
               _DateBox(date: d, weekdays: weekdays, months: months),
               const SizedBox(width: 14),
               Expanded(
-                child: Text('No rehearsal',
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(color: AppColors.gray)),
+                child: Text(
+                  'No rehearsal',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.gray,
+                  ),
+                ),
               ),
             ],
           ),
@@ -430,19 +456,22 @@ class _DayRow extends StatelessWidget {
                   Row(
                     children: [
                       _MiniStat(
-                          color: AppColors.secondaryDark,
-                          label: 'P',
-                          value: '${day.present}'),
+                        color: AppColors.secondaryDark,
+                        label: 'P',
+                        value: '${day.present}',
+                      ),
                       const SizedBox(width: 8),
                       _MiniStat(
-                          color: AppColors.accentDark,
-                          label: 'L',
-                          value: '${day.late}'),
+                        color: AppColors.accentDark,
+                        label: 'L',
+                        value: '${day.late}',
+                      ),
                       const SizedBox(width: 8),
                       _MiniStat(
-                          color: AppColors.gray,
-                          label: 'A',
-                          value: '${day.absent}'),
+                        color: AppColors.gray,
+                        label: 'A',
+                        value: '${day.absent}',
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -453,8 +482,10 @@ class _DayRow extends StatelessWidget {
                   ),
                   if (day.avgLateMinutes > 0) ...[
                     const SizedBox(height: 4),
-                    Text('Avg late ${day.avgLateMinutes} min',
-                        style: theme.textTheme.labelSmall),
+                    Text(
+                      'Avg late ${day.avgLateMinutes} min',
+                      style: theme.textTheme.labelSmall,
+                    ),
                   ],
                 ],
               ),
@@ -488,17 +519,26 @@ class _DateBox extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Text(months[date.month - 1].toUpperCase(),
-              style: theme.textTheme.labelSmall
-                  ?.copyWith(color: AppColors.accentLight)),
-          Text('${date.day}',
-              style: theme.textTheme.titleLarge?.copyWith(
-                color: AppColors.cream,
-                height: 1,
-              )),
-          Text(weekdays[date.weekday - 1],
-              style: theme.textTheme.labelSmall
-                  ?.copyWith(color: AppColors.accentLight, fontSize: 9)),
+          Text(
+            months[date.month - 1].toUpperCase(),
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: AppColors.accentLight,
+            ),
+          ),
+          Text(
+            '${date.day}',
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: AppColors.cream,
+              height: 1,
+            ),
+          ),
+          Text(
+            weekdays[date.weekday - 1],
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: AppColors.accentLight,
+              fontSize: 9,
+            ),
+          ),
         ],
       ),
     );
@@ -541,7 +581,10 @@ class _StackedBar extends StatelessWidget {
               ),
             // Force a minimum width so the bar always shows something.
             if (present + late + absent == 0)
-              Expanded(flex: total, child: Container(color: AppColors.offWhite)),
+              Expanded(
+                flex: total,
+                child: Container(color: AppColors.offWhite),
+              ),
           ],
         ),
       ),
@@ -598,12 +641,10 @@ class _Legend extends StatelessWidget {
         Container(
           width: 9,
           height: 9,
-          decoration:
-              BoxDecoration(color: color, shape: BoxShape.circle),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 4),
-        Text(label,
-            style: Theme.of(context).textTheme.labelSmall),
+        Text(label, style: Theme.of(context).textTheme.labelSmall),
       ],
     );
   }

@@ -20,11 +20,27 @@ class AttendanceSheetScreen extends StatefulWidget {
 
 class _AttendanceSheetScreenState extends State<AttendanceSheetScreen> {
   static const _months = [
-    'January','February','March','April','May','June',
-    'July','August','September','October','November','December'
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
   static const _weekdays = [
-    'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
   ];
 
   bool _loading = true;
@@ -43,7 +59,10 @@ class _AttendanceSheetScreenState extends State<AttendanceSheetScreen> {
   Future<void> _load() async {
     try {
       final members = await AttendanceService.branchMembers(widget.branch);
-      final sheet = await AttendanceService.loadSheet(widget.branch, widget.date);
+      final sheet = await AttendanceService.loadSheet(
+        widget.branch,
+        widget.date,
+      );
       if (!mounted) return;
       setState(() {
         _members = members;
@@ -57,14 +76,16 @@ class _AttendanceSheetScreenState extends State<AttendanceSheetScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Could not load: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not load: $e')));
     }
   }
 
   Future<void> _editLateMinutes(Member m) async {
     final controller = TextEditingController(
-        text: (_lateMinutes[m.id] ?? 0).toString());
+      text: (_lateMinutes[m.id] ?? 0).toString(),
+    );
     final mins = await showDialog<int>(
       context: context,
       builder: (_) => AlertDialog(
@@ -80,11 +101,12 @@ class _AttendanceSheetScreenState extends State<AttendanceSheetScreen> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
-            onPressed: () => Navigator.pop(
-                context, int.tryParse(controller.text) ?? 0),
+            onPressed: () =>
+                Navigator.pop(context, int.tryParse(controller.text) ?? 0),
             child: const Text('Save'),
           ),
         ],
@@ -121,8 +143,9 @@ class _AttendanceSheetScreenState extends State<AttendanceSheetScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Could not save: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not save: $e')));
     }
   }
 
@@ -132,9 +155,7 @@ class _AttendanceSheetScreenState extends State<AttendanceSheetScreen> {
     final d = widget.date;
     final presentCount = _present.values.where((v) => v).length;
     return Scaffold(
-      appBar: AppBar(
-        title: Text('${widget.branch} Attendance'),
-      ),
+      appBar: AppBar(title: Text('${widget.branch} Attendance')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : Column(
@@ -150,8 +171,10 @@ class _AttendanceSheetScreenState extends State<AttendanceSheetScreen> {
                         '${_weekdays[d.weekday - 1]} ${d.day} ${_months[d.month - 1]} ${d.year}',
                         style: theme.textTheme.titleMedium,
                       ),
-                      Text(AttendanceService.sessionTime,
-                          style: theme.textTheme.bodySmall),
+                      Text(
+                        AttendanceService.sessionTime,
+                        style: theme.textTheme.bodySmall,
+                      ),
                     ],
                   ),
                 ),
@@ -181,14 +204,18 @@ class _AttendanceSheetScreenState extends State<AttendanceSheetScreen> {
                         ? const Center(
                             child: Padding(
                               padding: EdgeInsets.all(32),
-                              child: Text('No active members in this branch yet.'),
+                              child: Text(
+                                'No active members in this branch yet.',
+                              ),
                             ),
                           )
                         : ListView(
                             padding: const EdgeInsets.fromLTRB(20, 12, 20, 90),
                             children: [
-                              Text('$presentCount of ${_members.length} present',
-                                  style: theme.textTheme.labelMedium),
+                              Text(
+                                '$presentCount of ${_members.length} present',
+                                style: theme.textTheme.labelMedium,
+                              ),
                               const SizedBox(height: 10),
                               ..._members.map((m) {
                                 final here = _present[m.id] ?? true;
@@ -197,33 +224,39 @@ class _AttendanceSheetScreenState extends State<AttendanceSheetScreen> {
                                   padding: const EdgeInsets.only(bottom: 8),
                                   child: ElegantCard(
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 8),
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
                                     child: Row(
                                       children: [
                                         Avatar(
-                                            name: m.name,
-                                            size: 38,
-                                            photoUrl: m.photoUrl),
+                                          name: m.name,
+                                          size: 38,
+                                          photoUrl: m.photoUrl,
+                                        ),
                                         const SizedBox(width: 12),
                                         Expanded(
                                           child: Column(
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
                                             children: [
-                                              Text(m.name,
-                                                  style: theme
-                                                      .textTheme.titleSmall),
+                                              Text(
+                                                m.name,
+                                                style:
+                                                    theme.textTheme.titleSmall,
+                                              ),
                                               Text(
                                                 here && late
                                                     ? '${m.voiceSection} · late ${_lateMinutes[m.id]} min'
                                                     : m.voiceSection,
                                                 style: theme
-                                                    .textTheme.labelSmall
+                                                    .textTheme
+                                                    .labelSmall
                                                     ?.copyWith(
-                                                  color: here && late
-                                                      ? AppColors.accentDark
-                                                      : null,
-                                                ),
+                                                      color: here && late
+                                                          ? AppColors.accentDark
+                                                          : null,
+                                                    ),
                                               ),
                                             ],
                                           ),
@@ -274,9 +307,13 @@ class _AttendanceSheetScreenState extends State<AttendanceSheetScreen> {
                 onPressed: _saving ? null : _save,
                 icon: _saving
                     ? const SizedBox(
-                        height: 18, width: 18,
+                        height: 18,
+                        width: 18,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: AppColors.cream))
+                          strokeWidth: 2,
+                          color: AppColors.cream,
+                        ),
+                      )
                     : const Icon(Icons.save, size: 18),
                 label: const Text('Save Attendance'),
               ),
@@ -307,14 +344,11 @@ class _StateChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         onTap: onTap,
         child: Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: selected
-                  ? color
-                  : color.withValues(alpha: 0.4),
+              color: selected ? color : color.withValues(alpha: 0.4),
               width: 1,
             ),
           ),

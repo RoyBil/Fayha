@@ -48,7 +48,15 @@ class BusRouteService {
     required LatLng startPoint,
     required String endName,
     required LatLng endPoint,
-    required List<({String name, LatLng location, int? geofenceRadiusM, int? approachRadiusM})> stops,
+    required List<
+      ({
+        String name,
+        LatLng location,
+        int? geofenceRadiusM,
+        int? approachRadiusM,
+      })
+    >
+    stops,
   }) async {
     final me = _c.auth.currentUser?.id;
     if (me == null) throw 'Not signed in';
@@ -59,21 +67,26 @@ class BusRouteService {
       stops.map((s) => s.location).toList(),
     );
 
-    final routeId = await _c.rpc('bus_routes_upsert_with_geometry', params: {
-      'p_id': null,
-      'p_branch': branch,
-      'p_name': name,
-      'p_start_name': startName,
-      'p_start_lat': startPoint.latitude,
-      'p_start_lng': startPoint.longitude,
-      'p_end_name': endName,
-      'p_end_lat': endPoint.latitude,
-      'p_end_lng': endPoint.longitude,
-      'p_polyline_coords': directions.polyline
-          .map((p) => [p.longitude, p.latitude])
-          .toList(),
-      'p_total_distance_m': directions.totalDistanceM,
-    }) as String;
+    final routeId =
+        await _c.rpc(
+              'bus_routes_upsert_with_geometry',
+              params: {
+                'p_id': null,
+                'p_branch': branch,
+                'p_name': name,
+                'p_start_name': startName,
+                'p_start_lat': startPoint.latitude,
+                'p_start_lng': startPoint.longitude,
+                'p_end_name': endName,
+                'p_end_lat': endPoint.latitude,
+                'p_end_lng': endPoint.longitude,
+                'p_polyline_coords': directions.polyline
+                    .map((p) => [p.longitude, p.latitude])
+                    .toList(),
+                'p_total_distance_m': directions.totalDistanceM,
+              },
+            )
+            as String;
 
     // Insert stops
     final stopRows = <Map<String, dynamic>>[];
@@ -102,7 +115,15 @@ class BusRouteService {
     String? name,
     required LatLng startPoint,
     required LatLng endPoint,
-    required List<({String name, LatLng location, int? geofenceRadiusM, int? approachRadiusM})> stops,
+    required List<
+      ({
+        String name,
+        LatLng location,
+        int? geofenceRadiusM,
+        int? approachRadiusM,
+      })
+    >
+    stops,
   }) async {
     final directions = await fetchDirections(
       startPoint,
@@ -110,21 +131,24 @@ class BusRouteService {
       stops.map((s) => s.location).toList(),
     );
 
-    await _c.rpc('bus_routes_upsert_with_geometry', params: {
-      'p_id': routeId,
-      'p_branch': null,
-      'p_name': name,
-      'p_start_name': null,
-      'p_start_lat': startPoint.latitude,
-      'p_start_lng': startPoint.longitude,
-      'p_end_name': null,
-      'p_end_lat': endPoint.latitude,
-      'p_end_lng': endPoint.longitude,
-      'p_polyline_coords': directions.polyline
-          .map((p) => [p.longitude, p.latitude])
-          .toList(),
-      'p_total_distance_m': directions.totalDistanceM,
-    });
+    await _c.rpc(
+      'bus_routes_upsert_with_geometry',
+      params: {
+        'p_id': routeId,
+        'p_branch': null,
+        'p_name': name,
+        'p_start_name': null,
+        'p_start_lat': startPoint.latitude,
+        'p_start_lng': startPoint.longitude,
+        'p_end_name': null,
+        'p_end_lat': endPoint.latitude,
+        'p_end_lng': endPoint.longitude,
+        'p_polyline_coords': directions.polyline
+            .map((p) => [p.longitude, p.latitude])
+            .toList(),
+        'p_total_distance_m': directions.totalDistanceM,
+      },
+    );
 
     await _c.from('bus_route_stops').delete().eq('route_id', routeId);
     final stopRows = <Map<String, dynamic>>[];
@@ -134,7 +158,8 @@ class BusRouteService {
         'route_id': routeId,
         'order_index': i,
         'name': s.name,
-        'location': 'SRID=4326;POINT(${s.location.longitude} ${s.location.latitude})',
+        'location':
+            'SRID=4326;POINT(${s.location.longitude} ${s.location.latitude})',
         if (s.geofenceRadiusM != null) 'geofence_radius_m': s.geofenceRadiusM,
         if (s.approachRadiusM != null) 'approach_radius_m': s.approachRadiusM,
       });
@@ -157,22 +182,21 @@ class BusRouteService {
   /// to a straight line through the waypoints if no API key is set or
   /// the request fails (so the rest of the app stays usable in dev).
   static Future<({List<LatLng> polyline, double totalDistanceM})>
-      fetchDirections(LatLng start, LatLng end, List<LatLng> waypoints) async {
+  fetchDirections(LatLng start, LatLng end, List<LatLng> waypoints) async {
     final key = googleDirectionsApiKey;
     if (key == null || key.isEmpty) {
       return _straightLineFallback(start, end, waypoints);
     }
     try {
-      final wp = waypoints
-          .map((p) => '${p.latitude},${p.longitude}')
-          .join('|');
-      final uri = Uri.https('maps.googleapis.com', '/maps/api/directions/json', {
-        'origin': '${start.latitude},${start.longitude}',
-        'destination': '${end.latitude},${end.longitude}',
-        if (wp.isNotEmpty) 'waypoints': wp,
-        'mode': 'driving',
-        'key': key,
-      });
+      final wp = waypoints.map((p) => '${p.latitude},${p.longitude}').join('|');
+      final uri =
+          Uri.https('maps.googleapis.com', '/maps/api/directions/json', {
+            'origin': '${start.latitude},${start.longitude}',
+            'destination': '${end.latitude},${end.longitude}',
+            if (wp.isNotEmpty) 'waypoints': wp,
+            'mode': 'driving',
+            'key': key,
+          });
       final res = await http.get(uri);
       if (res.statusCode != 200) {
         return _straightLineFallback(start, end, waypoints);
@@ -188,17 +212,17 @@ class BusRouteService {
         0,
         (s, l) => s + ((l['distance'] as Map)['value'] as num).toDouble(),
       );
-      return (
-        polyline: _decodeGooglePolyline(encoded),
-        totalDistanceM: totalM,
-      );
+      return (polyline: _decodeGooglePolyline(encoded), totalDistanceM: totalM);
     } catch (_) {
       return _straightLineFallback(start, end, waypoints);
     }
   }
 
-  static ({List<LatLng> polyline, double totalDistanceM})
-      _straightLineFallback(LatLng start, LatLng end, List<LatLng> waypoints) {
+  static ({List<LatLng> polyline, double totalDistanceM}) _straightLineFallback(
+    LatLng start,
+    LatLng end,
+    List<LatLng> waypoints,
+  ) {
     final pts = <LatLng>[start, ...waypoints, end];
     final d = const Distance();
     double total = 0;

@@ -24,6 +24,7 @@ class TripGroupDetailScreen extends StatefulWidget {
 class _TripGroupDetailScreenState extends State<TripGroupDetailScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabs;
+  late TripGroup _group;
 
   bool get _isAdmin => AppState.instance.isAdmin;
   String get _myId => AppState.instance.currentMember?.id ?? '';
@@ -31,22 +32,54 @@ class _TripGroupDetailScreenState extends State<TripGroupDetailScreen>
   late Future<List<TripGroupInfo>> _info;
   late Future<List<TripGroupDocument>> _docs;
   late Future<List<TripGroupMember>> _members;
+  late Future<Map<String, Set<TripDocumentType>>> _docTypes;
 
   @override
   void initState() {
     super.initState();
+    _group = widget.group;
     _tabs = TabController(length: 3, vsync: this);
     _reload();
   }
 
   void _reload() {
     setState(() {
-      _info = TripGroupsService.fetchInfo(widget.group.id);
+      _info = TripGroupsService.fetchInfo(_group.id);
       _docs = _isAdmin
-          ? TripGroupsService.fetchAllDocuments(widget.group.id)
-          : TripGroupsService.fetchDocuments(widget.group.id, _myId);
-      _members = TripGroupsService.fetchMembers(widget.group.id);
+          ? TripGroupsService.fetchAllDocuments(_group.id)
+          : TripGroupsService.fetchDocuments(_group.id, _myId);
+      _members = TripGroupsService.fetchMembers(_group.id);
+      _docTypes = TripGroupsService.fetchDocumentTypes(_group.id);
     });
+  }
+
+  Future<void> _editRequiredDocs() async {
+    final selected = await showDialog<List<TripDocumentType>>(
+      context: context,
+      builder: (_) => _RequiredDocsDialog(current: _group.requiredDocTypes),
+    );
+    if (selected == null) return;
+    try {
+      await TripGroupsService.update(_group.id, requiredDocTypes: selected);
+      setState(() {
+        _group = TripGroup(
+          id: _group.id,
+          name: _group.name,
+          description: _group.description,
+          destination: _group.destination,
+          departureDate: _group.departureDate,
+          returnDate: _group.returnDate,
+          createdAt: _group.createdAt,
+          requiredDocTypes: selected,
+          members: _group.members,
+        );
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not update: $e')));
+    }
   }
 
   @override
@@ -59,7 +92,15 @@ class _TripGroupDetailScreenState extends State<TripGroupDetailScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.group.name),
+        title: Text(_group.name),
+        actions: [
+          if (_isAdmin)
+            IconButton(
+              icon: const Icon(Icons.checklist_outlined),
+              tooltip: 'Required documents',
+              onPressed: _editRequiredDocs,
+            ),
+        ],
         bottom: TabBar(
           controller: _tabs,
           labelColor: AppColors.primary,
@@ -68,11 +109,13 @@ class _TripGroupDetailScreenState extends State<TripGroupDetailScreen>
           tabs: [
             const Tab(icon: Icon(Icons.info_outline, size: 18), text: 'Info'),
             const Tab(
-                icon: Icon(Icons.folder_outlined, size: 18),
-                text: 'Documents'),
+              icon: Icon(Icons.folder_outlined, size: 18),
+              text: 'Documents',
+            ),
             Tab(
-                icon: const Icon(Icons.people_outline, size: 18),
-                text: _isAdmin ? 'Members' : 'Team'),
+              icon: const Icon(Icons.people_outline, size: 18),
+              text: _isAdmin ? 'Members' : 'Team',
+            ),
           ],
         ),
       ),
@@ -82,20 +125,22 @@ class _TripGroupDetailScreenState extends State<TripGroupDetailScreen>
           _InfoTab(
             future: _info,
             isAdmin: _isAdmin,
-            groupId: widget.group.id,
+            groupId: _group.id,
             onChanged: _reload,
           ),
           _DocumentsTab(
             future: _docs,
-            groupId: widget.group.id,
+            groupId: _group.id,
             memberId: _myId,
             isAdmin: _isAdmin,
             onChanged: _reload,
           ),
           _MembersTab(
             future: _members,
-            groupId: widget.group.id,
-            groupName: widget.group.name,
+            docTypesFuture: _docTypes,
+            requiredDocTypes: _group.requiredDocTypes,
+            groupId: _group.id,
+            groupName: _group.name,
             isAdmin: _isAdmin,
             onChanged: _reload,
           ),
@@ -155,18 +200,21 @@ class _InfoTab extends StatelessWidget {
                 )
               else
                 for (final cat in TripInfoCategory.values) ...[
-                  Builder(builder: (context) {
-                    final catItems =
-                        items.where((i) => i.category == cat).toList();
-                    if (catItems.isEmpty) return const SizedBox.shrink();
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8, top: 4),
-                          child: _CategoryLabel(category: cat),
-                        ),
-                        ...catItems.map((item) => Padding(
+                  Builder(
+                    builder: (context) {
+                      final catItems = items
+                          .where((i) => i.category == cat)
+                          .toList();
+                      if (catItems.isEmpty) return const SizedBox.shrink();
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8, top: 4),
+                            child: _CategoryLabel(category: cat),
+                          ),
+                          ...catItems.map(
+                            (item) => Padding(
                               padding: const EdgeInsets.only(bottom: 10),
                               child: _InfoCard(
                                 item: item,
@@ -176,11 +224,13 @@ class _InfoTab extends StatelessWidget {
                                   onChanged();
                                 },
                               ),
-                            )),
-                        const SizedBox(height: 8),
-                      ],
-                    );
-                  }),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                      );
+                    },
+                  ),
                 ],
             ],
           );
@@ -203,8 +253,9 @@ class _InfoTab extends StatelessWidget {
     if (xFile != null) {
       try {
         final bytes = Uint8List.fromList(await xFile.readAsBytes());
-        final ext =
-            xFile.name.contains('.') ? xFile.name.split('.').last : 'bin';
+        final ext = xFile.name.contains('.')
+            ? xFile.name.split('.').last
+            : 'bin';
         final uploaded = await TripGroupsService.uploadInfoFile(
           groupId: groupId,
           bytes: bytes,
@@ -215,9 +266,9 @@ class _InfoTab extends StatelessWidget {
         fileName = uploaded.name;
       } catch (e) {
         if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('File upload failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('File upload failed: $e')));
         return;
       }
     }
@@ -235,9 +286,9 @@ class _InfoTab extends StatelessWidget {
       onChanged();
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not post: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not post: $e')));
     }
   }
 }
@@ -331,8 +382,11 @@ class _InfoCard extends StatelessWidget {
                   height: 80,
                   color: AppColors.offWhite,
                   child: const Center(
-                    child: Icon(Icons.broken_image_outlined,
-                        color: AppColors.lightGray, size: 32),
+                    child: Icon(
+                      Icons.broken_image_outlined,
+                      color: AppColors.lightGray,
+                      size: 32,
+                    ),
                   ),
                 ),
               ),
@@ -362,8 +416,11 @@ class _InfoCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(6),
                             child: const Padding(
                               padding: EdgeInsets.all(4),
-                              child: Icon(Icons.delete_outline,
-                                  size: 18, color: AppColors.gray),
+                              child: Icon(
+                                Icons.delete_outline,
+                                size: 18,
+                                color: AppColors.gray,
+                              ),
                             ),
                           ),
                         ),
@@ -374,30 +431,37 @@ class _InfoCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     Text(
                       item.body!,
-                      style: theme.textTheme.bodyMedium
-                          ?.copyWith(height: 1.6),
+                      style: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
                     ),
                   ],
                   // Non-image file chip
                   if (hasFile) ...[
                     const SizedBox(height: 12),
                     GestureDetector(
-                      onTap: () => launchUrl(Uri.parse(item.fileUrl!),
-                          mode: LaunchMode.externalApplication),
+                      onTap: () => launchUrl(
+                        Uri.parse(item.fileUrl!),
+                        mode: LaunchMode.externalApplication,
+                      ),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 9),
+                          horizontal: 12,
+                          vertical: 9,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.primary.withValues(alpha: 0.06),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                              color: AppColors.primary.withValues(alpha: 0.2)),
+                            color: AppColors.primary.withValues(alpha: 0.2),
+                          ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.insert_drive_file_outlined,
-                                size: 16, color: AppColors.primary),
+                            const Icon(
+                              Icons.insert_drive_file_outlined,
+                              size: 16,
+                              color: AppColors.primary,
+                            ),
                             const SizedBox(width: 8),
                             Flexible(
                               child: Text(
@@ -411,8 +475,11 @@ class _InfoCard extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: 6),
-                            const Icon(Icons.open_in_new,
-                                size: 13, color: AppColors.primary),
+                            const Icon(
+                              Icons.open_in_new,
+                              size: 13,
+                              color: AppColors.primary,
+                            ),
                           ],
                         ),
                       ),
@@ -493,9 +560,9 @@ class _DocumentsTabState extends State<_DocumentsTab> {
       widget.onChanged();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Upload failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
     } finally {
       if (mounted) setState(() => _uploading = false);
     }
@@ -509,8 +576,9 @@ class _DocumentsTabState extends State<_DocumentsTab> {
         content: Text('Delete "${doc.fileName}"?'),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(context, true),
@@ -525,9 +593,9 @@ class _DocumentsTabState extends State<_DocumentsTab> {
       widget.onChanged();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not delete: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not delete: $e')));
     }
   }
 
@@ -572,7 +640,9 @@ class _DocumentsTabState extends State<_DocumentsTab> {
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: AppColors.cream),
+                            strokeWidth: 2,
+                            color: AppColors.cream,
+                          ),
                         )
                       : const Icon(Icons.upload_file, size: 18),
                   label: Text(_uploading ? 'Uploading…' : 'Upload document'),
@@ -583,20 +653,24 @@ class _DocumentsTabState extends State<_DocumentsTab> {
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 24),
                   child: Center(
-                    child: Text('No documents uploaded yet.',
-                        textAlign: TextAlign.center),
+                    child: Text(
+                      'No documents uploaded yet.',
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 )
               else
-                ...docs.map((doc) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _DocCard(
-                        doc: doc,
-                        showMember: false,
-                        canDelete: true,
-                        onDelete: () => _delete(doc),
-                      ),
-                    )),
+                ...docs.map(
+                  (doc) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _DocCard(
+                      doc: doc,
+                      showMember: false,
+                      canDelete: true,
+                      onDelete: () => _delete(doc),
+                    ),
+                  ),
+                ),
             ],
           );
         },
@@ -645,7 +719,9 @@ class _AdminDocsView extends StatelessWidget {
                     width: 16,
                     height: 16,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: AppColors.cream),
+                      strokeWidth: 2,
+                      color: AppColors.cream,
+                    ),
                   )
                 : const Icon(Icons.upload_file, size: 18),
             label: Text(uploading ? 'Uploading…' : 'Upload document'),
@@ -656,8 +732,11 @@ class _AdminDocsView extends StatelessWidget {
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 24),
             child: Center(
-                child: Text('No documents uploaded yet.',
-                    textAlign: TextAlign.center)),
+              child: Text(
+                'No documents uploaded yet.',
+                textAlign: TextAlign.center,
+              ),
+            ),
           )
         else
           for (final entry in byMember.entries) ...[
@@ -665,24 +744,36 @@ class _AdminDocsView extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 8, top: 4),
               child: Row(
                 children: [
-                  Avatar(name: docs.firstWhere((d) => d.memberId == entry.key).memberName ?? '', size: 28),
+                  Avatar(
+                    name:
+                        docs
+                            .firstWhere((d) => d.memberId == entry.key)
+                            .memberName ??
+                        '',
+                    size: 28,
+                  ),
                   const SizedBox(width: 8),
                   Text(
-                    docs.firstWhere((d) => d.memberId == entry.key).memberName ?? 'Member',
+                    docs
+                            .firstWhere((d) => d.memberId == entry.key)
+                            .memberName ??
+                        'Member',
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                 ],
               ),
             ),
-            ...entry.value.map((doc) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: _DocCard(
-                    doc: doc,
-                    showMember: false,
-                    canDelete: true,
-                    onDelete: () => onDelete(doc),
-                  ),
-                )),
+            ...entry.value.map(
+              (doc) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _DocCard(
+                  doc: doc,
+                  showMember: false,
+                  canDelete: true,
+                  onDelete: () => onDelete(doc),
+                ),
+              ),
+            ),
             const SizedBox(height: 12),
           ],
       ],
@@ -705,6 +796,7 @@ class _DocCard extends StatelessWidget {
 
   static const _icons = {
     TripDocumentType.passport: Icons.book_outlined,
+    TripDocumentType.profilePhoto: Icons.portrait_outlined,
     TripDocumentType.visa: Icons.badge_outlined,
     TripDocumentType.insurance: Icons.health_and_safety_outlined,
     TripDocumentType.other: Icons.description_outlined,
@@ -734,10 +826,12 @@ class _DocCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(doc.fileName,
-                    style: theme.textTheme.titleSmall,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis),
+                Text(
+                  doc.fileName,
+                  style: theme.textTheme.titleSmall,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 Text(
                   '${doc.documentType.label} · ${_fmt(doc.uploadedAt)}',
                   style: theme.textTheme.labelSmall,
@@ -746,16 +840,24 @@ class _DocCard extends StatelessWidget {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.download_outlined,
-                size: 18, color: AppColors.primary),
+            icon: const Icon(
+              Icons.download_outlined,
+              size: 18,
+              color: AppColors.primary,
+            ),
             tooltip: 'Download',
-            onPressed: () => launchUrl(Uri.parse(doc.fileUrl),
-                mode: LaunchMode.externalApplication),
+            onPressed: () => launchUrl(
+              Uri.parse(doc.fileUrl),
+              mode: LaunchMode.externalApplication,
+            ),
           ),
           if (canDelete && onDelete != null)
             IconButton(
-              icon: const Icon(Icons.delete_outline,
-                  size: 18, color: AppColors.gray),
+              icon: const Icon(
+                Icons.delete_outline,
+                size: 18,
+                color: AppColors.gray,
+              ),
               onPressed: onDelete,
             ),
         ],
@@ -770,6 +872,8 @@ class _DocCard extends StatelessWidget {
 
 class _MembersTab extends StatelessWidget {
   final Future<List<TripGroupMember>> future;
+  final Future<Map<String, Set<TripDocumentType>>> docTypesFuture;
+  final List<TripDocumentType> requiredDocTypes;
   final String groupId;
   final String groupName;
   final bool isAdmin;
@@ -777,11 +881,23 @@ class _MembersTab extends StatelessWidget {
 
   const _MembersTab({
     required this.future,
+    required this.docTypesFuture,
+    required this.requiredDocTypes,
     required this.groupId,
     required this.groupName,
     required this.isAdmin,
     required this.onChanged,
   });
+
+  static Color _statusColor(
+    Set<TripDocumentType>? docs,
+    List<TripDocumentType> required,
+  ) {
+    if (required.isEmpty) return const Color(0xFF43A047);
+    if (docs == null || docs.isEmpty) return const Color(0xFFE53935);
+    if (required.every(docs.contains)) return const Color(0xFF43A047);
+    return const Color(0xFFFB8C00);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -794,45 +910,68 @@ class _MembersTab extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           final members = snap.data ?? const <TripGroupMember>[];
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-            children: [
-              if (isAdmin)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: FilledButton.icon(
-                    onPressed: () => _pickMembers(context, members),
-                    icon: const Icon(Icons.person_add_outlined, size: 18),
-                    label: const Text('Add members'),
-                  ),
-                ),
-              if (members.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 24),
-                  child: Center(
-                      child: Text(
-                    isAdmin
-                        ? 'No members in this group yet.'
-                        : 'No fellow travelers yet.',
-                    textAlign: TextAlign.center,
-                  )),
-                )
-              else
-                ...members.map((m) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _MemberTile(
-                        member: m,
-                        canRemove: isAdmin,
-                        onRemove: isAdmin
-                            ? () async {
-                                await TripGroupsService.removeMember(
-                                    groupId, m.memberId);
-                                onChanged();
-                              }
-                            : null,
+          return FutureBuilder<Map<String, Set<TripDocumentType>>>(
+            future: docTypesFuture,
+            builder: (context, docSnap) {
+              final docTypes =
+                  docSnap.data ?? const <String, Set<TripDocumentType>>{};
+              return ListView(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+                children: [
+                  if (isAdmin)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: FilledButton.icon(
+                        onPressed: () => _pickMembers(context, members),
+                        icon: const Icon(Icons.person_add_outlined, size: 18),
+                        label: const Text('Add members'),
                       ),
-                    )),
-            ],
+                    ),
+                  if (members.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      child: Center(
+                        child: Text(
+                          isAdmin
+                              ? 'No members in this group yet.'
+                              : 'No fellow travelers yet.',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    )
+                  else ...[
+                    if (isAdmin && requiredDocTypes.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _DocStatusLegend(),
+                      ),
+                    ...members.map((m) {
+                      final uploaded = docTypes[m.memberId];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _MemberTile(
+                          member: m,
+                          uploaded: uploaded,
+                          requiredTypes: requiredDocTypes,
+                          statusColor: _statusColor(uploaded, requiredDocTypes),
+                          showStatus: requiredDocTypes.isNotEmpty,
+                          canRemove: isAdmin,
+                          onRemove: isAdmin
+                              ? () async {
+                                  await TripGroupsService.removeMember(
+                                    groupId,
+                                    m.memberId,
+                                  );
+                                  onChanged();
+                                }
+                              : null,
+                        ),
+                      );
+                    }),
+                  ],
+                ],
+              );
+            },
           );
         },
       ),
@@ -840,7 +979,9 @@ class _MembersTab extends StatelessWidget {
   }
 
   Future<void> _pickMembers(
-      BuildContext context, List<TripGroupMember> existing) async {
+    BuildContext context,
+    List<TripGroupMember> existing,
+  ) async {
     final selected = await showDialog<List<String>>(
       context: context,
       builder: (_) => _MemberPickerDialog(
@@ -874,58 +1015,257 @@ class _MembersTab extends StatelessWidget {
 
     if (lastError != null && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(
-          added == 0
-              ? 'Could not add members: $lastError'
-              : '${selected.length - added} member(s) could not be added',
-        )),
+        SnackBar(
+          content: Text(
+            added == 0
+                ? 'Could not add members: $lastError'
+                : '${selected.length - added} member(s) could not be added',
+          ),
+        ),
       );
     }
   }
 }
 
+class _DocStatusLegend extends StatelessWidget {
+  const _DocStatusLegend();
+
+  @override
+  Widget build(BuildContext context) {
+    final style = Theme.of(context).textTheme.labelSmall;
+    return Row(
+      children: [
+        _dot(const Color(0xFF43A047)),
+        const SizedBox(width: 4),
+        Text('All required', style: style),
+        const SizedBox(width: 12),
+        _dot(const Color(0xFFFB8C00)),
+        const SizedBox(width: 4),
+        Text('Partial', style: style),
+        const SizedBox(width: 12),
+        _dot(const Color(0xFFE53935)),
+        const SizedBox(width: 4),
+        Text('Missing', style: style),
+      ],
+    );
+  }
+
+  Widget _dot(Color color) => Container(
+    width: 10,
+    height: 10,
+    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+  );
+}
+
 class _MemberTile extends StatelessWidget {
   final TripGroupMember member;
+  final Set<TripDocumentType>? uploaded;
+  final List<TripDocumentType> requiredTypes;
+  final Color? statusColor;
+  final bool showStatus;
   final bool canRemove;
   final VoidCallback? onRemove;
+
   const _MemberTile({
     required this.member,
+    required this.requiredTypes,
+    this.uploaded,
+    this.statusColor,
+    this.showStatus = false,
     this.canRemove = false,
     this.onRemove,
   });
+
+  List<TripDocumentType> get _missing =>
+      requiredTypes.where((t) => !(uploaded?.contains(t) ?? false)).toList();
+
+  String? get _missingText {
+    final m = _missing;
+    if (m.isEmpty) return null;
+    if (m.length == 1) return '${m.first.label} still required';
+    return '${m.first.label} and ${m.length - 1} others still required';
+  }
+
+  void _showDetail(BuildContext context) {
+    if (requiredTypes.isEmpty) return;
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) {
+        final name = member.memberName ?? 'Unknown';
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(name, style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 4),
+              Text(
+                'Required documents',
+                style: Theme.of(context).textTheme.labelSmall,
+              ),
+              const SizedBox(height: 16),
+              ...requiredTypes.map((t) {
+                final done = uploaded?.contains(t) ?? false;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    children: [
+                      Icon(
+                        done
+                            ? Icons.check_circle_outline
+                            : Icons.radio_button_unchecked,
+                        size: 20,
+                        color: done
+                            ? const Color(0xFF43A047)
+                            : const Color(0xFFE53935),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        t.label,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      const Spacer(),
+                      Text(
+                        done ? 'Uploaded' : 'Missing',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: done
+                              ? const Color(0xFF43A047)
+                              : const Color(0xFFE53935),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final name = member.memberName ?? 'Unknown';
-    return ElegantCard(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      child: Row(
-        children: [
-          Avatar(name: name, size: 36),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(name, style: theme.textTheme.titleSmall),
-                if (member.voiceSection != null)
-                  Text(
-                    '${member.voiceSection} · ${member.branch ?? ''}',
-                    style: theme.textTheme.labelSmall,
-                  ),
-              ],
+    final missingText = _missingText;
+    return GestureDetector(
+      onTap: requiredTypes.isNotEmpty ? () => _showDetail(context) : null,
+      child: ElegantCard(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        child: Row(
+          children: [
+            Avatar(name: name, size: 36),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name, style: theme.textTheme.titleSmall),
+                  if (member.voiceSection != null)
+                    Text(
+                      '${member.voiceSection} · ${member.branch ?? ''}',
+                      style: theme.textTheme.labelSmall,
+                    ),
+                  if (missingText != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        missingText,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: _missing.length == requiredTypes.length
+                              ? const Color(0xFFE53935)
+                              : const Color(0xFFFB8C00),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ),
-          if (canRemove)
-            IconButton(
-              icon: const Icon(Icons.person_remove_outlined,
-                  size: 18, color: AppColors.gray),
-              tooltip: 'Remove from group',
-              onPressed: onRemove,
-            ),
-        ],
+            if (showStatus && statusColor != null)
+              Container(
+                width: 12,
+                height: 12,
+                margin: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(
+                  color: statusColor,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            if (canRemove)
+              IconButton(
+                icon: const Icon(
+                  Icons.person_remove_outlined,
+                  size: 18,
+                  color: AppColors.gray,
+                ),
+                tooltip: 'Remove from group',
+                onPressed: onRemove,
+              ),
+          ],
+        ),
       ),
+    );
+  }
+}
+
+// ── Required docs dialog ──────────────────────────────────────────────────────
+
+class _RequiredDocsDialog extends StatefulWidget {
+  final List<TripDocumentType> current;
+  const _RequiredDocsDialog({required this.current});
+
+  @override
+  State<_RequiredDocsDialog> createState() => _RequiredDocsDialogState();
+}
+
+class _RequiredDocsDialogState extends State<_RequiredDocsDialog> {
+  late final Set<TripDocumentType> _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = widget.current.toSet();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Required documents'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: TripDocumentType.values
+            .where((t) => t != TripDocumentType.other)
+            .map(
+              (t) => CheckboxListTile(
+                title: Text(t.label),
+                value: _selected.contains(t),
+                contentPadding: EdgeInsets.zero,
+                onChanged: (on) => setState(() {
+                  if (on == true) {
+                    _selected.add(t);
+                  } else {
+                    _selected.remove(t);
+                  }
+                }),
+              ),
+            )
+            .toList(),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, _selected.toList()),
+          child: const Text('Save'),
+        ),
+      ],
     );
   }
 }
@@ -967,15 +1307,18 @@ class _MemberPickerDialogState extends State<_MemberPickerDialog> {
             child: Row(
               children: [
                 Expanded(
-                  child: Text('Add Members',
-                      style: Theme.of(context).textTheme.titleLarge),
+                  child: Text(
+                    'Add Members',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                 ),
                 if (_selected.isNotEmpty)
                   Text(
                     '${_selected.length} selected',
                     style: TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600),
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
               ],
             ),
@@ -1015,11 +1358,13 @@ class _MemberPickerDialogState extends State<_MemberPickerDialog> {
                 final filtered = _query.isEmpty
                     ? available
                     : available
-                        .where((m) =>
-                            m.name.toLowerCase().contains(_query) ||
-                            m.voiceSection.toLowerCase().contains(_query) ||
-                            m.branch.toLowerCase().contains(_query))
-                        .toList();
+                          .where(
+                            (m) =>
+                                m.name.toLowerCase().contains(_query) ||
+                                m.voiceSection.toLowerCase().contains(_query) ||
+                                m.branch.toLowerCase().contains(_query),
+                          )
+                          .toList();
 
                 if (filtered.isEmpty) {
                   return Center(
@@ -1048,12 +1393,16 @@ class _MemberPickerDialogState extends State<_MemberPickerDialog> {
                         }
                       }),
                       secondary: Avatar(name: m.name, size: 36),
-                      title: Text(m.name,
-                          style: const TextStyle(fontWeight: FontWeight.w600)),
+                      title: Text(
+                        m.name,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
                       subtitle: Text(
-                          [m.voiceSection, m.branch]
-                              .where((s) => s.isNotEmpty)
-                              .join(' · ')),
+                        [
+                          m.voiceSection,
+                          m.branch,
+                        ].where((s) => s.isNotEmpty).join(' · '),
+                      ),
                       activeColor: AppColors.primary,
                       controlAffinity: ListTileControlAffinity.trailing,
                     );
@@ -1069,18 +1418,16 @@ class _MemberPickerDialogState extends State<_MemberPickerDialog> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancel')),
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
                 const SizedBox(width: 8),
                 FilledButton(
                   onPressed: _selected.isEmpty
                       ? null
-                      : () =>
-                          Navigator.pop(context, _selected.toList()),
+                      : () => Navigator.pop(context, _selected.toList()),
                   child: Text(
-                    _selected.isEmpty
-                        ? 'Add'
-                        : 'Add ${_selected.length}',
+                    _selected.isEmpty ? 'Add' : 'Add ${_selected.length}',
                   ),
                 ),
               ],
@@ -1139,10 +1486,9 @@ class _InfoFormDialogState extends State<_InfoFormDialog> {
                 isExpanded: true,
                 underline: const SizedBox.shrink(),
                 items: TripInfoCategory.values
-                    .map((c) => DropdownMenuItem(
-                          value: c,
-                          child: Text(c.label),
-                        ))
+                    .map(
+                      (c) => DropdownMenuItem(value: c, child: Text(c.label)),
+                    )
                     .toList(),
                 onChanged: (v) {
                   if (v != null) setState(() => _category = v);
@@ -1160,7 +1506,9 @@ class _InfoFormDialogState extends State<_InfoFormDialog> {
               controller: _body,
               maxLines: 4,
               decoration: const InputDecoration(
-                  labelText: 'Details', alignLabelWithHint: true),
+                labelText: 'Details',
+                alignLabelWithHint: true,
+              ),
             ),
             const SizedBox(height: 14),
             if (_file == null)
@@ -1171,32 +1519,42 @@ class _InfoFormDialogState extends State<_InfoFormDialog> {
               )
             else
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.07),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                      color: AppColors.primary.withValues(alpha: 0.25)),
+                    color: AppColors.primary.withValues(alpha: 0.25),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.insert_drive_file_outlined,
-                        size: 18, color: AppColors.primary),
+                    const Icon(
+                      Icons.insert_drive_file_outlined,
+                      size: 18,
+                      color: AppColors.primary,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         _file!.name,
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: AppColors.primary),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.primary,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     GestureDetector(
                       onTap: () => setState(() => _file = null),
-                      child: const Icon(Icons.close,
-                          size: 16, color: AppColors.gray),
+                      child: const Icon(
+                        Icons.close,
+                        size: 16,
+                        color: AppColors.gray,
+                      ),
                     ),
                   ],
                 ),
@@ -1206,8 +1564,9 @@ class _InfoFormDialogState extends State<_InfoFormDialog> {
       ),
       actions: [
         TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel')),
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
         FilledButton(
           onPressed: () {
             final title = _title.text.trim();
@@ -1232,13 +1591,15 @@ class _DocTypeDialog extends StatelessWidget {
     return SimpleDialog(
       title: const Text('Document type'),
       children: TripDocumentType.values
-          .map((t) => SimpleDialogOption(
-                onPressed: () => Navigator.pop(context, t),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Text(t.label),
-                ),
-              ))
+          .map(
+            (t) => SimpleDialogOption(
+              onPressed: () => Navigator.pop(context, t),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Text(t.label),
+              ),
+            ),
+          )
           .toList(),
     );
   }

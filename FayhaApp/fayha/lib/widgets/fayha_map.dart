@@ -21,8 +21,10 @@ Future<void> smoothMove(
   void tick() {
     final t = curved.value;
     controller.move(
-      LatLng(lat0 + (target.latitude - lat0) * t,
-          lng0 + (target.longitude - lng0) * t),
+      LatLng(
+        lat0 + (target.latitude - lat0) * t,
+        lng0 + (target.longitude - lng0) * t,
+      ),
       z0 + (targetZoom - z0) * t,
     );
   }
@@ -80,8 +82,13 @@ class _FayhaMapState extends State<FayhaMap> with TickerProviderStateMixin {
   void _zoom(double delta) {
     final c = widget.controller.camera;
     final newZoom = (c.zoom + delta).clamp(2.0, 18.0);
-    smoothMove(this, widget.controller, c.center, newZoom,
-        duration: const Duration(milliseconds: 350));
+    smoothMove(
+      this,
+      widget.controller,
+      c.center,
+      newZoom,
+      duration: const Duration(milliseconds: 350),
+    );
   }
 
   void _recenter() {
@@ -108,7 +115,8 @@ class _FayhaMapState extends State<FayhaMap> with TickerProviderStateMixin {
                   minZoom: 2,
                   maxZoom: 18,
                   interactionOptions: const InteractionOptions(
-                    flags: InteractiveFlag.pinchZoom |
+                    flags:
+                        InteractiveFlag.pinchZoom |
                         InteractiveFlag.doubleTapZoom |
                         InteractiveFlag.drag |
                         InteractiveFlag.flingAnimation,
@@ -127,17 +135,19 @@ class _FayhaMapState extends State<FayhaMap> with TickerProviderStateMixin {
                     PolylineLayer(polylines: widget.polylines),
                   MarkerLayer(
                     markers: widget.pins
-                        .map((p) => Marker(
-                              point: p.point,
-                              width: 140,
-                              height: 60,
-                              alignment: Alignment.center,
-                              rotate: false,
-                              child: GestureDetector(
-                                onTap: p.onTap,
-                                child: _PinMarker(label: p.label, color: p.color),
-                              ),
-                            ))
+                        .map(
+                          (p) => Marker(
+                            point: p.point,
+                            width: 140,
+                            height: 60,
+                            alignment: Alignment.center,
+                            rotate: false,
+                            child: GestureDetector(
+                              onTap: p.onTap,
+                              child: _PinMarker(label: p.label, color: p.color),
+                            ),
+                          ),
+                        )
                         .toList(),
                   ),
                   const RichAttributionWidget(
@@ -187,7 +197,11 @@ class _PinMarker extends StatelessWidget {
             shape: BoxShape.circle,
             border: Border.all(color: Colors.white, width: 2.5),
             boxShadow: const [
-              BoxShadow(color: Colors.black38, blurRadius: 3, offset: Offset(0, 1)),
+              BoxShadow(
+                color: Colors.black38,
+                blurRadius: 3,
+                offset: Offset(0, 1),
+              ),
             ],
           ),
         ),
@@ -200,7 +214,11 @@ class _PinMarker extends StatelessWidget {
               borderRadius: BorderRadius.circular(4),
               border: Border.all(color: color.withValues(alpha: 0.6), width: 1),
               boxShadow: const [
-                BoxShadow(color: Colors.black26, blurRadius: 2, offset: Offset(0, 1)),
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 2,
+                  offset: Offset(0, 1),
+                ),
               ],
             ),
             child: Text(
@@ -310,7 +328,9 @@ class MapInfoSheet extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.35),
+                      ),
                     ),
                     child: Icon(icon, color: AppColors.cream, size: 26),
                   ),
@@ -319,17 +339,21 @@ class MapInfoSheet extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(title,
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              color: AppColors.cream,
-                              fontWeight: FontWeight.w600,
-                            )),
+                        Text(
+                          title,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            color: AppColors.cream,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                         if (subtitle != null) ...[
                           const SizedBox(height: 2),
-                          Text(subtitle!,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: AppColors.cream.withValues(alpha: 0.9),
-                              )),
+                          Text(
+                            subtitle!,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: AppColors.cream.withValues(alpha: 0.9),
+                            ),
+                          ),
                         ],
                       ],
                     ),
@@ -345,7 +369,10 @@ class MapInfoSheet extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.offWhite),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 6,
+                ),
                 child: Column(
                   children: [
                     for (int i = 0; i < facts.length; i++) ...[
@@ -355,17 +382,25 @@ class MapInfoSheet extends StatelessWidget {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(facts[i].icon, size: 18, color: AppColors.primary),
+                            Icon(
+                              facts[i].icon,
+                              size: 18,
+                              color: AppColors.primary,
+                            ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(facts[i].label,
-                                      style: theme.textTheme.labelMedium),
+                                  Text(
+                                    facts[i].label,
+                                    style: theme.textTheme.labelMedium,
+                                  ),
                                   const SizedBox(height: 2),
-                                  Text(facts[i].value,
-                                      style: theme.textTheme.bodyLarge),
+                                  Text(
+                                    facts[i].value,
+                                    style: theme.textTheme.bodyLarge,
+                                  ),
                                 ],
                               ),
                             ),
@@ -387,8 +422,10 @@ class MapInfoSheet extends StatelessWidget {
                     border: Border.all(color: AppColors.offWhite),
                   ),
                   padding: const EdgeInsets.all(16),
-                  child: Text(description!,
-                      style: theme.textTheme.bodyMedium?.copyWith(height: 1.6)),
+                  child: Text(
+                    description!,
+                    style: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
+                  ),
                 ),
               ),
             Padding(

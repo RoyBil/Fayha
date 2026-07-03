@@ -1,6 +1,10 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:file_selector/file_selector.dart';
+import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter_new/return_code.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../data/mock_data.dart';
 import '../../services/admin_service.dart';
 import '../../services/choir_songs_service.dart';
@@ -11,6 +15,7 @@ enum _SongTarget { audience, choir }
 class ComposeSongScreen extends StatefulWidget {
   /// Edit mode for an existing choir library song.
   final ChoirSong? existing;
+
   /// Edit mode for an existing audience (public) song.
   final RepertoireSong? existingAudience;
   const ComposeSongScreen({super.key, this.existing, this.existingAudience});
@@ -41,8 +46,10 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
   _SongTarget _target = _SongTarget.choir;
   bool _saving = false;
   String? _progress;
-  final List<_PickedAudio?> _parts =
-      List<_PickedAudio?>.filled(choirVoiceParts.length, null);
+  final List<_PickedAudio?> _parts = List<_PickedAudio?>.filled(
+    choirVoiceParts.length,
+    null,
+  );
   _PickedAudio? _audienceAudio;
 
   bool get _isEdit => widget.existing != null;
@@ -84,6 +91,42 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
     super.dispose();
   }
 
+  /// Re-encodes an MP3 at 128 kbps when the file exceeds 3 MB.
+  /// Returns the original bytes unchanged for non-MP3 files, files that are
+  /// already within the limit, or when FFmpeg fails (safe fallback).
+  static Future<List<int>> _compressMp3IfNeeded(
+    List<int> bytes,
+    String extension,
+  ) async {
+    const limit = 3 * 1024 * 1024; // 3 MB
+    if (extension.toLowerCase() != 'mp3' || bytes.length <= limit) {
+      return bytes;
+    }
+    final tempDir = await getTemporaryDirectory();
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    final inputPath = '${tempDir.path}/fayha_in_$ts.mp3';
+    final outputPath = '${tempDir.path}/fayha_out_$ts.mp3';
+    try {
+      await File(inputPath).writeAsBytes(bytes);
+      final session = await FFmpegKit.execute(
+        '-i "$inputPath" -b:a 128k -ar 44100 -y "$outputPath"',
+      );
+      final rc = await session.getReturnCode();
+      if (!ReturnCode.isSuccess(rc)) return bytes;
+      final compressed = await File(outputPath).readAsBytes();
+      return compressed.length < bytes.length ? compressed : bytes;
+    } catch (_) {
+      return bytes;
+    } finally {
+      try {
+        await File(inputPath).delete();
+      } catch (_) {}
+      try {
+        await File(outputPath).delete();
+      } catch (_) {}
+    }
+  }
+
   Future<void> _pickAudienceAudio() async {
     const typeGroup = XTypeGroup(
       label: 'Audio',
@@ -95,7 +138,11 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
     final name = file.name;
     final ext = name.contains('.') ? name.split('.').last.toLowerCase() : 'mp3';
     setState(() {
-      _audienceAudio = _PickedAudio(filename: name, extension: ext, bytes: bytes);
+      _audienceAudio = _PickedAudio(
+        filename: name,
+        extension: ext,
+        bytes: bytes,
+      );
     });
   }
 
@@ -108,9 +155,7 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
     if (file == null) return;
     final bytes = await file.readAsBytes();
     final name = file.name;
-    final ext = name.contains('.')
-        ? name.split('.').last.toLowerCase()
-        : 'm4a';
+    final ext = name.contains('.') ? name.split('.').last.toLowerCase() : 'm4a';
     setState(() {
       _parts[index] = _PickedAudio(
         filename: name,
@@ -129,8 +174,8 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
       if (!any) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content:
-                  Text('Upload at least one voice part (e.g. Soprano).')),
+            content: Text('Upload at least one voice part (e.g. Soprano).'),
+          ),
         );
         return;
       }
@@ -143,9 +188,14 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
       if (_target == _SongTarget.audience) {
         String? audioUrl;
         if (_audienceAudio != null) {
+          setState(() => _progress = 'Processing audio…');
+          final finalBytes = await _compressMp3IfNeeded(
+            _audienceAudio!.bytes,
+            _audienceAudio!.extension,
+          );
           setState(() => _progress = 'Uploading audio…');
           audioUrl = await AdminService.uploadSongAudio(
-            bytes: Uint8List.fromList(_audienceAudio!.bytes),
+            bytes: Uint8List.fromList(finalBytes),
             fileExtension: _audienceAudio!.extension,
           );
         }
@@ -154,21 +204,37 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
           await AdminService.updateSong(
             id: widget.existingAudience!.id,
             title: _title.text.trim(),
-            subtitle: _subtitle.text.trim().isEmpty ? null : _subtitle.text.trim(),
-            composers: _composers.text.trim().isEmpty ? null : _composers.text.trim(),
-            description: _description.text.trim().isEmpty ? null : _description.text.trim(),
+            subtitle: _subtitle.text.trim().isEmpty
+                ? null
+                : _subtitle.text.trim(),
+            composers: _composers.text.trim().isEmpty
+                ? null
+                : _composers.text.trim(),
+            description: _description.text.trim().isEmpty
+                ? null
+                : _description.text.trim(),
             lyrics: _lyrics.text.trim().isEmpty ? null : _lyrics.text.trim(),
-            youtubeUrl: _youtube.text.trim().isEmpty ? null : _youtube.text.trim(),
+            youtubeUrl: _youtube.text.trim().isEmpty
+                ? null
+                : _youtube.text.trim(),
             audioUrl: audioUrl,
           );
         } else {
           await AdminService.addSong(
             title: _title.text.trim(),
-            subtitle: _subtitle.text.trim().isEmpty ? null : _subtitle.text.trim(),
-            composers: _composers.text.trim().isEmpty ? null : _composers.text.trim(),
-            description: _description.text.trim().isEmpty ? null : _description.text.trim(),
+            subtitle: _subtitle.text.trim().isEmpty
+                ? null
+                : _subtitle.text.trim(),
+            composers: _composers.text.trim().isEmpty
+                ? null
+                : _composers.text.trim(),
+            description: _description.text.trim().isEmpty
+                ? null
+                : _description.text.trim(),
             lyrics: _lyrics.text.trim().isEmpty ? null : _lyrics.text.trim(),
-            youtubeUrl: _youtube.text.trim().isEmpty ? null : _youtube.text.trim(),
+            youtubeUrl: _youtube.text.trim().isEmpty
+                ? null
+                : _youtube.text.trim(),
             audioUrl: audioUrl,
           );
         }
@@ -182,14 +248,20 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
         }
         for (var k = 0; k < picked.length; k++) {
           final i = picked[k];
-          setState(() => _progress =
-              'Uploading ${choirVoiceParts[i]} (${k + 1}/${picked.length})…');
+          setState(
+            () => _progress =
+                'Processing ${choirVoiceParts[i]} (${k + 1}/${picked.length})…',
+          );
           final p = _parts[i]!;
-          partPatch[choirVoicePartKeys[i]] =
-              await ChoirSongsService.uploadPart(
+          final finalBytes = await _compressMp3IfNeeded(p.bytes, p.extension);
+          setState(
+            () => _progress =
+                'Uploading ${choirVoiceParts[i]} (${k + 1}/${picked.length})…',
+          );
+          partPatch[choirVoicePartKeys[i]] = await ChoirSongsService.uploadPart(
             songId: existing.id,
             partKey: choirVoicePartKeys[i],
-            bytes: Uint8List.fromList(p.bytes),
+            bytes: Uint8List.fromList(finalBytes),
             fileExtension: p.extension,
           );
         }
@@ -214,14 +286,20 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
         }
         for (var k = 0; k < picked.length; k++) {
           final i = picked[k];
-          setState(() => _progress =
-              'Uploading ${choirVoiceParts[i]} (${k + 1}/${picked.length})…');
+          setState(
+            () => _progress =
+                'Processing ${choirVoiceParts[i]} (${k + 1}/${picked.length})…',
+          );
           final p = _parts[i]!;
-          partUrls[choirVoicePartKeys[i]] =
-              await ChoirSongsService.uploadPart(
+          final finalBytes = await _compressMp3IfNeeded(p.bytes, p.extension);
+          setState(
+            () => _progress =
+                'Uploading ${choirVoiceParts[i]} (${k + 1}/${picked.length})…',
+          );
+          partUrls[choirVoicePartKeys[i]] = await ChoirSongsService.uploadPart(
             songId: id,
             partKey: choirVoicePartKeys[i],
-            bytes: Uint8List.fromList(p.bytes),
+            bytes: Uint8List.fromList(finalBytes),
             fileExtension: p.extension,
           );
         }
@@ -229,15 +307,19 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
         await ChoirSongsService.create(
           id: id,
           title: _title.text.trim(),
-          subtitle: _subtitle.text.trim().isEmpty ? null : _subtitle.text.trim(),
-          composers:
-              _composers.text.trim().isEmpty ? null : _composers.text.trim(),
+          subtitle: _subtitle.text.trim().isEmpty
+              ? null
+              : _subtitle.text.trim(),
+          composers: _composers.text.trim().isEmpty
+              ? null
+              : _composers.text.trim(),
           description: _description.text.trim().isEmpty
               ? null
               : _description.text.trim(),
           lyrics: _lyrics.text.trim().isEmpty ? null : _lyrics.text.trim(),
-          youtubeUrl:
-              _youtube.text.trim().isEmpty ? null : _youtube.text.trim(),
+          youtubeUrl: _youtube.text.trim().isEmpty
+              ? null
+              : _youtube.text.trim(),
           partUrls: partUrls,
         );
       }
@@ -250,9 +332,11 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
         _progress = null;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_isEdit
-            ? 'Could not save changes: $e'
-            : 'Could not add song: $e')),
+        SnackBar(
+          content: Text(
+            _isEdit ? 'Could not save changes: $e' : 'Could not add song: $e',
+          ),
+        ),
       );
     }
   }
@@ -260,7 +344,9 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_isEdit || _isAudienceEdit ? 'Edit Song' : 'Add a Song')),
+      appBar: AppBar(
+        title: Text(_isEdit || _isAudienceEdit ? 'Edit Song' : 'Add a Song'),
+      ),
       body: AbsorbPointer(
         absorbing: _saving,
         child: Form(
@@ -269,8 +355,10 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
             children: [
               if (!_isEdit && !_isAudienceEdit) ...[
-                Text('Where does this song go?',
-                    style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  'Where does this song go?',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -305,8 +393,11 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
               const SizedBox(height: 14),
               _field(_lyrics, 'Lyrics', Icons.lyrics_outlined, lines: 6),
               const SizedBox(height: 14),
-              _field(_youtube, 'YouTube link (optional)',
-                  Icons.play_circle_outline),
+              _field(
+                _youtube,
+                'YouTube link (optional)',
+                Icons.play_circle_outline,
+              ),
               if (_target == _SongTarget.audience) ...[
                 const SizedBox(height: 22),
                 Text(
@@ -339,16 +430,17 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 12),
-                for (var i = 0; i < choirVoiceParts.length; i++)
-                  _partRow(i),
+                for (var i = 0; i < choirVoiceParts.length; i++) _partRow(i),
               ],
               const SizedBox(height: 24),
               if (_saving && _progress != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Center(
-                    child: Text(_progress!,
-                        style: Theme.of(context).textTheme.bodySmall),
+                    child: Text(
+                      _progress!,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ),
                 ),
               FilledButton.icon(
@@ -358,10 +450,17 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
                         height: 18,
                         width: 18,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: AppColors.cream),
+                          strokeWidth: 2,
+                          color: AppColors.cream,
+                        ),
                       )
-                    : Icon((_isEdit || _isAudienceEdit) ? Icons.save : Icons.add, size: 18),
-                label: Text((_isEdit || _isAudienceEdit) ? 'Save Changes' : 'Add Song'),
+                    : Icon(
+                        (_isEdit || _isAudienceEdit) ? Icons.save : Icons.add,
+                        size: 18,
+                      ),
+                label: Text(
+                  (_isEdit || _isAudienceEdit) ? 'Save Changes' : 'Add Song',
+                ),
               ),
             ],
           ),
@@ -392,7 +491,11 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
               borderRadius: BorderRadius.circular(8),
             ),
             alignment: Alignment.center,
-            child: const Icon(Icons.audiotrack, color: AppColors.primary, size: 20),
+            child: const Icon(
+              Icons.audiotrack,
+              color: AppColors.primary,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -400,8 +503,8 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
               picked
                   ? _audienceAudio!.filename
                   : (_isAudienceEdit
-                      ? 'Current audio kept — tap Replace to change'
-                      : 'No file selected'),
+                        ? 'Current audio kept — tap Replace to change'
+                        : 'No file selected'),
               style: Theme.of(context).textTheme.bodySmall,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -411,7 +514,9 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
           TextButton.icon(
             onPressed: _pickAudienceAudio,
             icon: Icon(
-              (picked || _isAudienceEdit) ? Icons.swap_horiz : Icons.upload_file,
+              (picked || _isAudienceEdit)
+                  ? Icons.swap_horiz
+                  : Icons.upload_file,
               size: 16,
             ),
             label: Text((picked || _isAudienceEdit) ? 'Replace' : 'Upload'),
@@ -445,25 +550,31 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
           ),
           child: Column(
             children: [
-              Icon(icon,
-                  size: 22,
-                  color: selected ? AppColors.cream : AppColors.primary),
+              Icon(
+                icon,
+                size: 22,
+                color: selected ? AppColors.cream : AppColors.primary,
+              ),
               const SizedBox(height: 6),
-              Text(label,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                    color: selected ? AppColors.cream : AppColors.dark,
-                  )),
+              Text(
+                label,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  color: selected ? AppColors.cream : AppColors.dark,
+                ),
+              ),
               const SizedBox(height: 2),
-              Text(sub,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: selected
-                        ? AppColors.cream.withValues(alpha: 0.8)
-                        : AppColors.gray,
-                  )),
+              Text(
+                sub,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: selected
+                      ? AppColors.cream.withValues(alpha: 0.8)
+                      : AppColors.gray,
+                ),
+              ),
             ],
           ),
         ),
@@ -510,14 +621,16 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(choirVoiceParts[i],
-                      style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    choirVoiceParts[i],
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   Text(
                     picked
                         ? part.filename
                         : (_isEdit
-                            ? 'Current file kept — tap Replace to change'
-                            : 'No file selected'),
+                              ? 'Current file kept — tap Replace to change'
+                              : 'No file selected'),
                     style: Theme.of(context).textTheme.bodySmall,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -540,8 +653,13 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
     );
   }
 
-  Widget _field(TextEditingController c, String label, IconData icon,
-      {bool required = false, int lines = 1}) {
+  Widget _field(
+    TextEditingController c,
+    String label,
+    IconData icon, {
+    bool required = false,
+    int lines = 1,
+  }) {
     return TextFormField(
       controller: c,
       maxLines: lines,

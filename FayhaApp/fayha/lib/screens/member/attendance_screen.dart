@@ -21,10 +21,27 @@ class AttendanceScreen extends StatefulWidget {
 
 class _AttendanceScreenState extends State<AttendanceScreen> {
   static const _weekdays = [
-    'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
   ];
   static const _months = [
-    'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
 
   late String _branch;
@@ -33,8 +50,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   bool _loading = true;
   String? _error;
 
-  bool get _isSuper =>
-      AppState.instance.currentMember?.role == 'superAdmin';
+  bool get _isSuper => AppState.instance.currentMember?.role == 'superAdmin';
   bool get _isAdmin {
     final r = AppState.instance.currentMember?.role;
     return r == 'admin' || r == 'superAdmin';
@@ -93,8 +109,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(e.isRehearsal ? 'Big rehearsal' : 'Concert',
-                  style: Theme.of(ctx).textTheme.labelMedium),
+              Text(
+                e.isRehearsal ? 'Big rehearsal' : 'Concert',
+                style: Theme.of(ctx).textTheme.labelMedium,
+              ),
               Text(e.title, style: Theme.of(ctx).textTheme.titleLarge),
               const SizedBox(height: 4),
               Text(
@@ -159,8 +177,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Take attendance',
-                  style: Theme.of(ctx).textTheme.titleLarge),
+              Text(
+                'Take attendance',
+                style: Theme.of(ctx).textTheme.titleLarge,
+              ),
               const SizedBox(height: 4),
               Text(
                 '${_weekdays[date.weekday - 1]} · ${date.day}/${date.month}/${date.year}',
@@ -203,8 +223,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       final saved = await Navigator.push<bool>(
         context,
         MaterialPageRoute(
-          builder: (_) =>
-              AttendanceSheetScreen(branch: _branch, date: date),
+          builder: (_) => AttendanceSheetScreen(branch: _branch, date: date),
         ),
       );
       if (saved == true) _load();
@@ -212,8 +231,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => QrAttendanceAdminScreen.rehearsal(
-              branch: _branch, date: date),
+          builder: (_) =>
+              QrAttendanceAdminScreen.rehearsal(branch: _branch, date: date),
         ),
       );
       _load();
@@ -233,7 +252,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         body: EmptyState(
           icon: Icons.checklist_rtl,
           title: 'Attendance',
-          message: 'Attendance is recorded by your branch admin and the Maestro.',
+          message:
+              'Attendance is recorded by your branch admin and the Maestro.',
         ),
       );
     }
@@ -259,7 +279,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (_) => const AttendanceHistoryScreen()),
+                  builder: (_) => const AttendanceHistoryScreen(),
+                ),
               ),
             ),
           ),
@@ -287,11 +308,15 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   )
                 : Row(
                     children: [
-                      const Icon(Icons.location_city_outlined,
-                          color: AppColors.primary),
+                      const Icon(
+                        Icons.location_city_outlined,
+                        color: AppColors.primary,
+                      ),
                       const SizedBox(width: 10),
-                      Text('$_branch branch',
-                          style: theme.textTheme.titleMedium),
+                      Text(
+                        '$_branch branch',
+                        style: theme.textTheme.titleMedium,
+                      ),
                     ],
                   ),
           ),
@@ -322,47 +347,49 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                             ],
                           )
                         : _sessions.isEmpty
-                            ? ListView(
-                                children: const [
-                                  SizedBox(height: 80),
-                                  EmptyState(
-                                    icon: Icons.event_available,
-                                    title: 'All caught up',
-                                    message:
-                                        'No rehearsal dates to record right now.',
-                                  ),
-                                ],
-                              )
-                            : ListView(
-                                padding: const EdgeInsets.fromLTRB(
-                                    20, 12, 20, 32),
-                                children: [
-                                  const SectionHeader(
-                                      eyebrow: 'Sessions',
-                                      title: 'Pick a date'),
-                                  const SizedBox(height: 12),
-                                  ..._sessions.map((s) => Padding(
-                                        padding:
-                                            const EdgeInsets.only(bottom: 8),
-                                        child: _sessionCard(theme, s),
-                                      )),
-                                  if (_events.isNotEmpty) ...[
-                                    const SizedBox(height: 24),
-                                    const SectionHeader(
-                                      eyebrow: 'Events',
-                                      title: 'Concerts & big rehearsals',
-                                      subtitle:
-                                          'Open a QR session for an event with attendance.',
-                                    ),
-                                    const SizedBox(height: 12),
-                                    ..._events.map((e) => Padding(
-                                          padding: const EdgeInsets.only(
-                                              bottom: 8),
-                                          child: _eventCard(theme, e),
-                                        )),
-                                  ],
-                                ],
+                        ? ListView(
+                            children: const [
+                              SizedBox(height: 80),
+                              EmptyState(
+                                icon: Icons.event_available,
+                                title: 'All caught up',
+                                message:
+                                    'No rehearsal dates to record right now.',
                               ),
+                            ],
+                          )
+                        : ListView(
+                            padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+                            children: [
+                              const SectionHeader(
+                                eyebrow: 'Sessions',
+                                title: 'Pick a date',
+                              ),
+                              const SizedBox(height: 12),
+                              ..._sessions.map(
+                                (s) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: _sessionCard(theme, s),
+                                ),
+                              ),
+                              if (_events.isNotEmpty) ...[
+                                const SizedBox(height: 24),
+                                const SectionHeader(
+                                  eyebrow: 'Events',
+                                  title: 'Concerts & big rehearsals',
+                                  subtitle:
+                                      'Open a QR session for an event with attendance.',
+                                ),
+                                const SizedBox(height: 12),
+                                ..._events.map(
+                                  (e) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 8),
+                                    child: _eventCard(theme, e),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
                   ),
           ),
         ],
@@ -372,7 +399,18 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
   Widget _eventCard(ThemeData theme, Concert e) {
     const months = [
-      'JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'
+      'JAN',
+      'FEB',
+      'MAR',
+      'APR',
+      'MAY',
+      'JUN',
+      'JUL',
+      'AUG',
+      'SEP',
+      'OCT',
+      'NOV',
+      'DEC',
     ];
     final d = e.date;
     final today = _isToday(d);
@@ -392,15 +430,19 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             ),
             child: Column(
               children: [
-                Text(months[d.month - 1],
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: today ? AppColors.dark : AppColors.accentLight,
-                    )),
-                Text('${d.day}',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: today ? AppColors.dark : AppColors.cream,
-                      height: 1,
-                    )),
+                Text(
+                  months[d.month - 1],
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: today ? AppColors.dark : AppColors.accentLight,
+                  ),
+                ),
+                Text(
+                  '${d.day}',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: today ? AppColors.dark : AppColors.cream,
+                    height: 1,
+                  ),
+                ),
               ],
             ),
           ),
@@ -409,8 +451,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(e.title, style: theme.textTheme.titleMedium,
-                    maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(
+                  e.title,
+                  style: theme.textTheme.titleMedium,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 Text(
                   '${e.isRehearsal ? "Big rehearsal" : "Concert"} · ${e.location}',
                   style: theme.textTheme.bodySmall,
@@ -423,12 +469,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           if (past)
             const Padding(
               padding: EdgeInsets.only(right: 4),
-              child: Text('Past',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: AppColors.gray,
-                    fontWeight: FontWeight.w600,
-                  )),
+              child: Text(
+                'Past',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AppColors.gray,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           const Icon(Icons.chevron_right, color: AppColors.gray),
         ],
@@ -467,15 +515,19 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             ),
             child: Column(
               children: [
-                Text(_months[d.month - 1].toUpperCase(),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                        color: today
-                            ? AppColors.dark
-                            : AppColors.accentLight)),
-                Text('${d.day}',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                        color: today ? AppColors.dark : AppColors.cream,
-                        height: 1)),
+                Text(
+                  _months[d.month - 1].toUpperCase(),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: today ? AppColors.dark : AppColors.accentLight,
+                  ),
+                ),
+                Text(
+                  '${d.day}',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: today ? AppColors.dark : AppColors.cream,
+                    height: 1,
+                  ),
+                ),
               ],
             ),
           ),
@@ -484,10 +536,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_weekdays[d.weekday - 1],
-                    style: theme.textTheme.titleMedium),
-                Text('${d.day}/${d.month}/${d.year}',
-                    style: theme.textTheme.bodySmall),
+                Text(
+                  _weekdays[d.weekday - 1],
+                  style: theme.textTheme.titleMedium,
+                ),
+                Text(
+                  '${d.day}/${d.month}/${d.year}',
+                  style: theme.textTheme.bodySmall,
+                ),
               ],
             ),
           ),
@@ -497,12 +553,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               color: badgeColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Text(badgeText,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: badgeColor,
-                )),
+            child: Text(
+              badgeText,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: badgeColor,
+              ),
+            ),
           ),
           const SizedBox(width: 4),
           const Icon(Icons.chevron_right, color: AppColors.gray),

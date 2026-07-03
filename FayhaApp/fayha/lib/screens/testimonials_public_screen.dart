@@ -1,5 +1,7 @@
+import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import '../data/mock_data.dart';
 import '../services/testimonials_service.dart';
@@ -19,6 +21,9 @@ class TestimonialsPublicScreen extends StatefulWidget {
 
 class _TestimonialsPublicScreenState extends State<TestimonialsPublicScreen> {
   late Future<List<Testimonial>> _public;
+  bool _showAll = false;
+
+  static const _initialCount = 10;
 
   @override
   void initState() {
@@ -27,7 +32,9 @@ class _TestimonialsPublicScreenState extends State<TestimonialsPublicScreen> {
   }
 
   void _reload() {
-    setState(() => _public = TestimonialsService.fetchPublic());
+    setState(() {
+      _public = TestimonialsService.fetchPublic();
+    });
   }
 
   @override
@@ -66,13 +73,39 @@ class _TestimonialsPublicScreenState extends State<TestimonialsPublicScreen> {
                     ),
                   );
                 }
+                final visible = _showAll
+                    ? list
+                    : list.take(_initialCount).toList();
+                final hasMore = !_showAll && list.length > _initialCount;
                 return Column(
-                  children: list
-                      .map((t) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: _TestimonialCard(t: t),
-                          ))
-                      .toList(),
+                  children: [
+                    ...visible.map(
+                      (t) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _TestimonialCard(t: t),
+                      ),
+                    ),
+                    if (hasMore) ...[
+                      const SizedBox(height: 4),
+                      OutlinedButton.icon(
+                        onPressed: () => setState(() => _showAll = true),
+                        icon: const Icon(Icons.expand_more, size: 18),
+                        label: Text(
+                          'Read more (${list.length - _initialCount} more)',
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                    if (_showAll && list.length > _initialCount) ...[
+                      const SizedBox(height: 4),
+                      OutlinedButton.icon(
+                        onPressed: () => setState(() => _showAll = false),
+                        icon: const Icon(Icons.expand_less, size: 18),
+                        label: const Text('Show less'),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                  ],
                 );
               },
             ),
@@ -94,13 +127,27 @@ class _TestimonialsPublicScreenState extends State<TestimonialsPublicScreen> {
   }
 }
 
-class _TestimonialCard extends StatelessWidget {
+class _TestimonialCard extends StatefulWidget {
   final Testimonial t;
   const _TestimonialCard({required this.t});
 
   @override
+  State<_TestimonialCard> createState() => _TestimonialCardState();
+}
+
+class _TestimonialCardState extends State<_TestimonialCard> {
+  static const _truncateAt = 75;
+  bool _expanded = false;
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final t = widget.t;
+    final isLong = t.body.length > _truncateAt;
+    final displayText = isLong && !_expanded
+        ? '${t.body.substring(0, _truncateAt)}…'
+        : t.body;
+
     return ElegantCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,12 +188,30 @@ class _TestimonialCard extends StatelessWidget {
                 left: BorderSide(color: AppColors.accent, width: 3),
               ),
             ),
-            child: Text(
-              t.body,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                height: 1.6,
-                fontStyle: FontStyle.italic,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  displayText,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    height: 1.6,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+                if (isLong) ...[
+                  const SizedBox(height: 4),
+                  GestureDetector(
+                    onTap: () => setState(() => _expanded = !_expanded),
+                    child: Text(
+                      _expanded ? 'Read Less' : 'Read More',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
         ],
@@ -167,27 +232,62 @@ class _AudienceSubmitFormState extends State<_AudienceSubmitForm> {
   final _name = TextEditingController();
   final _email = TextEditingController();
   final _message = TextEditingController();
+  final _captchaCtrl = TextEditingController();
   Uint8List? _photoBytes;
   String _photoExt = 'jpg';
   bool _saving = false;
   bool _done = false;
+
+  // Bot protection: simple math challenge + minimum visible-time gate.
+  late final int _captchaA;
+  late final int _captchaB;
+  bool _captchaSolved = false;
+  late final DateTime _formShownAt;
+
+  @override
+  void initState() {
+    super.initState();
+    final rng = Random();
+    _captchaA = rng.nextInt(9) + 1;
+    _captchaB = rng.nextInt(9) + 1;
+    _formShownAt = DateTime.now();
+  }
 
   @override
   void dispose() {
     _name.dispose();
     _email.dispose();
     _message.dispose();
+    _captchaCtrl.dispose();
     super.dispose();
   }
+
+  static const _maxPhotoBytes = 5 * 1024 * 1024; // 5 MB
 
   Future<void> _pickPhoto() async {
     final f = await ImagePicker().pickImage(
       source: ImageSource.gallery,
-      maxWidth: 1200,
-      imageQuality: 85,
+      maxWidth: 1920,
+      maxHeight: 1920,
+      imageQuality: 80,
     );
     if (f == null) return;
-    final bytes = await f.readAsBytes();
+    var bytes = await f.readAsBytes();
+
+    // If still above 5 MB, re-pick with lower quality is not possible
+    // (image_picker runs native compression); show a friendly error instead.
+    if (bytes.lengthInBytes > _maxPhotoBytes) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Photo is too large (max 5 MB). Please choose a smaller image.',
+          ),
+        ),
+      );
+      return;
+    }
+
     final ext = f.name.contains('.')
         ? f.name.split('.').last.toLowerCase()
         : 'jpg';
@@ -205,8 +305,25 @@ class _AudienceSubmitFormState extends State<_AudienceSubmitForm> {
     if (name.isEmpty || email.isEmpty || msg.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Please fill in name, email, and message')),
+          content: Text('Please fill in name, email, and message'),
+        ),
       );
+      return;
+    }
+    if (!_captchaSolved) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Please answer the security question: $_captchaA + $_captchaB = ?',
+          ),
+        ),
+      );
+      return;
+    }
+    // Time-gate: if the form was filled in under 3 seconds it's almost
+    // certainly a bot. Silently pretend success to avoid revealing the check.
+    if (DateTime.now().difference(_formShownAt).inSeconds < 3) {
+      setState(() => _done = true);
       return;
     }
     setState(() => _saving = true);
@@ -230,9 +347,9 @@ class _AudienceSubmitFormState extends State<_AudienceSubmitForm> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not submit: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not submit: $e')));
     }
   }
 
@@ -286,6 +403,30 @@ class _AudienceSubmitFormState extends State<_AudienceSubmitForm> {
                 alignLabelWithHint: true,
               ),
             ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _captchaCtrl,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: InputDecoration(
+                labelText: 'Security check: what is $_captchaA + $_captchaB?',
+                prefixIcon: const Icon(Icons.security_outlined, size: 18),
+                suffixIcon: _captchaSolved
+                    ? const Icon(
+                        Icons.check_circle,
+                        color: AppColors.secondary,
+                        size: 20,
+                      )
+                    : null,
+              ),
+              onChanged: (v) {
+                final answer = int.tryParse(v.trim());
+                final solved = answer == _captchaA + _captchaB;
+                if (solved != _captchaSolved) {
+                  setState(() => _captchaSolved = solved);
+                }
+              },
+            ),
             const SizedBox(height: 12),
             Row(
               children: [
@@ -302,17 +443,25 @@ class _AudienceSubmitFormState extends State<_AudienceSubmitForm> {
                   const CircleAvatar(
                     radius: 20,
                     backgroundColor: AppColors.offWhite,
-                    child: Icon(Icons.person, color: AppColors.gray),
+                    child: Icon(Icons.account_circle, color: AppColors.gray),
                   ),
                 const SizedBox(width: 10),
-                OutlinedButton.icon(
-                  onPressed: _pickPhoto,
-                  icon: Icon(
-                      hasPhoto ? Icons.swap_horiz : Icons.add_photo_alternate_outlined,
-                      size: 18),
-                  label: Text(hasPhoto ? 'Change photo' : 'Add photo (optional)'),
+                Flexible(
+                  child: OutlinedButton.icon(
+                    onPressed: _pickPhoto,
+                    icon: Icon(
+                      hasPhoto
+                          ? Icons.swap_horiz
+                          : Icons.account_circle_outlined,
+                      size: 18,
+                    ),
+                    label: Text(
+                      hasPhoto ? 'Change picture' : 'Profile picture',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ),
-                const Spacer(),
+                const SizedBox(width: 8),
                 FilledButton(
                   onPressed: _saving ? null : _submit,
                   child: _saving
@@ -320,7 +469,9 @@ class _AudienceSubmitFormState extends State<_AudienceSubmitForm> {
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: AppColors.cream),
+                            strokeWidth: 2,
+                            color: AppColors.cream,
+                          ),
                         )
                       : const Text('Submit'),
                 ),

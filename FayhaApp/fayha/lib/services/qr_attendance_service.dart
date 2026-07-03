@@ -23,20 +23,20 @@ class QrSession {
     this.lateAfter,
   });
   factory QrSession.fromMap(Map<String, dynamic> m) => QrSession(
-        id: m['id'] as String,
-        rehearsalId: m['rehearsal_id'] as String?,
-        concertId: m['concert_id'] as String?,
-        branch: m['branch'] as String?,
-        token: m['token'] as String,
-        startedAt: DateTime.parse(m['started_at'] as String).toLocal(),
-        validFrom: m['valid_from'] != null
-            ? DateTime.parse(m['valid_from'] as String).toLocal()
-            : DateTime.parse(m['started_at'] as String).toLocal(),
-        expiresAt: DateTime.parse(m['expires_at'] as String).toLocal(),
-        lateAfter: m['late_after'] == null
-            ? null
-            : DateTime.parse(m['late_after'] as String).toLocal(),
-      );
+    id: m['id'] as String,
+    rehearsalId: m['rehearsal_id'] as String?,
+    concertId: m['concert_id'] as String?,
+    branch: m['branch'] as String?,
+    token: m['token'] as String,
+    startedAt: DateTime.parse(m['started_at'] as String).toLocal(),
+    validFrom: m['valid_from'] != null
+        ? DateTime.parse(m['valid_from'] as String).toLocal()
+        : DateTime.parse(m['started_at'] as String).toLocal(),
+    expiresAt: DateTime.parse(m['expires_at'] as String).toLocal(),
+    lateAfter: m['late_after'] == null
+        ? null
+        : DateTime.parse(m['late_after'] as String).toLocal(),
+  );
 
   Duration get remaining => expiresAt.difference(DateTime.now());
   bool get isExpired => DateTime.now().isAfter(expiresAt);
@@ -93,12 +93,16 @@ class QrAttendanceService {
     if (existingRehearsal != null) {
       rehearsalId = existingRehearsal['id'] as String;
     } else {
-      final row = await _c.from('rehearsals').insert({
-        'branch': branch,
-        'session_date': dayStr,
-        'status': 'held',
-        'recorded_by': _c.auth.currentUser?.id,
-      }).select('id').single();
+      final row = await _c
+          .from('rehearsals')
+          .insert({
+            'branch': branch,
+            'session_date': dayStr,
+            'status': 'held',
+            'recorded_by': _c.auth.currentUser?.id,
+          })
+          .select('id')
+          .single();
       rehearsalId = row['id'] as String;
     }
 
@@ -143,11 +147,12 @@ class QrAttendanceService {
         .from('qr_sessions')
         .select()
         .gt('expires_at', now.toUtc().toIso8601String());
-    final liveRows = await (rehearsalId != null
-            ? base.eq('rehearsal_id', rehearsalId)
-            : base.eq('concert_id', concertId as Object))
-        .order('started_at', ascending: false)
-        .limit(1);
+    final liveRows =
+        await (rehearsalId != null
+                ? base.eq('rehearsal_id', rehearsalId)
+                : base.eq('concert_id', concertId as Object))
+            .order('started_at', ascending: false)
+            .limit(1);
     if (liveRows.isNotEmpty) {
       return QrSession.fromMap(liveRows.first);
     }
@@ -162,12 +167,11 @@ class QrAttendanceService {
           'token': token,
           'started_at': now.toUtc().toIso8601String(),
           'valid_from': validFrom.toUtc().toIso8601String(),
-          'expires_at':
-              validFrom.add(validFor).toUtc().toIso8601String(),
-          'late_after': (lateAfter ??
-                  validFrom.add(const Duration(minutes: 15)))
-              .toUtc()
-              .toIso8601String(),
+          'expires_at': validFrom.add(validFor).toUtc().toIso8601String(),
+          'late_after':
+              (lateAfter ?? validFrom.add(const Duration(minutes: 15)))
+                  .toUtc()
+                  .toIso8601String(),
           'created_by': _c.auth.currentUser?.id,
         })
         .select()
@@ -209,10 +213,11 @@ class QrAttendanceService {
       };
 
       final query = _c.from('attendance').select('id').eq('member_id', adminId);
-      final existing = await (rehearsalId != null
-              ? query.eq('rehearsal_id', rehearsalId)
-              : query.eq('concert_id', concertId as Object))
-          .maybeSingle();
+      final existing =
+          await (rehearsalId != null
+                  ? query.eq('rehearsal_id', rehearsalId)
+                  : query.eq('concert_id', concertId as Object))
+              .maybeSingle();
 
       if (existing != null) {
         await _c
@@ -240,11 +245,10 @@ class QrAttendanceService {
     double? lat,
     double? lng,
   }) async {
-    final res = await _c.rpc('claim_attendance', params: {
-      'p_token': token,
-      'p_lat': lat,
-      'p_lng': lng,
-    });
+    final res = await _c.rpc(
+      'claim_attendance',
+      params: {'p_token': token, 'p_lat': lat, 'p_lng': lng},
+    );
     final map = (res as Map).cast<String, dynamic>();
     return (map['late_minutes'] as num?)?.toInt() ?? 0;
   }
@@ -253,9 +257,11 @@ class QrAttendanceService {
   static Future<List<QrCheckin>> checkins(QrSession session) async {
     final rows = await _c
         .from('attendance')
-        .select('member_id, late_minutes, checked_in_at, '
-            'checked_in_lat, checked_in_lng, '
-            'members:member_id(name)')
+        .select(
+          'member_id, late_minutes, checked_in_at, '
+          'checked_in_lat, checked_in_lng, '
+          'members:member_id(name)',
+        )
         .eq('qr_session_id', session.id)
         .order('checked_in_at', ascending: false);
     return _mapCheckins(rows as List);
@@ -279,9 +285,11 @@ class QrAttendanceService {
     if (rehearsal == null) return const [];
     final rows = await _c
         .from('attendance')
-        .select('member_id, late_minutes, checked_in_at, '
-            'checked_in_lat, checked_in_lng, '
-            'members:member_id(name)')
+        .select(
+          'member_id, late_minutes, checked_in_at, '
+          'checked_in_lat, checked_in_lng, '
+          'members:member_id(name)',
+        )
         .eq('rehearsal_id', rehearsal['id'] as String)
         .eq('via', 'qr')
         .order('checked_in_at', ascending: false);
@@ -332,11 +340,7 @@ class QrAttendanceService {
       patch['late_after'] = lateAfter.toUtc().toIso8601String();
     }
     if (patch.isEmpty) {
-      final row = await _c
-          .from('qr_sessions')
-          .select()
-          .eq('id', id)
-          .single();
+      final row = await _c.from('qr_sessions').select().eq('id', id).single();
       return QrSession.fromMap(row);
     }
     final row = await _c
@@ -368,9 +372,11 @@ class QrAttendanceService {
   static Future<List<QrCheckin>> checkinsForConcert(String concertId) async {
     final rows = await _c
         .from('attendance')
-        .select('member_id, late_minutes, checked_in_at, '
-            'checked_in_lat, checked_in_lng, '
-            'members:member_id(name)')
+        .select(
+          'member_id, late_minutes, checked_in_at, '
+          'checked_in_lat, checked_in_lng, '
+          'members:member_id(name)',
+        )
         .eq('concert_id', concertId)
         .eq('via', 'qr')
         .order('checked_in_at', ascending: false);
@@ -408,11 +414,122 @@ class QrAttendanceService {
     }
   }
 
+  /// Pre-schedules a QR session for a concert/big-rehearsal at the time the
+  /// event is created, without auto-attending anyone.  The session stays
+  /// pending until [validFrom] arrives.  Safe to call for future dates; skips
+  /// silently if the window has already passed or a session already exists.
+  static Future<void> preScheduleForConcert({
+    required String concertId,
+    required DateTime validFrom,
+    required DateTime expiresAt,
+    DateTime? lateAfter,
+  }) async {
+    final now = DateTime.now();
+    if (expiresAt.isBefore(now)) return; // past event — skip
+
+    // Reuse if a non-expired session already exists for this concert.
+    final existing = await _c
+        .from('qr_sessions')
+        .select('id')
+        .eq('concert_id', concertId)
+        .gt('expires_at', now.toUtc().toIso8601String())
+        .limit(1);
+    if ((existing as List).isNotEmpty) return;
+
+    final token = _generateToken();
+    await _c.from('qr_sessions').insert({
+      'concert_id': concertId,
+      'rehearsal_id': null,
+      'branch': null,
+      'token': token,
+      'started_at': now.toUtc().toIso8601String(),
+      'valid_from': validFrom.toUtc().toIso8601String(),
+      'expires_at': expiresAt.toUtc().toIso8601String(),
+      'late_after': (lateAfter ?? validFrom.add(const Duration(minutes: 15)))
+          .toUtc()
+          .toIso8601String(),
+      'created_by': _c.auth.currentUser?.id,
+    });
+  }
+
+  /// Auto-create a default QR window (5:55 PM – 9:00 PM) for a branch
+  /// rehearsal the first time an admin opens the QR screen for that day.
+  /// Returns the existing or newly-created session, or null if the default
+  /// window has already ended (safe to call on every screen open).
+  static Future<QrSession?> ensureDefaultSessionForRehearsal({
+    required String branch,
+    required DateTime date,
+  }) async {
+    final now = DateTime.now();
+    final d = date;
+    final defaultStart = DateTime(d.year, d.month, d.day, 17, 55);
+    final defaultEnd = DateTime(d.year, d.month, d.day, 21, 0);
+    if (defaultEnd.isBefore(now)) return null;
+
+    final dayStr =
+        '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+    // Find or create the rehearsal row.
+    final existingRehearsal = await _c
+        .from('rehearsals')
+        .select('id')
+        .eq('branch', branch)
+        .eq('session_date', dayStr)
+        .maybeSingle();
+    String rehearsalId;
+    if (existingRehearsal != null) {
+      rehearsalId = existingRehearsal['id'] as String;
+    } else {
+      final row = await _c
+          .from('rehearsals')
+          .insert({
+            'branch': branch,
+            'session_date': dayStr,
+            'status': 'held',
+            'recorded_by': _c.auth.currentUser?.id,
+          })
+          .select('id')
+          .single();
+      rehearsalId = row['id'] as String;
+    }
+
+    // Reuse if a non-expired session already exists.
+    final existing = await _c
+        .from('qr_sessions')
+        .select()
+        .eq('rehearsal_id', rehearsalId)
+        .gt('expires_at', now.toUtc().toIso8601String())
+        .order('started_at', ascending: false)
+        .limit(1);
+    if ((existing as List).isNotEmpty) {
+      return QrSession.fromMap(existing.first);
+    }
+
+    // Create the default session without auto-attending anyone.
+    final from = defaultStart.isBefore(now) ? now : defaultStart;
+    final lateAfter = defaultStart.add(const Duration(minutes: 15));
+    final token = _generateToken();
+    final inserted = await _c
+        .from('qr_sessions')
+        .insert({
+          'rehearsal_id': rehearsalId,
+          'concert_id': null,
+          'branch': branch,
+          'token': token,
+          'started_at': now.toUtc().toIso8601String(),
+          'valid_from': from.toUtc().toIso8601String(),
+          'expires_at': defaultEnd.toUtc().toIso8601String(),
+          'late_after': lateAfter.toUtc().toIso8601String(),
+          'created_by': _c.auth.currentUser?.id,
+        })
+        .select()
+        .single();
+    return QrSession.fromMap(inserted);
+  }
+
   static String _generateToken() {
     final r = Random.secure();
-    const charset =
-        'ABCDEFGHJKLMNPQRSTUVWXYZ23456789abcdefghijkmnpqrstuvwxyz';
-    return List.generate(24, (_) => charset[r.nextInt(charset.length)])
-        .join();
+    const charset = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789abcdefghijkmnpqrstuvwxyz';
+    return List.generate(24, (_) => charset[r.nextInt(charset.length)]).join();
   }
 }

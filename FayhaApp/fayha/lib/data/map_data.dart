@@ -85,11 +85,16 @@ class MapData {
 
   static Color colorFor(String branch) {
     switch (branch.toLowerCase()) {
-      case 'tripoli': return tripoliColor;
-      case 'beirut': return beirutColor;
-      case 'aley': return aleyColor;
-      case 'chouf': return choufColor;
-      default: return AppColors.gray;
+      case 'tripoli':
+        return tripoliColor;
+      case 'beirut':
+        return beirutColor;
+      case 'aley':
+        return aleyColor;
+      case 'chouf':
+        return choufColor;
+      default:
+        return AppColors.gray;
     }
   }
 
@@ -163,7 +168,8 @@ class MapData {
       color: tripoliColor,
       lat: 34.4516745,
       lng: 35.8121094,
-      bio: 'Full-stack developer by day, Tenor 2 in the Tripoli branch by night. Joined Fayha in 2019.',
+      bio:
+          'Full-stack developer by day, Tenor 2 in the Tripoli branch by night. Joined Fayha in 2019.',
     ),
     MemberHome(
       memberName: 'Maestro Barkev Taslakian',
@@ -175,7 +181,8 @@ class MapData {
       color: tripoliColor,
       lat: 34.3880239,
       lng: 35.8404634,
-      bio: 'Founded Fayha National Choir in 2003. Has shaped Arabic a cappella into an internationally recognized artform and trained dozens of conductors across the Arab region.',
+      bio:
+          'Founded Fayha National Choir in 2003. Has shaped Arabic a cappella into an internationally recognized artform and trained dozens of conductors across the Arab region.',
     ),
     MemberHome(
       memberName: 'Amir Chehayeb',

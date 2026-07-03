@@ -56,8 +56,7 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
     AppState.instance.addListener(_onAppStateChange);
 
     // Realtime: update Polls badge instantly when a new poll is published.
-    _pollsChannel = Supabase.instance.client
-        .channel('home_polls_insert')
+    _pollsChannel = Supabase.instance.client.channel('home_polls_insert')
       ..onPostgresChanges(
         event: PostgresChangeEvent.insert,
         schema: 'public',
@@ -118,45 +117,48 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
           children: [
             _ProfileHeader(member: m, years: years),
             if (!m.isMaestro) ...[
-            const SizedBox(height: 14),
-            _LiveLocationCard(
-              enabled: m.liveLocationEnabled,
-              onEnable: () async {
-                final messenger = ScaffoldMessenger.of(context);
-                try {
-                  await LiveLocationService.instance.enable();
-                  if (!mounted) return;
-                  setState(() {});
-                  messenger.showSnackBar(
-                    const SnackBar(
+              const SizedBox(height: 14),
+              _LiveLocationCard(
+                enabled: m.liveLocationEnabled,
+                onEnable: () async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  try {
+                    await LiveLocationService.instance.enable();
+                    if (!mounted) return;
+                    setState(() {});
+                    messenger.showSnackBar(
+                      const SnackBar(
                         content: Text(
-                            'Your live location is now shared with Maestro')),
-                  );
-                } catch (e) {
-                  if (!mounted) return;
-                  messenger.showSnackBar(
-                    SnackBar(content: Text('Could not enable: $e')),
-                  );
-                }
-              },
-              onDisable: () async {
-                final messenger = ScaffoldMessenger.of(context);
-                try {
-                  await LiveLocationService.instance.disable();
-                  if (!mounted) return;
-                  setState(() {});
-                  messenger.showSnackBar(
-                    const SnackBar(
-                        content: Text('Live location sharing turned off')),
-                  );
-                } catch (e) {
-                  if (!mounted) return;
-                  messenger.showSnackBar(
-                    SnackBar(content: Text('Could not turn off: $e')),
-                  );
-                }
-              },
-            ),
+                          'Your live location is now shared with Maestro',
+                        ),
+                      ),
+                    );
+                  } catch (e) {
+                    if (!mounted) return;
+                    messenger.showSnackBar(
+                      SnackBar(content: Text('Could not enable: $e')),
+                    );
+                  }
+                },
+                onDisable: () async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  try {
+                    await LiveLocationService.instance.disable();
+                    if (!mounted) return;
+                    setState(() {});
+                    messenger.showSnackBar(
+                      const SnackBar(
+                        content: Text('Live location sharing turned off'),
+                      ),
+                    );
+                  } catch (e) {
+                    if (!mounted) return;
+                    messenger.showSnackBar(
+                      SnackBar(content: Text('Could not turn off: $e')),
+                    );
+                  }
+                },
+              ),
             ],
             if (m.houseLat == null || m.houseLng == null) ...[
               const SizedBox(height: 14),
@@ -165,7 +167,8 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
                   await Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (_) => const HouseLocationPickerScreen()),
+                      builder: (_) => const HouseLocationPickerScreen(),
+                    ),
                   );
                   if (mounted) setState(() {});
                 },
@@ -174,11 +177,17 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
             const SizedBox(height: 20),
             Row(
               children: [
-                Expanded(child: _Stat(label: 'Trips', value: '${m.travelsCount}')),
+                Expanded(
+                  child: _Stat(label: 'Trips', value: '${m.travelsCount}'),
+                ),
                 const SizedBox(width: 10),
-                Expanded(child: _Stat(label: 'Songs', value: '$memorized')),
+                Expanded(
+                  child: _Stat(label: 'Songs', value: '$memorized'),
+                ),
                 const SizedBox(width: 10),
-                Expanded(child: _Stat(label: 'Years', value: '$years')),
+                Expanded(
+                  child: _Stat(label: 'Years', value: '$years'),
+                ),
                 const SizedBox(width: 10),
                 Expanded(child: _LevelStat(level: m.singerLevel)),
               ],
@@ -191,8 +200,12 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
                 _Tile(
                   icon: Icons.person_outline,
                   label: 'Profile',
-                  onTap: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const MemberProfileScreen())),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const MemberProfileScreen(),
+                    ),
+                  ),
                 ),
                 _Tile(
                   icon: Icons.checklist_rtl,
@@ -211,8 +224,7 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
                   label: 'Scan QR',
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(
-                        builder: (_) => const QrCheckInScreen()),
+                    MaterialPageRoute(builder: (_) => const QrCheckInScreen()),
                   ),
                 ),
                 _Tile(
@@ -220,8 +232,10 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
                   label: 'Polls',
                   badge: _unvotedPolls,
                   onTap: () async {
-                    await Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const PollsScreen()));
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const PollsScreen()),
+                    );
                     _reloadAlertCounts();
                   },
                 ),
@@ -237,8 +251,9 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
                     final navigator = Navigator.of(context);
                     await AlertCountsService.markDmsSeen();
                     if (mounted) setState(() => _unreadDms = 0);
-                    await navigator.push(MaterialPageRoute(
-                        builder: (_) => const MessagesScreen()));
+                    await navigator.push(
+                      MaterialPageRoute(builder: (_) => const MessagesScreen()),
+                    );
                     await AlertCountsService.markDmsSeen();
                     _reloadAlertCounts();
                   },
@@ -246,8 +261,12 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
                 _Tile(
                   icon: Icons.format_quote,
                   label: 'Testimonials',
-                  onTap: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const TestimonialsMemberScreen())),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const TestimonialsMemberScreen(),
+                    ),
+                  ),
                 ),
                 _Tile(
                   icon: Icons.groups_outlined,
@@ -255,7 +274,8 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (_) => const MembersDirectoryScreen()),
+                      builder: (_) => const MembersDirectoryScreen(),
+                    ),
                   ),
                 ),
                 _Tile(
@@ -263,8 +283,7 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
                   label: 'Bus Routes',
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(
-                        builder: (_) => const BusRoutesScreen()),
+                    MaterialPageRoute(builder: (_) => const BusRoutesScreen()),
                   ),
                 ),
                 if (m.isAdmin || m.isContentEditor)
@@ -272,9 +291,7 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
                     icon: m.isContentEditor && !m.isAdmin
                         ? Icons.edit_note_outlined
                         : Icons.admin_panel_settings_outlined,
-                    label: m.isContentEditor && !m.isAdmin
-                        ? 'Editor'
-                        : 'Admin',
+                    label: m.isContentEditor && !m.isAdmin ? 'Editor' : 'Admin',
                     badge: _adminInbox,
                     onTap: () async {
                       // Opening admin counts as "seen" — the home badge
@@ -285,8 +302,10 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
                       await AlertCountsService.markAdminInboxSeen();
                       if (mounted) setState(() => _adminInbox = 0);
                       await navigator.push(
-                          MaterialPageRoute(
-                              builder: (_) => const AdminPanelScreen()));
+                        MaterialPageRoute(
+                          builder: (_) => const AdminPanelScreen(),
+                        ),
+                      );
                       _reloadAlertCounts();
                     },
                   ),
@@ -308,7 +327,9 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
             _GalleryStrip(future: _gallery ??= GalleryService.list(limit: 12)),
             const SizedBox(height: 28),
             const SectionHeader(
-                eyebrow: 'Coming Up', title: 'Concerts & Rehearsals'),
+              eyebrow: 'Coming Up',
+              title: 'Concerts & Rehearsals',
+            ),
             const SizedBox(height: 12),
             FutureBuilder<List<Concert>>(
               future: _upcoming,
@@ -323,17 +344,21 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
                 if (events.isEmpty) {
                   return ElegantCard(
                     background: AppColors.offWhite,
-                    child: Text('No upcoming events yet.',
-                        style: theme.textTheme.bodyMedium),
+                    child: Text(
+                      'No upcoming events yet.',
+                      style: theme.textTheme.bodyMedium,
+                    ),
                   );
                 }
                 return Column(
                   children: events
                       .take(4)
-                      .map((e) => Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: _eventCard(theme, e),
-                          ))
+                      .map(
+                        (e) => Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: _eventCard(theme, e),
+                        ),
+                      )
                       .toList(),
                 );
               },
@@ -345,9 +370,25 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
   }
 
   Widget _eventCard(ThemeData theme, Concert e) {
-    const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-    final h = e.date.hour > 12 ? e.date.hour - 12 : (e.date.hour == 0 ? 12 : e.date.hour);
-    final time = '$h:${e.date.minute.toString().padLeft(2, '0')} ${e.date.hour >= 12 ? 'PM' : 'AM'}';
+    const months = [
+      'JAN',
+      'FEB',
+      'MAR',
+      'APR',
+      'MAY',
+      'JUN',
+      'JUL',
+      'AUG',
+      'SEP',
+      'OCT',
+      'NOV',
+      'DEC',
+    ];
+    final h = e.date.hour > 12
+        ? e.date.hour - 12
+        : (e.date.hour == 0 ? 12 : e.date.hour);
+    final time =
+        '$h:${e.date.minute.toString().padLeft(2, '0')} ${e.date.hour >= 12 ? 'PM' : 'AM'}';
     return ElegantCard(
       background: AppColors.offWhite,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -361,12 +402,20 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
             ),
             child: Column(
               children: [
-                Text(months[e.date.month - 1],
-                    style: theme.textTheme.labelSmall
-                        ?.copyWith(color: AppColors.accentLight, letterSpacing: 1)),
-                Text('${e.date.day}',
-                    style: theme.textTheme.titleLarge
-                        ?.copyWith(color: AppColors.cream, height: 1)),
+                Text(
+                  months[e.date.month - 1],
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: AppColors.accentLight,
+                    letterSpacing: 1,
+                  ),
+                ),
+                Text(
+                  '${e.date.day}',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: AppColors.cream,
+                    height: 1,
+                  ),
+                ),
               ],
             ),
           ),
@@ -376,10 +425,16 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
-                    color: (e.isRehearsal ? AppColors.secondary : AppColors.accentDark)
-                        .withValues(alpha: 0.15),
+                    color:
+                        (e.isRehearsal
+                                ? AppColors.secondary
+                                : AppColors.accentDark)
+                            .withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -397,8 +452,7 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
                 const SizedBox(height: 4),
                 Text(e.title, style: theme.textTheme.titleMedium),
                 const SizedBox(height: 2),
-                Text('${e.location} · $time',
-                    style: theme.textTheme.bodySmall),
+                Text('${e.location} · $time', style: theme.textTheme.bodySmall),
               ],
             ),
           ),
@@ -462,7 +516,10 @@ class _ProfileHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.accent,
                     borderRadius: BorderRadius.circular(12),
@@ -531,21 +588,31 @@ class _LevelStat extends StatelessWidget {
 
   static String _label(String? v) {
     switch (v) {
-      case 'not_on_stage':        return 'Not on Stage';
-      case 'on_stage':            return 'On Stage';
-      case 'assistant_conductor': return 'Asst. Cond.';
-      case 'friend':              return 'Friend';
-      default:                    return 'Not set';
+      case 'not_on_stage':
+        return 'Not on Stage';
+      case 'on_stage':
+        return 'On Stage';
+      case 'assistant_conductor':
+        return 'Asst. Cond.';
+      case 'friend':
+        return 'Friend';
+      default:
+        return 'Not set';
     }
   }
 
   static Color _color(String? v) {
     switch (v) {
-      case 'not_on_stage':        return AppColors.gray;
-      case 'on_stage':            return AppColors.secondary;
-      case 'assistant_conductor': return AppColors.accentDark;
-      case 'friend':              return AppColors.primary;
-      default:                    return AppColors.gray;
+      case 'not_on_stage':
+        return AppColors.gray;
+      case 'on_stage':
+        return AppColors.secondary;
+      case 'assistant_conductor':
+        return AppColors.accentDark;
+      case 'friend':
+        return AppColors.primary;
+      default:
+        return AppColors.gray;
     }
   }
 
@@ -563,8 +630,7 @@ class _LevelStat extends StatelessWidget {
       child: Column(
         children: [
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: c.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(20),
@@ -673,10 +739,14 @@ class _TileCard extends StatelessWidget {
                   right: -4,
                   top: -4,
                   child: Container(
-                    constraints:
-                        const BoxConstraints(minWidth: 20, minHeight: 20),
+                    constraints: const BoxConstraints(
+                      minWidth: 20,
+                      minHeight: 20,
+                    ),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 6, vertical: 2),
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.accent,
                       borderRadius: BorderRadius.circular(20),
@@ -723,7 +793,9 @@ class _LiveLocationCard extends StatelessWidget {
           color: AppColors.secondary.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-              color: AppColors.secondary.withValues(alpha: 0.5), width: 1),
+            color: AppColors.secondary.withValues(alpha: 0.5),
+            width: 1,
+          ),
         ),
         child: Row(
           children: [
@@ -733,19 +805,26 @@ class _LiveLocationCard extends StatelessWidget {
                 color: AppColors.secondaryDark,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.location_on,
-                  color: Colors.white, size: 18),
+              child: const Icon(
+                Icons.location_on,
+                color: Colors.white,
+                size: 18,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Sharing your location with Maestro',
-                      style: theme.textTheme.titleMedium),
+                  Text(
+                    'Sharing your location with Maestro',
+                    style: theme.textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 2),
-                  Text('Updates every 30 seconds while the app is open.',
-                      style: theme.textTheme.bodySmall),
+                  Text(
+                    'Updates every 30 seconds while the app is open.',
+                    style: theme.textTheme.bodySmall,
+                  ),
                 ],
               ),
             ),
@@ -773,7 +852,9 @@ class _LiveLocationCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-                color: AppColors.accentDark.withValues(alpha: 0.4), width: 1),
+              color: AppColors.accentDark.withValues(alpha: 0.4),
+              width: 1,
+            ),
           ),
           child: Row(
             children: [
@@ -783,16 +864,21 @@ class _LiveLocationCard extends StatelessWidget {
                   color: AppColors.cream,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.share_location,
-                    color: AppColors.primary, size: 22),
+                child: const Icon(
+                  Icons.share_location,
+                  color: AppColors.primary,
+                  size: 22,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Share my live location with Maestro',
-                        style: theme.textTheme.titleMedium),
+                    Text(
+                      'Share my live location with Maestro',
+                      style: theme.textTheme.titleMedium,
+                    ),
                     const SizedBox(height: 2),
                     Text(
                       'Only the Maestro can see it. Cannot be turned off later.',
@@ -827,7 +913,9 @@ class _HouseLocationPrompt extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-                color: AppColors.accentDark.withValues(alpha: 0.4), width: 1),
+              color: AppColors.accentDark.withValues(alpha: 0.4),
+              width: 1,
+            ),
           ),
           child: Row(
             children: [
@@ -837,8 +925,11 @@ class _HouseLocationPrompt extends StatelessWidget {
                   color: AppColors.cream,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.add_location_alt,
-                    color: AppColors.primary, size: 22),
+                child: const Icon(
+                  Icons.add_location_alt,
+                  color: AppColors.primary,
+                  size: 22,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -899,7 +990,9 @@ class _GalleryStrip extends StatelessWidget {
                 children: [
                   const Expanded(
                     child: SectionHeader(
-                        eyebrow: 'Gallery', title: 'Recent Moments'),
+                      eyebrow: 'Gallery',
+                      title: 'Recent Moments',
+                    ),
                   ),
                   TextButton(
                     onPressed: () => _openGallery(context),
@@ -941,21 +1034,26 @@ class _GalleryStrip extends StatelessWidget {
                                         p.photoUrl,
                                         fit: BoxFit.cover,
                                         errorBuilder: (_, __, ___) => Container(
-                                            color: AppColors.offWhite,
-                                            child: const Icon(Icons.broken_image,
-                                                color: AppColors.gray)),
+                                          color: AppColors.offWhite,
+                                          child: const Icon(
+                                            Icons.broken_image,
+                                            color: AppColors.gray,
+                                          ),
+                                        ),
                                         loadingBuilder: (ctx, child, ev) {
                                           if (ev == null) return child;
                                           return Container(
-                                              color: AppColors.offWhite);
+                                            color: AppColors.offWhite,
+                                          );
                                         },
                                       ),
                                     if (p.isVideo)
                                       const Center(
                                         child: Icon(
-                                            Icons.play_circle_fill_rounded,
-                                            color: Colors.white,
-                                            size: 30),
+                                          Icons.play_circle_fill_rounded,
+                                          color: Colors.white,
+                                          size: 30,
+                                        ),
                                       ),
                                   ],
                                 ),
@@ -964,9 +1062,7 @@ class _GalleryStrip extends StatelessWidget {
                             const SizedBox(height: 4),
                             Text(
                               caption.isEmpty ? ' ' : caption,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
+                              style: Theme.of(context).textTheme.labelSmall
                                   ?.copyWith(
                                     color: caption.isEmpty
                                         ? Colors.transparent
@@ -1016,46 +1112,56 @@ class _MyTripsSection extends StatelessWidget {
           children: [
             const SectionHeader(eyebrow: 'Travel', title: 'My Trips'),
             const SizedBox(height: 12),
-            ...trips.map((g) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: ElegantCard(
-                    onTap: () => onTap(g),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: AppColors.accentDark.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.flight_takeoff,
-                              color: AppColors.accentDark, size: 22),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(g.name, style: theme.textTheme.titleMedium),
-                              if (g.destination != null)
-                                Text(g.destination!,
-                                    style: theme.textTheme.bodySmall),
-                              if (g.departureDate != null)
-                                Text(
-                                  _dateRange(g.departureDate!, g.returnDate),
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                      color: AppColors.primary),
-                                ),
-                            ],
-                          ),
-                        ),
-                        const Icon(Icons.chevron_right, color: AppColors.gray),
-                      ],
-                    ),
+            ...trips.map(
+              (g) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: ElegantCard(
+                  onTap: () => onTap(g),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
                   ),
-                )),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.accentDark.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.flight_takeoff,
+                          color: AppColors.accentDark,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(g.name, style: theme.textTheme.titleMedium),
+                            if (g.destination != null)
+                              Text(
+                                g.destination!,
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            if (g.departureDate != null)
+                              Text(
+                                _dateRange(g.departureDate!, g.returnDate),
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right, color: AppColors.gray),
+                    ],
+                  ),
+                ),
+              ),
+            ),
             const SizedBox(height: 24),
           ],
         );

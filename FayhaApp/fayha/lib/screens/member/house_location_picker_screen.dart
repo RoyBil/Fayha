@@ -111,7 +111,9 @@ class _HouseLocationPickerScreenState extends State<HouseLocationPickerScreen> {
         id: m.id,
         houseLat: _picked!.latitude,
         houseLng: _picked!.longitude,
-        houseAddress: _address.text.trim().isEmpty ? null : _address.text.trim(),
+        houseAddress: _address.text.trim().isEmpty
+            ? null
+            : _address.text.trim(),
       );
       AppState.instance.updateProfile(
         houseLat: _picked!.latitude,
@@ -123,18 +125,16 @@ class _HouseLocationPickerScreenState extends State<HouseLocationPickerScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not save: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not save: $e')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My House Location'),
-      ),
+      appBar: AppBar(title: const Text('My House Location')),
       body: Column(
         children: [
           Container(
@@ -158,101 +158,109 @@ class _HouseLocationPickerScreenState extends State<HouseLocationPickerScreen> {
           Expanded(
             child: Stack(
               children: [
-            FlutterMap(
-              mapController: _ctrl,
-              options: MapOptions(
-                initialCenter: _initialCenter,
-                initialZoom: _initialZoom,
-                minZoom: 2,
-                maxZoom: 19,
-                onTap: (_, point) => setState(() => _picked = point),
-                interactionOptions: const InteractionOptions(
-                  flags: InteractiveFlag.pinchZoom |
-                      InteractiveFlag.doubleTapZoom |
-                      InteractiveFlag.drag |
-                      InteractiveFlag.flingAnimation |
-                      InteractiveFlag.scrollWheelZoom,
-                ),
-              ),
-              children: [
-                TileLayer(
-                  urlTemplate:
-                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.fayhanationalchoir.app',
-                  maxZoom: 19,
-                ),
-                MarkerLayer(
-                  markers: [
-                    if (_myLocation != null)
-                      Marker(
-                        point: _myLocation!,
-                        width: 22,
-                        height: 22,
-                        alignment: Alignment.center,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.blueAccent,
-                            shape: BoxShape.circle,
-                            border:
-                                Border.all(color: Colors.white, width: 2.5),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Colors.black38,
-                                blurRadius: 4,
-                                offset: Offset(0, 1),
+                FlutterMap(
+                  mapController: _ctrl,
+                  options: MapOptions(
+                    initialCenter: _initialCenter,
+                    initialZoom: _initialZoom,
+                    minZoom: 2,
+                    maxZoom: 19,
+                    onTap: (_, point) => setState(() => _picked = point),
+                    interactionOptions: const InteractionOptions(
+                      flags:
+                          InteractiveFlag.pinchZoom |
+                          InteractiveFlag.doubleTapZoom |
+                          InteractiveFlag.drag |
+                          InteractiveFlag.flingAnimation |
+                          InteractiveFlag.scrollWheelZoom,
+                    ),
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.fayhanationalchoir.app',
+                      maxZoom: 19,
+                    ),
+                    MarkerLayer(
+                      markers: [
+                        if (_myLocation != null)
+                          Marker(
+                            point: _myLocation!,
+                            width: 22,
+                            height: 22,
+                            alignment: Alignment.center,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.blueAccent,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 2.5,
+                                ),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Colors.black38,
+                                    blurRadius: 4,
+                                    offset: Offset(0, 1),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
-                        ),
-                      ),
-                    if (_picked != null)
-                      Marker(
-                        point: _picked!,
-                        width: 60,
-                        height: 60,
-                        alignment: Alignment.center,
-                        child: const Icon(
-                          Icons.home,
-                          size: 40,
-                          color: AppColors.primary,
-                          shadows: [
-                            Shadow(color: Colors.black54, blurRadius: 4),
-                          ],
-                        ),
-                      ),
+                        if (_picked != null)
+                          Marker(
+                            point: _picked!,
+                            width: 60,
+                            height: 60,
+                            alignment: Alignment.center,
+                            child: const Icon(
+                              Icons.home,
+                              size: 40,
+                              color: AppColors.primary,
+                              shadows: [
+                                Shadow(color: Colors.black54, blurRadius: 4),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                    const RichAttributionWidget(
+                      attributions: [
+                        TextSourceAttribution('© OpenStreetMap contributors'),
+                      ],
+                    ),
                   ],
                 ),
-                const RichAttributionWidget(
-                  attributions: [
-                    TextSourceAttribution('© OpenStreetMap contributors'),
-                  ],
-                ),
-              ],
-            ),
-            Positioned(
-              right: 12,
-              bottom: 12,
-              child: Material(
-                color: Colors.white,
-                shape: const CircleBorder(),
-                elevation: 4,
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: _locating ? null : _useMyLocationAsHouse,
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: _locating
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.my_location,
-                            color: AppColors.primary, size: 22),
+                Positioned(
+                  right: 12,
+                  bottom: 12,
+                  child: Material(
+                    color: Colors.white,
+                    shape: const CircleBorder(),
+                    elevation: 4,
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: _locating ? null : _useMyLocationAsHouse,
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: _locating
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(
+                                Icons.my_location,
+                                color: AppColors.primary,
+                                size: 22,
+                              ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
               ],
             ),
           ),
@@ -280,7 +288,9 @@ class _HouseLocationPickerScreenState extends State<HouseLocationPickerScreen> {
                             width: 16,
                             height: 16,
                             child: CircularProgressIndicator(
-                                strokeWidth: 2, color: AppColors.cream),
+                              strokeWidth: 2,
+                              color: AppColors.cream,
+                            ),
                           )
                         : const Icon(Icons.check, size: 18),
                     label: const Text('Save Location'),

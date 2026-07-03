@@ -42,8 +42,12 @@ class MemberMoreScreen extends StatelessWidget {
                     icon: Icons.person_outline,
                     title: 'My Profile',
                     subtitle: '${m.voiceSection} · ${m.branch}',
-                    onTap: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const MemberProfileScreen())),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const MemberProfileScreen(),
+                      ),
+                    ),
                   ),
                   const _Sep(),
                   _Tile(
@@ -71,7 +75,8 @@ class MemberMoreScreen extends StatelessWidget {
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (_) => const QrCheckInScreen()),
+                          builder: (_) => const QrCheckInScreen(),
+                        ),
                       ),
                     ),
                   ],
@@ -83,7 +88,8 @@ class MemberMoreScreen extends StatelessWidget {
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (_) => const MembersDirectoryScreen()),
+                        builder: (_) => const MembersDirectoryScreen(),
+                      ),
                     ),
                   ),
                   const _Sep(),
@@ -93,32 +99,42 @@ class MemberMoreScreen extends StatelessWidget {
                     subtitle: m.isMaestro
                         ? 'Inbox of every member'
                         : 'Chat with admins and Maestro',
-                    onTap: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const MessagesScreen())),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const MessagesScreen()),
+                    ),
                   ),
                   const _Sep(),
                   _Tile(
                     icon: Icons.poll_outlined,
                     title: 'Polls',
                     subtitle: 'Vote on choir decisions',
-                    onTap: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const PollsScreen())),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const PollsScreen()),
+                    ),
                   ),
                   const _Sep(),
                   _Tile(
                     icon: Icons.format_quote,
                     title: 'Testimonials',
                     subtitle: 'View members\' stories',
-                    onTap: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const TestimonialsMemberScreen())),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const TestimonialsMemberScreen(),
+                      ),
+                    ),
                   ),
                   const _Sep(),
                   _Tile(
                     icon: Icons.photo_library_outlined,
                     title: 'Gallery',
                     subtitle: 'Moments from the choir',
-                    onTap: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const GalleryScreen())),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const GalleryScreen()),
+                    ),
                   ),
                   if (m.isAdmin || m.isContentEditor) ...[
                     const _Sep(),
@@ -132,8 +148,12 @@ class MemberMoreScreen extends StatelessWidget {
                       subtitle: m.isContentEditor && !m.isAdmin
                           ? 'Post news, events and announcements'
                           : 'Approvals · members · attendance stats',
-                      onTap: () => Navigator.push(context,
-                          MaterialPageRoute(builder: (_) => const AdminPanelScreen())),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AdminPanelScreen(),
+                        ),
+                      ),
                     ),
                   ],
                   const _Sep(),
@@ -144,7 +164,8 @@ class MemberMoreScreen extends StatelessWidget {
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (_) => const LiveLocationsMapScreen()),
+                        builder: (_) => const LiveLocationsMapScreen(),
+                      ),
                     ),
                   ),
                   const _Sep(),
@@ -157,7 +178,8 @@ class MemberMoreScreen extends StatelessWidget {
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (_) => const BusRoutesScreen()),
+                        builder: (_) => const BusRoutesScreen(),
+                      ),
                     ),
                   ),
                   const _Sep(),
@@ -170,7 +192,8 @@ class MemberMoreScreen extends StatelessWidget {
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (_) => const TripGroupsScreen()),
+                        builder: (_) => const TripGroupsScreen(),
+                      ),
                     ),
                   ),
                 ],
@@ -187,24 +210,30 @@ class MemberMoreScreen extends StatelessWidget {
                     icon: Icons.mail_outline,
                     title: ChoirData.managerEmail,
                     subtitle: 'Manager',
-                    onTap: () => launchUrl(Uri.parse('mailto:${ChoirData.managerEmail}'),
-                        mode: LaunchMode.externalApplication),
+                    onTap: () => launchUrl(
+                      Uri.parse('mailto:${ChoirData.managerEmail}'),
+                      mode: LaunchMode.externalApplication,
+                    ),
                   ),
                   const _Sep(),
                   _Tile(
                     icon: Icons.phone_outlined,
                     title: ChoirData.phones.first,
                     subtitle: 'Call manager',
-                    onTap: () => launchUrl(Uri.parse('tel:${ChoirData.phones.first}'),
-                        mode: LaunchMode.externalApplication),
+                    onTap: () => launchUrl(
+                      Uri.parse('tel:${ChoirData.phones.first}'),
+                      mode: LaunchMode.externalApplication,
+                    ),
                   ),
                   const _Sep(),
                   _Tile(
                     icon: Icons.language,
                     title: 'Website',
                     subtitle: ChoirData.websiteUrl,
-                    onTap: () => launchUrl(Uri.parse(ChoirData.websiteUrl),
-                        mode: LaunchMode.externalApplication),
+                    onTap: () => launchUrl(
+                      Uri.parse(ChoirData.websiteUrl),
+                      mode: LaunchMode.externalApplication,
+                    ),
                   ),
                 ],
               ),

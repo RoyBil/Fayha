@@ -23,10 +23,10 @@ class QrAttendanceAdminScreen extends StatefulWidget {
     super.key,
     required String this.branch,
     required DateTime this.date,
-  })  : concertId = null,
-        concertTitle = null,
-        concertStart = null,
-        isBigRehearsal = false;
+  }) : concertId = null,
+       concertTitle = null,
+       concertStart = null,
+       isBigRehearsal = false;
 
   const QrAttendanceAdminScreen.event({
     super.key,
@@ -34,8 +34,8 @@ class QrAttendanceAdminScreen extends StatefulWidget {
     required String this.concertTitle,
     required DateTime this.concertStart,
     required this.isBigRehearsal,
-  })  : branch = null,
-        date = null;
+  }) : branch = null,
+       date = null;
 
   bool get isConcertTarget => concertId != null;
 
@@ -87,10 +87,22 @@ class _QrAttendanceAdminScreenState extends State<QrAttendanceAdminScreen> {
       _error = null;
     });
     try {
-      final s = widget.isConcertTarget
+      QrSession? s = widget.isConcertTarget
           ? await QrAttendanceService.latestSessionForConcert(widget.concertId!)
           : await QrAttendanceService.latestSession(
-              branch: widget.branch!, date: widget.date!);
+              branch: widget.branch!,
+              date: widget.date!,
+            );
+
+      // Auto-create the default 5:55 PM–9:00 PM window for rehearsals so
+      // admins don't have to manually create a QR every week.
+      if (s == null && !widget.isConcertTarget) {
+        s = await QrAttendanceService.ensureDefaultSessionForRehearsal(
+          branch: widget.branch!,
+          date: widget.date!,
+        );
+      }
+
       if (!mounted) return;
       setState(() {
         _session = s;
@@ -103,7 +115,9 @@ class _QrAttendanceAdminScreenState extends State<QrAttendanceAdminScreen> {
           _staticFuture = widget.isConcertTarget
               ? QrAttendanceService.checkinsForConcert(widget.concertId!)
               : QrAttendanceService.checkinsForDay(
-                  branch: widget.branch!, date: widget.date!);
+                  branch: widget.branch!,
+                  date: widget.date!,
+                );
         }
       });
       _refreshTicker();
@@ -178,8 +192,7 @@ class _QrAttendanceAdminScreenState extends State<QrAttendanceAdminScreen> {
     final config = await showModalBottomSheet<_QrConfig>(
       context: context,
       isScrollControlled: true,
-      builder: (_) =>
-          _QrConfigSheet(targetDate: _targetDate, existing: s),
+      builder: (_) => _QrConfigSheet(targetDate: _targetDate, existing: s),
     );
     if (config == null) return;
     setState(() => _starting = true);
@@ -200,9 +213,11 @@ class _QrAttendanceAdminScreenState extends State<QrAttendanceAdminScreen> {
         _staticFuture = updated.isActive
             ? null
             : (widget.isConcertTarget
-                ? QrAttendanceService.checkinsForConcert(widget.concertId!)
-                : QrAttendanceService.checkinsForDay(
-                    branch: widget.branch!, date: widget.date!));
+                  ? QrAttendanceService.checkinsForConcert(widget.concertId!)
+                  : QrAttendanceService.checkinsForDay(
+                      branch: widget.branch!,
+                      date: widget.date!,
+                    ));
       });
       _refreshTicker();
     } catch (e) {
@@ -222,15 +237,18 @@ class _QrAttendanceAdminScreenState extends State<QrAttendanceAdminScreen> {
       builder: (_) => AlertDialog(
         title: const Text('Delete this QR session?'),
         content: const Text(
-            'The QR will stop working immediately. Existing check-ins '
-            'are kept in the attendance record.'),
+          'The QR will stop working immediately. Existing check-ins '
+          'are kept in the attendance record.',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Delete')),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
@@ -245,13 +263,15 @@ class _QrAttendanceAdminScreenState extends State<QrAttendanceAdminScreen> {
         _staticFuture = widget.isConcertTarget
             ? QrAttendanceService.checkinsForConcert(widget.concertId!)
             : QrAttendanceService.checkinsForDay(
-                branch: widget.branch!, date: widget.date!);
+                branch: widget.branch!,
+                date: widget.date!,
+              );
       });
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not delete: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not delete: $e')));
     }
   }
 
@@ -267,19 +287,19 @@ class _QrAttendanceAdminScreenState extends State<QrAttendanceAdminScreen> {
 
   String _fmtTime(DateTime t) =>
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
-  String _fmtDate(DateTime d) =>
-      '${d.day}/${d.month}/${d.year}';
+  String _fmtDate(DateTime d) => '${d.day}/${d.month}/${d.year}';
 
   Future<void> _openOnMap(double lat, double lng) async {
     final url = Uri.parse(
-        'https://www.google.com/maps/search/?api=1&query=$lat,$lng');
+      'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
+    );
     try {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not open map: $lat, $lng')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not open map: $lat, $lng')));
     }
   }
 
@@ -305,7 +325,10 @@ class _QrAttendanceAdminScreenState extends State<QrAttendanceAdminScreen> {
               child: Text(
                 _targetLabel,
                 style: const TextStyle(
-                    color: AppColors.cream, fontSize: 12, letterSpacing: 0.6),
+                  color: AppColors.cream,
+                  fontSize: 12,
+                  letterSpacing: 0.6,
+                ),
               ),
             ),
           ),
@@ -321,8 +344,7 @@ class _QrAttendanceAdminScreenState extends State<QrAttendanceAdminScreen> {
                   _topSection(),
                   if (_error != null) ...[
                     const SizedBox(height: 12),
-                    Text(_error!,
-                        style: TextStyle(color: Colors.red.shade700)),
+                    Text(_error!, style: TextStyle(color: Colors.red.shade700)),
                   ],
                   const SizedBox(height: 28),
                   SectionHeader(
@@ -331,8 +353,8 @@ class _QrAttendanceAdminScreenState extends State<QrAttendanceAdminScreen> {
                     subtitle: _hasLiveQr
                         ? 'Updates as members scan.'
                         : (_pendingQr
-                            ? 'Will go live when the start time arrives.'
-                            : 'All members who scanned.'),
+                              ? 'Will go live when the start time arrives.'
+                              : 'All members who scanned.'),
                   ),
                   const SizedBox(height: 8),
                   _attendeesList(),
@@ -369,7 +391,9 @@ class _QrAttendanceAdminScreenState extends State<QrAttendanceAdminScreen> {
                     width: 18,
                     height: 18,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: AppColors.cream),
+                      strokeWidth: 2,
+                      color: AppColors.cream,
+                    ),
                   )
                 : const Icon(Icons.qr_code_2),
             label: const Text('Configure & start'),
@@ -384,8 +408,7 @@ class _QrAttendanceAdminScreenState extends State<QrAttendanceAdminScreen> {
       background: AppColors.offWhite,
       child: Row(
         children: [
-          const Icon(Icons.timer_off_outlined,
-              size: 28, color: AppColors.gray),
+          const Icon(Icons.timer_off_outlined, size: 28, color: AppColors.gray),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -415,8 +438,11 @@ class _QrAttendanceAdminScreenState extends State<QrAttendanceAdminScreen> {
             child: pending
                 ? Column(
                     children: [
-                      const Icon(Icons.hourglass_top,
-                          size: 64, color: AppColors.gray),
+                      const Icon(
+                        Icons.hourglass_top,
+                        size: 64,
+                        color: AppColors.gray,
+                      ),
                       const SizedBox(height: 8),
                       Text(
                         'QR goes live at ${_fmtTime(s.validFrom)}',
@@ -446,16 +472,23 @@ class _QrAttendanceAdminScreenState extends State<QrAttendanceAdminScreen> {
           const SizedBox(height: 12),
           Row(
             children: [
-              const Icon(Icons.schedule,
-                  size: 16, color: AppColors.secondaryDark),
+              const Icon(
+                Icons.schedule,
+                size: 16,
+                color: AppColors.secondaryDark,
+              ),
               const SizedBox(width: 6),
-              Text(_fmtRemaining(s.remaining),
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: AppColors.secondaryDark,
-                      )),
+              Text(
+                _fmtRemaining(s.remaining),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: AppColors.secondaryDark,
+                ),
+              ),
               const Spacer(),
-              Text('${_fmtTime(s.validFrom)} → ${_fmtTime(s.expiresAt)}',
-                  style: Theme.of(context).textTheme.bodySmall),
+              Text(
+                '${_fmtTime(s.validFrom)} → ${_fmtTime(s.expiresAt)}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ],
           ),
           if (s.lateAfter != null)
@@ -522,8 +555,10 @@ class _QrAttendanceAdminScreenState extends State<QrAttendanceAdminScreen> {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 20),
         child: Center(
-          child: Text('No check-ins yet.',
-              style: Theme.of(context).textTheme.bodyMedium),
+          child: Text(
+            'No check-ins yet.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
         ),
       );
     }
@@ -537,15 +572,17 @@ class _QrAttendanceAdminScreenState extends State<QrAttendanceAdminScreen> {
           child: Text(
             '${list.length} checked in · $onTime on time · $late late',
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: AppColors.gray,
-                  letterSpacing: 0.6,
-                ),
+              color: AppColors.gray,
+              letterSpacing: 0.6,
+            ),
           ),
         ),
-        ...list.map((c) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _checkinTile(c),
-            )),
+        ...list.map(
+          (c) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _checkinTile(c),
+          ),
+        ),
       ],
     );
   }
@@ -570,15 +607,17 @@ class _QrAttendanceAdminScreenState extends State<QrAttendanceAdminScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(c.memberName,
-                    style: Theme.of(context).textTheme.titleSmall),
+                Text(
+                  c.memberName,
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
                 Text(
                   isLate
                       ? '${_fmtTime(c.checkedInAt)} · ${c.lateMinutes} min late'
                       : '${_fmtTime(c.checkedInAt)} · on time',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: isLate ? AppColors.accentDark : AppColors.gray,
-                      ),
+                    color: isLate ? AppColors.accentDark : AppColors.gray,
+                  ),
                 ),
                 if (c.lat != null && c.lng != null)
                   InkWell(
@@ -586,14 +625,15 @@ class _QrAttendanceAdminScreenState extends State<QrAttendanceAdminScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.place,
-                            size: 14, color: AppColors.primary),
+                        const Icon(
+                          Icons.place,
+                          size: 14,
+                          color: AppColors.primary,
+                        ),
                         const SizedBox(width: 2),
                         Text(
                           'View location',
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelSmall
+                          style: Theme.of(context).textTheme.labelSmall
                               ?.copyWith(
                                 color: AppColors.primary,
                                 decoration: TextDecoration.underline,
@@ -615,15 +655,12 @@ class _QrConfig {
   final DateTime validFrom;
   final Duration duration;
   final DateTime? lateAfter;
-  _QrConfig({
-    required this.validFrom,
-    required this.duration,
-    this.lateAfter,
-  });
+  _QrConfig({required this.validFrom, required this.duration, this.lateAfter});
 }
 
 class _QrConfigSheet extends StatefulWidget {
   final DateTime targetDate;
+
   /// When non-null, edit an existing session.
   final QrSession? existing;
   const _QrConfigSheet({required this.targetDate, this.existing});
@@ -634,7 +671,7 @@ class _QrConfigSheet extends StatefulWidget {
 
 class _QrConfigSheetState extends State<_QrConfigSheet> {
   late DateTime _validFrom;
-  Duration _duration = const Duration(hours: 3);
+  Duration _duration = const Duration(hours: 3, minutes: 5);
   Duration _graceBeforeLate = const Duration(minutes: 15);
 
   bool get _isEdit => widget.existing != null;
@@ -644,6 +681,7 @@ class _QrConfigSheetState extends State<_QrConfigSheet> {
     ('1 h', Duration(hours: 1)),
     ('2 h', Duration(hours: 2)),
     ('3 h', Duration(hours: 3)),
+    ('3h 5m', Duration(hours: 3, minutes: 5)),
     ('5 h', Duration(hours: 5)),
     ('8 h', Duration(hours: 8)),
   ];
@@ -672,17 +710,17 @@ class _QrConfigSheetState extends State<_QrConfigSheet> {
       return;
     }
     final now = DateTime.now();
-    // Default the start time to "now, rounded up to next 5 minutes",
-    // anchored to the target day so the admin can schedule for later.
-    final base = widget.targetDate.year == now.year &&
-            widget.targetDate.month == now.month &&
-            widget.targetDate.day == now.day
-        ? now
-        : DateTime(widget.targetDate.year, widget.targetDate.month,
-            widget.targetDate.day, 18, 0);
-    final mins = base.minute + (5 - base.minute % 5) % 5;
-    _validFrom = DateTime(
-        base.year, base.month, base.day, base.hour, mins);
+    final d = widget.targetDate;
+    final isToday =
+        d.year == now.year && d.month == now.month && d.day == now.day;
+    if (isToday) {
+      // Round current time up to next 5-minute mark.
+      final mins = now.minute + (5 - now.minute % 5) % 5;
+      _validFrom = DateTime(now.year, now.month, now.day, now.hour, mins);
+    } else {
+      // Default start time for future dates: 5:55 PM.
+      _validFrom = DateTime(d.year, d.month, d.day, 17, 55);
+    }
   }
 
   Future<void> _pickDate() async {
@@ -695,7 +733,12 @@ class _QrConfigSheetState extends State<_QrConfigSheet> {
     if (d == null) return;
     setState(() {
       _validFrom = DateTime(
-          d.year, d.month, d.day, _validFrom.hour, _validFrom.minute);
+        d.year,
+        d.month,
+        d.day,
+        _validFrom.hour,
+        _validFrom.minute,
+      );
     });
   }
 
@@ -706,8 +749,13 @@ class _QrConfigSheetState extends State<_QrConfigSheet> {
     );
     if (t == null) return;
     setState(() {
-      _validFrom = DateTime(_validFrom.year, _validFrom.month,
-          _validFrom.day, t.hour, t.minute);
+      _validFrom = DateTime(
+        _validFrom.year,
+        _validFrom.month,
+        _validFrom.day,
+        t.hour,
+        t.minute,
+      );
     });
   }
 
@@ -740,13 +788,17 @@ class _QrConfigSheetState extends State<_QrConfigSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(_isEdit ? 'Edit QR session' : 'Configure QR session',
-                style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              _isEdit ? 'Edit QR session' : 'Configure QR session',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             const SizedBox(height: 16),
 
             // Start time
-            Text('Goes live at',
-                style: Theme.of(context).textTheme.labelMedium),
+            Text(
+              'Goes live at',
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
             const SizedBox(height: 6),
             Row(
               children: [
@@ -755,7 +807,8 @@ class _QrConfigSheetState extends State<_QrConfigSheet> {
                     onPressed: _pickDate,
                     icon: const Icon(Icons.event, size: 16),
                     label: Text(
-                        '${_validFrom.day}/${_validFrom.month}/${_validFrom.year}'),
+                      '${_validFrom.day}/${_validFrom.month}/${_validFrom.year}',
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -764,8 +817,9 @@ class _QrConfigSheetState extends State<_QrConfigSheet> {
                     onPressed: _pickTime,
                     icon: const Icon(Icons.schedule, size: 16),
                     label: Text(
-                        '${_validFrom.hour.toString().padLeft(2, '0')}:'
-                        '${_validFrom.minute.toString().padLeft(2, '0')}'),
+                      '${_validFrom.hour.toString().padLeft(2, '0')}:'
+                      '${_validFrom.minute.toString().padLeft(2, '0')}',
+                    ),
                   ),
                 ),
               ],
@@ -773,37 +827,44 @@ class _QrConfigSheetState extends State<_QrConfigSheet> {
             const SizedBox(height: 18),
 
             // Duration
-            Text('Stays open for',
-                style: Theme.of(context).textTheme.labelMedium),
+            Text(
+              'Stays open for',
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
             const SizedBox(height: 6),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: _durationOptions
-                  .map((o) => ChoiceChip(
-                        label: Text(o.$1),
-                        selected: _duration == o.$2,
-                        onSelected: (_) =>
-                            setState(() => _duration = o.$2),
-                      ))
+                  .map(
+                    (o) => ChoiceChip(
+                      label: Text(o.$1),
+                      selected: _duration == o.$2,
+                      onSelected: (_) => setState(() => _duration = o.$2),
+                    ),
+                  )
                   .toList(),
             ),
             const SizedBox(height: 18),
 
             // Late grace
-            Text('Mark late after',
-                style: Theme.of(context).textTheme.labelMedium),
+            Text(
+              'Mark late after',
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
             const SizedBox(height: 6),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: _graceOptions
-                  .map((o) => ChoiceChip(
-                        label: Text(o.$1),
-                        selected: _graceBeforeLate == o.$2,
-                        onSelected: (_) =>
-                            setState(() => _graceBeforeLate = o.$2),
-                      ))
+                  .map(
+                    (o) => ChoiceChip(
+                      label: Text(o.$1),
+                      selected: _graceBeforeLate == o.$2,
+                      onSelected: (_) =>
+                          setState(() => _graceBeforeLate = o.$2),
+                    ),
+                  )
                   .toList(),
             ),
             const SizedBox(height: 20),
@@ -818,8 +879,10 @@ class _QrConfigSheetState extends State<_QrConfigSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Live: ${_fmt(_validFrom)} → ${_fmt(endAt)}',
-                      style: Theme.of(context).textTheme.bodyMedium),
+                  Text(
+                    'Live: ${_fmt(_validFrom)} → ${_fmt(endAt)}',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
                   Text(
                     'Duration: ${_humanDuration(_duration)} · '
                     'Late after ${_fmt(lateAt)}',

@@ -33,8 +33,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     _future = AttendanceService.myHistory();
     _lastStatsVersion = AppState.instance.statsVersion;
     AppState.instance.addListener(_onAppStateChange);
-    _attendanceChannel =
-        AttendanceService.subscribeToMyAttendance(_reload);
+    _attendanceChannel = AttendanceService.subscribeToMyAttendance(_reload);
   }
 
   @override
@@ -88,14 +87,16 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                 return const Center(child: CircularProgressIndicator());
               }
               if (snap.hasError) {
-                return ListView(children: [
-                  const SizedBox(height: 80),
-                  EmptyState(
-                    icon: Icons.error_outline,
-                    title: 'Could not load history',
-                    message: '${snap.error}',
-                  ),
-                ]);
+                return ListView(
+                  children: [
+                    const SizedBox(height: 80),
+                    EmptyState(
+                      icon: Icons.error_outline,
+                      title: 'Could not load history',
+                      message: '${snap.error}',
+                    ),
+                  ],
+                );
               }
               final items = snap.data ?? const <HistoryItem>[];
               if (items.isEmpty) {
@@ -112,12 +113,13 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                 );
               }
 
-              final rehearsals =
-                  items.where((i) => i.kind == 'rehearsal').length;
-              final concerts =
-                  items.where((i) => i.kind == 'concert').length;
-              final bigRehearsals =
-                  items.where((i) => i.kind == 'big_rehearsal').length;
+              final rehearsals = items
+                  .where((i) => i.kind == 'rehearsal')
+                  .length;
+              final concerts = items.where((i) => i.kind == 'concert').length;
+              final bigRehearsals = items
+                  .where((i) => i.kind == 'big_rehearsal')
+                  .length;
 
               return ListView(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
@@ -125,22 +127,28 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                   Row(
                     children: [
                       Expanded(
-                          child: _StatBox(
-                              label: 'Rehearsals',
-                              value: '$rehearsals',
-                              icon: Icons.event_available)),
+                        child: _StatBox(
+                          label: 'Rehearsals',
+                          value: '$rehearsals',
+                          icon: Icons.event_available,
+                        ),
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
-                          child: _StatBox(
-                              label: 'Concerts',
-                              value: '$concerts',
-                              icon: Icons.music_note)),
+                        child: _StatBox(
+                          label: 'Concerts',
+                          value: '$concerts',
+                          icon: Icons.music_note,
+                        ),
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
-                          child: _StatBox(
-                              label: 'Big rehearsals',
-                              value: '$bigRehearsals',
-                              icon: Icons.groups)),
+                        child: _StatBox(
+                          label: 'Big rehearsals',
+                          value: '$bigRehearsals',
+                          icon: Icons.groups,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -150,10 +158,12 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                     subtitle: 'Everything you took part in, newest first.',
                   ),
                   const SizedBox(height: 12),
-                  ...items.map((i) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _HistoryTile(item: i),
-                      )),
+                  ...items.map(
+                    (i) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _HistoryTile(item: i),
+                    ),
+                  ),
                 ],
               );
             },
@@ -168,8 +178,11 @@ class _StatBox extends StatelessWidget {
   final String label;
   final String value;
   final IconData icon;
-  const _StatBox(
-      {required this.label, required this.value, required this.icon});
+  const _StatBox({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -184,14 +197,17 @@ class _StatBox extends StatelessWidget {
         children: [
           Icon(icon, size: 18, color: AppColors.primary),
           const SizedBox(height: 6),
-          Text(value,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(color: AppColors.primary)),
-          Text(label,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.labelSmall),
+          Text(
+            value,
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(color: AppColors.primary),
+          ),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.labelSmall,
+          ),
         ],
       ),
     );
@@ -203,10 +219,27 @@ class _HistoryTile extends StatelessWidget {
   const _HistoryTile({required this.item});
 
   static const _weekdays = [
-    'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
   ];
   static const _months = [
-    'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
 
   ({IconData icon, Color color, String label}) _meta() {
@@ -250,25 +283,28 @@ class _HistoryTile extends StatelessWidget {
             ),
             child: Column(
               children: [
-                Text(_months[d.month - 1].toUpperCase(),
-                    style: const TextStyle(
-                      color: AppColors.cream,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 10,
-                    )),
-                Text('${d.day}',
-                    style: const TextStyle(
-                      color: AppColors.cream,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      height: 1.1,
-                    )),
+                Text(
+                  _months[d.month - 1].toUpperCase(),
+                  style: const TextStyle(
+                    color: AppColors.cream,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 10,
+                  ),
+                ),
+                Text(
+                  '${d.day}',
+                  style: const TextStyle(
+                    color: AppColors.cream,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    height: 1.1,
+                  ),
+                ),
                 const SizedBox(height: 1),
-                Text('${d.year}',
-                    style: const TextStyle(
-                      color: AppColors.cream,
-                      fontSize: 9,
-                    )),
+                Text(
+                  '${d.year}',
+                  style: const TextStyle(color: AppColors.cream, fontSize: 9),
+                ),
               ],
             ),
           ),
@@ -281,20 +317,25 @@ class _HistoryTile extends StatelessWidget {
                   children: [
                     Icon(m.icon, size: 14, color: m.color),
                     const SizedBox(width: 6),
-                    Text(m.label,
-                        style: theme.textTheme.labelMedium
-                            ?.copyWith(color: m.color)),
+                    Text(
+                      m.label,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: m.color,
+                      ),
+                    ),
                     if (item.lateMinutes > 0) ...[
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.accent.withValues(alpha: 0.18),
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(
-                              color: AppColors.accentDark
-                                  .withValues(alpha: 0.45)),
+                            color: AppColors.accentDark.withValues(alpha: 0.45),
+                          ),
                         ),
                         child: Text(
                           'Late ${item.lateMinutes} min',
@@ -309,10 +350,12 @@ class _HistoryTile extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(item.title,
-                    style: theme.textTheme.titleMedium,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis),
+                Text(
+                  item.title,
+                  style: theme.textTheme.titleMedium,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const SizedBox(height: 2),
                 Text(
                   '${_weekdays[d.weekday - 1]} · ${item.subtitle}',

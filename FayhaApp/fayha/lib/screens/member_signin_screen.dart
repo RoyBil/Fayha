@@ -46,7 +46,8 @@ class _MemberSignInScreenState extends State<MemberSignInScreen> {
           if (!mounted) return;
           setState(() => _busy = false);
           _showMessage(
-              'Your account is still awaiting admin approval. You will be able to sign in once approved.');
+            'Your account is still awaiting admin approval. You will be able to sign in once approved.',
+          );
           return;
         case AccountState.deactivated:
         case AccountState.deleted:
@@ -54,7 +55,8 @@ class _MemberSignInScreenState extends State<MemberSignInScreen> {
           if (!mounted) return;
           setState(() => _busy = false);
           _showMessage(
-              'This account is not active. Please contact the choir administration.');
+            'This account is not active. Please contact the choir administration.',
+          );
           return;
         case AccountState.active:
           AppState.instance.signIn(member);
@@ -139,10 +141,18 @@ class _MemberSignInScreenState extends State<MemberSignInScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.music_note, color: AppColors.accentLight, size: 28),
+                    const Icon(
+                      Icons.music_note,
+                      color: AppColors.accentLight,
+                      size: 28,
+                    ),
                     const SizedBox(height: 10),
-                    Text('Choir Members Portal',
-                        style: theme.textTheme.titleLarge?.copyWith(color: AppColors.cream)),
+                    Text(
+                      'Choir Members Portal',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: AppColors.cream,
+                      ),
+                    ),
                     const SizedBox(height: 6),
                     Text(
                       'Access rehearsals, recordings, attendance, messaging and your member profile.',
@@ -176,9 +186,11 @@ class _MemberSignInScreenState extends State<MemberSignInScreen> {
                   labelText: 'Password',
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
-                    icon: Icon(_obscure
-                        ? Icons.visibility_outlined
-                        : Icons.visibility_off_outlined),
+                    icon: Icon(
+                      _obscure
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                    ),
                     onPressed: () => setState(() => _obscure = !_obscure),
                   ),
                 ),
@@ -199,9 +211,12 @@ class _MemberSignInScreenState extends State<MemberSignInScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: _busy
                       ? const SizedBox(
-                          height: 20, width: 20,
+                          height: 20,
+                          width: 20,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: AppColors.cream),
+                            strokeWidth: 2,
+                            color: AppColors.cream,
+                          ),
                         )
                       : const Text('Sign In'),
                 ),
@@ -211,7 +226,9 @@ class _MemberSignInScreenState extends State<MemberSignInScreen> {
                 child: TextButton(
                   onPressed: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const MemberSignUpScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const MemberSignUpScreen(),
+                    ),
                   ),
                   child: const Text('New member? Register here'),
                 ),

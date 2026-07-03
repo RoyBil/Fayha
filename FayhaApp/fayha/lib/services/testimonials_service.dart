@@ -65,13 +65,12 @@ class TestimonialsService {
   }) async {
     final ext = fileExtension.isEmpty ? 'jpg' : fileExtension;
     final path = 'tm_${DateTime.now().millisecondsSinceEpoch}.$ext';
-    await _c.storage.from('testimonial_photos').uploadBinary(
+    await _c.storage
+        .from('testimonial_photos')
+        .uploadBinary(
           path,
           bytes,
-          fileOptions: FileOptions(
-            upsert: false,
-            contentType: 'image/$ext',
-          ),
+          fileOptions: FileOptions(upsert: false, contentType: 'image/$ext'),
         );
     return _c.storage.from('testimonial_photos').getPublicUrl(path);
   }
@@ -79,10 +78,7 @@ class TestimonialsService {
   // ===== Editor / super admin =====
 
   static Future<void> setImportance(String id, TestimonialImportance i) async {
-    await _c
-        .from('testimonials')
-        .update({'importance': i.name})
-        .eq('id', id);
+    await _c.from('testimonials').update({'importance': i.name}).eq('id', id);
   }
 
   static Future<void> delete(String id) async {

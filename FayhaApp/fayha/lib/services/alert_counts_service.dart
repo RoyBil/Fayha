@@ -73,8 +73,9 @@ class AlertCountsService {
       final me = AppState.instance.currentMember;
       if (me == null) return 0;
       final seen = await _lastSeen(_kDms());
-      final seenIso =
-          (seen ?? DateTime.fromMillisecondsSinceEpoch(0)).toUtc().toIso8601String();
+      final seenIso = (seen ?? DateTime.fromMillisecondsSinceEpoch(0))
+          .toUtc()
+          .toIso8601String();
       if (me.isMaestro) {
         final rows = await _c
             .from('direct_messages')

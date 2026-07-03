@@ -72,8 +72,11 @@ class AuthService {
   static Future<Member?> loadCurrentMember() async {
     final user = _c.auth.currentUser;
     if (user == null) return null;
-    final row =
-        await _c.from('members').select().eq('id', user.id).maybeSingle();
+    final row = await _c
+        .from('members')
+        .select()
+        .eq('id', user.id)
+        .maybeSingle();
     if (row == null) return null;
     final m = Member.fromMap(row);
     try {
@@ -134,7 +137,9 @@ class AuthService {
   }) async {
     final ext = fileExtension.isEmpty ? 'jpg' : fileExtension;
     final path = '$memberId/avatar.$ext';
-    await _c.storage.from('avatars').uploadBinary(
+    await _c.storage
+        .from('avatars')
+        .uploadBinary(
           path,
           bytes,
           fileOptions: const FileOptions(upsert: true),

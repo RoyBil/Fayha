@@ -39,8 +39,7 @@ class _BusRoutesScreenState extends State<BusRoutesScreen> {
     // _COMPLETED / _CANCELLED are the ones that flip the LIVE badge;
     // intermediate events (STOP_ARRIVED etc.) also fire but the
     // refetch is cheap and keeps everything in sync.
-    _eventsChannel = Supabase.instance.client
-        .channel('bus_routes_list_events')
+    _eventsChannel = Supabase.instance.client.channel('bus_routes_list_events')
       ..onPostgresChanges(
         event: PostgresChangeEvent.insert,
         schema: 'public',
@@ -124,15 +123,17 @@ class _BusRoutesScreenState extends State<BusRoutesScreen> {
             }
             final rows = snap.data ?? const [];
             if (rows.isEmpty) {
-              return ListView(children: const [
-                SizedBox(height: 80),
-                EmptyState(
-                  icon: Icons.directions_bus_outlined,
-                  title: 'No routes yet',
-                  message:
-                      'Branch admins can create the first bus route from this screen.',
-                ),
-              ]);
+              return ListView(
+                children: const [
+                  SizedBox(height: 80),
+                  EmptyState(
+                    icon: Icons.directions_bus_outlined,
+                    title: 'No routes yet',
+                    message:
+                        'Branch admins can create the first bus route from this screen.',
+                  ),
+                ],
+              );
             }
             return ListView.separated(
               padding: const EdgeInsets.all(16),
@@ -175,9 +176,7 @@ class _RouteTile extends StatelessWidget {
       onTap: () async {
         await Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => BusRouteLiveScreen(route: r),
-          ),
+          MaterialPageRoute(builder: (_) => BusRouteLiveScreen(route: r)),
         );
         onChanged();
       },
@@ -191,15 +190,17 @@ class _RouteTile extends StatelessWidget {
                 Expanded(
                   child: Text(
                     r.name,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColors.primary,
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleMedium?.copyWith(color: AppColors.primary),
                   ),
                 ),
                 if (live)
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.secondary,
                       borderRadius: BorderRadius.circular(8),

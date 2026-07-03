@@ -51,9 +51,9 @@ class _JoinScreenState extends State<JoinScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _submitting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not submit: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not submit: $e')));
     }
   }
 
@@ -121,7 +121,8 @@ class _JoinScreenState extends State<JoinScreen> {
           TextFormField(
             controller: _name,
             decoration: const InputDecoration(labelText: 'Full name'),
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+            validator: (v) =>
+                (v == null || v.trim().isEmpty) ? 'Required' : null,
           ),
           const SizedBox(height: 14),
           TextFormField(
@@ -139,13 +140,15 @@ class _JoinScreenState extends State<JoinScreen> {
             controller: _phone,
             keyboardType: TextInputType.phone,
             decoration: const InputDecoration(labelText: 'Phone number'),
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+            validator: (v) =>
+                (v == null || v.trim().isEmpty) ? 'Required' : null,
           ),
           const SizedBox(height: 14),
           TextFormField(
             controller: _village,
             decoration: const InputDecoration(labelText: 'Village / Town'),
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+            validator: (v) =>
+                (v == null || v.trim().isEmpty) ? 'Required' : null,
           ),
           const SizedBox(height: 14),
           DropdownButtonFormField<String>(
@@ -181,7 +184,9 @@ class _JoinScreenState extends State<JoinScreen> {
                     width: 18,
                     height: 18,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: AppColors.cream),
+                      strokeWidth: 2,
+                      color: AppColors.cream,
+                    ),
                   )
                 : const Icon(Icons.send, size: 18),
             label: const Padding(

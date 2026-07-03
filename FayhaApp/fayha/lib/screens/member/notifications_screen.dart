@@ -8,9 +8,11 @@ import '../../widgets/elegant_card.dart';
 import '../../widgets/empty_state.dart';
 import '../concert_detail_screen.dart';
 import '../news_detail_screen.dart';
+import 'gallery_screen.dart';
 import 'maestro_dm_screen.dart';
 import 'messages_screen.dart';
 import 'polls_screen.dart';
+import 'testimonials_member_screen.dart';
 import 'trip_groups_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -29,8 +31,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   String _filter = 'All';
 
   static const _filters = [
-    'All', 'Unread', 'Starred',
-    'Messages', 'Announcements', 'News', 'Concerts', 'Polls', 'Trips'
+    'All',
+    'Unread',
+    'Starred',
+    'Messages',
+    'Announcements',
+    'News',
+    'Concerts',
+    'Polls',
+    'Trips',
+    'Gallery',
   ];
 
   @override
@@ -83,7 +93,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       case 'Polls':
         return i.kind == 'poll';
       case 'Trips':
-        return i.kind == 'trip_added';
+        return i.kind == 'trip_added' || i.kind == 'trip';
+      case 'Gallery':
+        return i.kind == 'gallery';
       default:
         return true;
     }
@@ -92,19 +104,60 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   ({IconData icon, Color color, String label}) _meta(String kind) {
     switch (kind) {
       case 'message':
-        return (icon: Icons.chat_bubble_outline, color: AppColors.primaryLight, label: 'Message');
+        return (
+          icon: Icons.chat_bubble_outline,
+          color: AppColors.primaryLight,
+          label: 'Message',
+        );
       case 'news':
-        return (icon: Icons.newspaper, color: AppColors.secondary, label: 'News');
+        return (
+          icon: Icons.newspaper,
+          color: AppColors.secondary,
+          label: 'News',
+        );
       case 'concert':
-        return (icon: Icons.music_note, color: AppColors.accentDark, label: 'Concert');
+        return (
+          icon: Icons.music_note,
+          color: AppColors.accentDark,
+          label: 'Concert',
+        );
       case 'big_rehearsal':
-        return (icon: Icons.groups, color: AppColors.secondaryDark, label: 'Big rehearsal');
+        return (
+          icon: Icons.groups,
+          color: AppColors.secondaryDark,
+          label: 'Big rehearsal',
+        );
       case 'poll':
-        return (icon: Icons.poll_outlined, color: AppColors.primary, label: 'Poll');
+        return (
+          icon: Icons.poll_outlined,
+          color: AppColors.primary,
+          label: 'Poll',
+        );
       case 'trip_added':
-        return (icon: Icons.flight_takeoff, color: AppColors.accentDark, label: 'Trip');
+      case 'trip':
+        return (
+          icon: Icons.flight_takeoff,
+          color: AppColors.accentDark,
+          label: 'Trip',
+        );
+      case 'gallery':
+        return (
+          icon: Icons.photo_library_outlined,
+          color: AppColors.primaryLight,
+          label: 'Gallery',
+        );
+      case 'testimonial_pending':
+        return (
+          icon: Icons.rate_review_outlined,
+          color: AppColors.secondary,
+          label: 'Testimonial',
+        );
       default:
-        return (icon: Icons.campaign, color: AppColors.primary, label: 'Announcement');
+        return (
+          icon: Icons.campaign,
+          color: AppColors.primary,
+          label: 'Announcement',
+        );
     }
   }
 
@@ -191,10 +244,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         );
         break;
       case 'trip_added':
+      case 'trip':
         if (!mounted) return;
         await Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const TripGroupsScreen()),
+        );
+        break;
+      case 'gallery':
+        if (!mounted) return;
+        await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const GalleryScreen()),
+        );
+        break;
+      case 'testimonial_pending':
+        if (!mounted) return;
+        await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const TestimonialsMemberScreen()),
         );
         break;
       default:
@@ -205,15 +273,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           isScrollControlled: true,
           backgroundColor: AppColors.cream,
           shape: const RoundedRectangleBorder(
-            borderRadius:
-                BorderRadius.vertical(top: Radius.circular(20)),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
           builder: (_) => Padding(
             padding: EdgeInsets.fromLTRB(
-                20,
-                16,
-                20,
-                20 + MediaQuery.of(context).viewInsets.bottom),
+              20,
+              16,
+              20,
+              20 + MediaQuery.of(context).viewInsets.bottom,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,17 +298,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 ),
                 const SizedBox(height: 12),
                 if (i.extra['sender_name'] != null)
-                  Text('From ${i.extra['sender_name']}',
-                      style: Theme.of(context).textTheme.labelMedium),
+                  Text(
+                    'From ${i.extra['sender_name']}',
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
                 const SizedBox(height: 4),
-                Text(i.title,
-                    style: Theme.of(context).textTheme.titleLarge),
+                Text(i.title, style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 12),
-                Text(i.body,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(height: 1.7)),
+                Text(
+                  i.body,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(height: 1.7),
+                ),
               ],
             ),
           ),
@@ -277,16 +347,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 8),
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 children: _filters
-                    .map((f) => Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ChoiceChip(
-                            label: Text(f),
-                            selected: _filter == f,
-                            onSelected: (_) => setState(() => _filter = f),
-                          ),
-                        ))
+                    .map(
+                      (f) => Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: Text(f),
+                          selected: _filter == f,
+                          onSelected: (_) => setState(() => _filter = f),
+                        ),
+                      ),
+                    )
                     .toList(),
               ),
             ),
@@ -297,8 +371,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   future: _feed,
                   builder: (context, snap) {
                     if (snap.connectionState != ConnectionState.done) {
-                      return const Center(
-                          child: CircularProgressIndicator());
+                      return const Center(child: CircularProgressIndicator());
                     }
                     final all = snap.data ?? const <FeedItem>[];
                     final items = all.where(_matches).toList();
@@ -309,15 +382,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           EmptyState(
                             icon: Icons.notifications_none,
                             title: 'Nothing here',
-                            message:
-                                'No notifications match this filter.',
+                            message: 'No notifications match this filter.',
                           ),
                         ],
                       );
                     }
                     return ListView(
-                      padding:
-                          const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
                       children: items.map((i) {
                         final m = _meta(i.kind);
                         final unread = _isUnread(i);
@@ -327,17 +398,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           child: ElegantCard(
                             onTap: () => _onTap(i),
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 12),
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
                             child: Row(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 // Unread dot (left edge).
                                 Container(
                                   width: 8,
                                   height: 8,
                                   margin: const EdgeInsets.only(
-                                      top: 8, right: 8),
+                                    top: 8,
+                                    right: 8,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: unread
                                         ? AppColors.accent
@@ -348,13 +422,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                 Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color:
-                                        m.color.withValues(alpha: 0.12),
-                                    borderRadius:
-                                        BorderRadius.circular(8),
+                                    color: m.color.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: Icon(m.icon,
-                                      size: 18, color: m.color),
+                                  child: Icon(m.icon, size: 18, color: m.color),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
@@ -365,41 +436,40 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                       Row(
                                         children: [
                                           Expanded(
-                                            child: Text(i.title,
-                                                style: theme
-                                                    .textTheme.titleSmall
-                                                    ?.copyWith(
-                                                  fontWeight: unread
-                                                      ? FontWeight.w700
-                                                      : FontWeight.w500,
-                                                )),
+                                            child: Text(
+                                              i.title,
+                                              style: theme.textTheme.titleSmall
+                                                  ?.copyWith(
+                                                    fontWeight: unread
+                                                        ? FontWeight.w700
+                                                        : FontWeight.w500,
+                                                  ),
+                                            ),
                                           ),
-                                          Text(_ago(i.date),
-                                              style: theme
-                                                  .textTheme.labelSmall),
+                                          Text(
+                                            _ago(i.date),
+                                            style: theme.textTheme.labelSmall,
+                                          ),
                                         ],
                                       ),
                                       const SizedBox(height: 4),
-                                      Text(i.body,
-                                          style: theme
-                                              .textTheme.bodySmall
-                                              ?.copyWith(height: 1.5),
-                                          maxLines: 3,
-                                          overflow:
-                                              TextOverflow.ellipsis),
+                                      Text(
+                                        i.body,
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(height: 1.5),
+                                        maxLines: 3,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ],
                                   ),
                                 ),
                                 // Star toggle.
                                 IconButton(
-                                  visualDensity:
-                                      VisualDensity.compact,
+                                  visualDensity: VisualDensity.compact,
                                   iconSize: 20,
                                   splashRadius: 18,
                                   icon: Icon(
-                                    starred
-                                        ? Icons.star
-                                        : Icons.star_border,
+                                    starred ? Icons.star : Icons.star_border,
                                     color: starred
                                         ? AppColors.accentDark
                                         : AppColors.gray,

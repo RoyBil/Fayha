@@ -11,11 +11,7 @@ import '../../widgets/empty_state.dart';
 class WeekDetailScreen extends StatefulWidget {
   final WeekStats week;
   final String branch;
-  const WeekDetailScreen({
-    super.key,
-    required this.week,
-    required this.branch,
-  });
+  const WeekDetailScreen({super.key, required this.week, required this.branch});
 
   @override
   State<WeekDetailScreen> createState() => _WeekDetailScreenState();
@@ -23,10 +19,27 @@ class WeekDetailScreen extends StatefulWidget {
 
 class _WeekDetailScreenState extends State<WeekDetailScreen> {
   static const _weekdays = [
-    'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
   ];
   static const _months = [
-    'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
 
   late Future<List<SessionRoster>> _future;
@@ -38,12 +51,16 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
   }
 
   Future<List<SessionRoster>> _loadAll() async {
-    final rosters = await Future.wait(widget.week.days
-        .where((d) => d.status == 'held')
-        .map((d) => AttendanceStatsService.sessionRoster(
+    final rosters = await Future.wait(
+      widget.week.days
+          .where((d) => d.status == 'held')
+          .map(
+            (d) => AttendanceStatsService.sessionRoster(
               branch: widget.branch,
               date: d.date,
-            )));
+            ),
+          ),
+    );
     return rosters;
   }
 
@@ -54,9 +71,7 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
     final label =
         '${w.weekStart.day} ${_months[w.weekStart.month - 1]} — ${end.day} ${_months[end.month - 1]}';
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Week of $label'),
-      ),
+      appBar: AppBar(title: Text('Week of $label')),
       body: FutureBuilder<List<SessionRoster>>(
         future: _future,
         builder: (context, snap) {
@@ -64,30 +79,32 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snap.hasError) {
-            return ListView(children: [
-              const SizedBox(height: 80),
-              EmptyState(
-                icon: Icons.error_outline,
-                title: 'Could not load',
-                message: '${snap.error}',
-              ),
-            ]);
+            return ListView(
+              children: [
+                const SizedBox(height: 80),
+                EmptyState(
+                  icon: Icons.error_outline,
+                  title: 'Could not load',
+                  message: '${snap.error}',
+                ),
+              ],
+            );
           }
           final rosters = snap.data ?? const <SessionRoster>[];
           if (rosters.isEmpty) {
-            return ListView(children: const [
-              SizedBox(height: 80),
-              EmptyState(
-                icon: Icons.event_busy,
-                title: 'No rehearsals held this week',
-              ),
-            ]);
+            return ListView(
+              children: const [
+                SizedBox(height: 80),
+                EmptyState(
+                  icon: Icons.event_busy,
+                  title: 'No rehearsals held this week',
+                ),
+              ],
+            );
           }
           return ListView(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-            children: [
-              for (final r in rosters) ..._sessionSection(r),
-            ],
+            children: [for (final r in rosters) ..._sessionSection(r)],
           );
         },
       ),
@@ -110,16 +127,22 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
               ),
               child: Column(
                 children: [
-                  Text(_months[d.month - 1].toUpperCase(),
-                      style: const TextStyle(
-                          color: AppColors.accentLight, fontSize: 10)),
-                  Text('${d.day}',
-                      style: const TextStyle(
-                        color: AppColors.cream,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        height: 1,
-                      )),
+                  Text(
+                    _months[d.month - 1].toUpperCase(),
+                    style: const TextStyle(
+                      color: AppColors.accentLight,
+                      fontSize: 10,
+                    ),
+                  ),
+                  Text(
+                    '${d.day}',
+                    style: const TextStyle(
+                      color: AppColors.cream,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      height: 1,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -128,8 +151,10 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(_weekdays[d.weekday - 1],
-                      style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    _weekdays[d.weekday - 1],
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   Text(
                     '${r.present.length} present · ${r.late.length} late · ${r.absent.length} absent',
                     style: Theme.of(context).textTheme.bodySmall,
@@ -195,22 +220,23 @@ class _WeekDetailScreenState extends State<WeekDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(m.name,
-                      style: Theme.of(context).textTheme.titleSmall),
-                  Text(m.voiceSection,
-                      style: Theme.of(context).textTheme.labelSmall),
+                  Text(m.name, style: Theme.of(context).textTheme.titleSmall),
+                  Text(
+                    m.voiceSection,
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
                 ],
               ),
             ),
             if (m.present && m.lateMinutes > 0)
               Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: AppColors.accent.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                      color: AppColors.accentDark.withValues(alpha: 0.5)),
+                    color: AppColors.accentDark.withValues(alpha: 0.5),
+                  ),
                 ),
                 child: Text(
                   '${m.lateMinutes} min',

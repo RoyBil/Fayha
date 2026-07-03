@@ -63,7 +63,11 @@ class _ComposePollScreenState extends State<ComposePollScreen> {
     );
     setState(() {
       _closesAt = DateTime(
-        d.year, d.month, d.day, t?.hour ?? 23, t?.minute ?? 59,
+        d.year,
+        d.month,
+        d.day,
+        t?.hour ?? 23,
+        t?.minute ?? 59,
       );
     });
   }
@@ -81,9 +85,9 @@ class _ComposePollScreenState extends State<ComposePollScreen> {
       return;
     }
     if (_audience == 'branch' && _branch == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pick a branch')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Pick a branch')));
       return;
     }
     setState(() => _saving = true);
@@ -104,9 +108,9 @@ class _ComposePollScreenState extends State<ComposePollScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not publish: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not publish: $e')));
     }
   }
 
@@ -178,7 +182,8 @@ class _ComposePollScreenState extends State<ComposePollScreen> {
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Allow multiple selections'),
                 subtitle: const Text(
-                    'Members can vote for more than one option'),
+                  'Members can vote for more than one option',
+                ),
                 value: _multiChoice,
                 activeColor: AppColors.primary,
                 onChanged: (v) => setState(() => _multiChoice = v),
@@ -193,7 +198,9 @@ class _ComposePollScreenState extends State<ComposePollScreen> {
                 ),
                 items: MessagesService.audiences
                     .where((a) => a.$1 != 'audience' && a.$1 != 'everyone')
-                    .map((a) => DropdownMenuItem(value: a.$1, child: Text(a.$2)))
+                    .map(
+                      (a) => DropdownMenuItem(value: a.$1, child: Text(a.$2)),
+                    )
                     .toList(),
                 onChanged: (v) => setState(() => _audience = v ?? 'members'),
               ),
@@ -217,7 +224,9 @@ class _ComposePollScreenState extends State<ComposePollScreen> {
                 borderRadius: BorderRadius.circular(8),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 16),
+                    horizontal: 14,
+                    vertical: 16,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
@@ -225,8 +234,11 @@ class _ComposePollScreenState extends State<ComposePollScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.event_busy,
-                          size: 18, color: AppColors.primary),
+                      const Icon(
+                        Icons.event_busy,
+                        size: 18,
+                        color: AppColors.primary,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
@@ -237,8 +249,7 @@ class _ComposePollScreenState extends State<ComposePollScreen> {
                       ),
                       if (_closesAt != null)
                         IconButton(
-                          icon:
-                              const Icon(Icons.clear, color: AppColors.gray),
+                          icon: const Icon(Icons.clear, color: AppColors.gray),
                           onPressed: () => setState(() => _closesAt = null),
                         ),
                     ],
@@ -253,7 +264,9 @@ class _ComposePollScreenState extends State<ComposePollScreen> {
                         height: 18,
                         width: 18,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: AppColors.cream),
+                          strokeWidth: 2,
+                          color: AppColors.cream,
+                        ),
                       )
                     : const Icon(Icons.publish, size: 18),
                 label: const Text('Publish Poll'),

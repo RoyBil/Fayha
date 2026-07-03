@@ -18,6 +18,8 @@ class Member {
   bool isMaestro;
   bool isEditor;
   bool isPollCreator;
+  bool canUploadGallery;
+
   /// Anyone who is allowed to post news / events / announcements.
   bool get isContentEditor => isEditor || isMaestro;
   bool leftChoir;
@@ -37,6 +39,7 @@ class Member {
   double? houseLng;
   String? houseAddress;
   bool liveLocationEnabled;
+
   /// 'not_on_stage' | 'on_stage' | 'assistant_conductor' | 'friend' | null
   String? singerLevel;
 
@@ -55,6 +58,7 @@ class Member {
     this.isMaestro = false,
     this.isEditor = false,
     this.isPollCreator = false,
+    this.canUploadGallery = false,
     this.leftChoir = false,
     this.shareLocation = true,
     Set<String>? memorizedSongIds,
@@ -73,9 +77,9 @@ class Member {
     this.houseAddress,
     this.liveLocationEnabled = false,
     this.singerLevel,
-  })  : memorizedSongIds = memorizedSongIds ?? <String>{},
-        travelLocations = travelLocations ?? <String>[],
-        clothing = clothing ?? <ClothingItem>[];
+  }) : memorizedSongIds = memorizedSongIds ?? <String>{},
+       travelLocations = travelLocations ?? <String>[],
+       clothing = clothing ?? <ClothingItem>[];
 
   factory Member.fromMap(Map<String, dynamic> r) {
     final role = (r['role'] as String?) ?? 'member';
@@ -103,6 +107,7 @@ class Member {
       isEditor: role == 'editor',
       isPollCreator:
           role == 'admin' || role == 'editor' || role == 'superAdmin',
+      canUploadGallery: (r['can_upload_gallery'] as bool?) ?? false,
       leftChoir: status == 'left',
       shareLocation: (r['share_location'] as bool?) ?? true,
       favoriteSongId: r['favorite_song_id'] as String?,
@@ -113,11 +118,13 @@ class Member {
       travelLocations:
           (r['travel_locations'] as List?)?.cast<String>() ?? <String>[],
       clothing: ((r['clothing'] as List?) ?? [])
-          .map((c) => ClothingItem(
-                type: (c['type'] as String?) ?? '',
-                size: (c['size'] as String?) ?? '',
-                quantity: (c['quantity'] as int?) ?? 1,
-              ))
+          .map(
+            (c) => ClothingItem(
+              type: (c['type'] as String?) ?? '',
+              size: (c['size'] as String?) ?? '',
+              quantity: (c['quantity'] as int?) ?? 1,
+            ),
+          )
           .toList(),
       isReturning: (r['is_returning'] as bool?) ?? false,
       breakFrom: r['break_from'] != null
@@ -145,8 +152,7 @@ class AppState extends ChangeNotifier {
   bool get isMaestro => _currentMember?.isMaestro ?? false;
   bool get isAdmin => _currentMember?.isAdmin ?? false;
   bool get isEditor => _currentMember?.isEditor ?? false;
-  bool get isContentEditor =>
-      _currentMember?.isContentEditor ?? false;
+  bool get isContentEditor => _currentMember?.isContentEditor ?? false;
 
   /// Bumped whenever something happens that should invalidate the
   /// home-page stat boxes (e.g. attendance was just recorded).

@@ -38,13 +38,33 @@ class _ConcertTile extends StatelessWidget {
   const _ConcertTile({required this.concert});
 
   static const _months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
   static const _monthsShort = [
-    'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
-    'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC',
+    'JAN',
+    'FEB',
+    'MAR',
+    'APR',
+    'MAY',
+    'JUN',
+    'JUL',
+    'AUG',
+    'SEP',
+    'OCT',
+    'NOV',
+    'DEC',
   ];
 
   String _formatTime(DateTime d) {
@@ -114,8 +134,7 @@ class _ConcertTile extends StatelessWidget {
                 const SizedBox(height: 6),
                 Row(
                   children: [
-                    const Icon(Icons.schedule,
-                        size: 13, color: AppColors.gray),
+                    const Icon(Icons.schedule, size: 13, color: AppColors.gray),
                     const SizedBox(width: 4),
                     Text(
                       '${_months[concert.date.month - 1]} ${concert.date.day} · ${_formatTime(concert.date)}',
@@ -126,8 +145,11 @@ class _ConcertTile extends StatelessWidget {
                 const SizedBox(height: 3),
                 Row(
                   children: [
-                    const Icon(Icons.place_outlined,
-                        size: 13, color: AppColors.gray),
+                    const Icon(
+                      Icons.place_outlined,
+                      size: 13,
+                      color: AppColors.gray,
+                    ),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
@@ -160,7 +182,11 @@ class _RehearsalLocationsCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.location_city, color: AppColors.primary, size: 22),
+              const Icon(
+                Icons.location_city,
+                color: AppColors.primary,
+                size: 22,
+              ),
               const SizedBox(width: 10),
               Text('Rehearsal Branches', style: theme.textTheme.titleLarge),
             ],
@@ -175,20 +201,25 @@ class _RehearsalLocationsCard extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: ChoirData.branches
-                .map((b) => ActionChip(
-                      avatar: const Icon(Icons.place_outlined,
-                          size: 16, color: AppColors.primary),
-                      label: Text(b),
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => Scaffold(
-                            appBar: AppBar(title: Text('$b Branch')),
-                            body: PublicMapScreen(initialBranchName: b),
-                          ),
+                .map(
+                  (b) => ActionChip(
+                    avatar: const Icon(
+                      Icons.place_outlined,
+                      size: 16,
+                      color: AppColors.primary,
+                    ),
+                    label: Text(b),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => Scaffold(
+                          appBar: AppBar(title: Text('$b Branch')),
+                          body: PublicMapScreen(initialBranchName: b),
                         ),
                       ),
-                    ))
+                    ),
+                  ),
+                )
                 .toList(),
           ),
         ],

@@ -62,12 +62,16 @@ class _BusRouteEditorScreenState extends State<BusRouteEditorScreen> {
       _endName.text = e.endName;
       _start = e.startPoint;
       _end = e.endPoint;
-      _stops.addAll(e.stops.map((s) => _EditableStop(
+      _stops.addAll(
+        e.stops.map(
+          (s) => _EditableStop(
             name: s.name,
             location: s.location,
             geofenceRadiusM: s.geofenceRadiusM,
             approachRadiusM: s.approachRadiusM,
-          )));
+          ),
+        ),
+      );
       _mode = _PickMode.stop;
     }
   }
@@ -91,10 +95,9 @@ class _BusRouteEditorScreenState extends State<BusRouteEditorScreen> {
           _end = p;
           break;
         case _PickMode.stop:
-          _stops.add(_EditableStop(
-            name: 'Stop ${_stops.length + 1}',
-            location: p,
-          ));
+          _stops.add(
+            _EditableStop(name: 'Stop ${_stops.length + 1}', location: p),
+          );
           break;
       }
     });
@@ -110,9 +113,7 @@ class _BusRouteEditorScreenState extends State<BusRouteEditorScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (_) => _PlacesSearchSheet(
-        near: _start ?? _defaultCenter,
-      ),
+      builder: (_) => _PlacesSearchSheet(near: _start ?? _defaultCenter),
     );
     if (picked == null) return;
     setState(() {
@@ -127,10 +128,9 @@ class _BusRouteEditorScreenState extends State<BusRouteEditorScreen> {
           if (_endName.text.trim().isEmpty) _endName.text = picked.name;
           break;
         case _PickMode.stop:
-          _stops.add(_EditableStop(
-            name: picked.name,
-            location: picked.location,
-          ));
+          _stops.add(
+            _EditableStop(name: picked.name, location: picked.location),
+          );
           break;
       }
     });
@@ -141,8 +141,7 @@ class _BusRouteEditorScreenState extends State<BusRouteEditorScreen> {
     final s = _stops[i];
     final nameCtrl = TextEditingController(text: s.name);
     final geoCtrl = TextEditingController(text: s.geofenceRadiusM.toString());
-    final appCtrl =
-        TextEditingController(text: s.approachRadiusM.toString());
+    final appCtrl = TextEditingController(text: s.approachRadiusM.toString());
     final result = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
@@ -156,14 +155,16 @@ class _BusRouteEditorScreenState extends State<BusRouteEditorScreen> {
             ),
             TextField(
               controller: geoCtrl,
-              decoration:
-                  const InputDecoration(labelText: 'Geofence radius (m)'),
+              decoration: const InputDecoration(
+                labelText: 'Geofence radius (m)',
+              ),
               keyboardType: TextInputType.number,
             ),
             TextField(
               controller: appCtrl,
-              decoration:
-                  const InputDecoration(labelText: 'Approach radius (m)'),
+              decoration: const InputDecoration(
+                labelText: 'Approach radius (m)',
+              ),
               keyboardType: TextInputType.number,
             ),
           ],
@@ -185,10 +186,8 @@ class _BusRouteEditorScreenState extends State<BusRouteEditorScreen> {
     if (result == true) {
       setState(() {
         s.name = nameCtrl.text.trim().isEmpty ? s.name : nameCtrl.text.trim();
-        s.geofenceRadiusM =
-            int.tryParse(geoCtrl.text) ?? s.geofenceRadiusM;
-        s.approachRadiusM =
-            int.tryParse(appCtrl.text) ?? s.approachRadiusM;
+        s.geofenceRadiusM = int.tryParse(geoCtrl.text) ?? s.geofenceRadiusM;
+        s.approachRadiusM = int.tryParse(appCtrl.text) ?? s.approachRadiusM;
       });
     }
   }
@@ -208,12 +207,14 @@ class _BusRouteEditorScreenState extends State<BusRouteEditorScreen> {
     try {
       final me = AppState.instance.currentMember!;
       final stops = _stops
-          .map((s) => (
-                name: s.name,
-                location: s.location,
-                geofenceRadiusM: s.geofenceRadiusM as int?,
-                approachRadiusM: s.approachRadiusM as int?,
-              ))
+          .map(
+            (s) => (
+              name: s.name,
+              location: s.location,
+              geofenceRadiusM: s.geofenceRadiusM as int?,
+              approachRadiusM: s.approachRadiusM as int?,
+            ),
+          )
           .toList();
 
       if (widget.existing == null) {
@@ -277,8 +278,7 @@ class _BusRouteEditorScreenState extends State<BusRouteEditorScreen> {
 
   void _toast(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   @override
@@ -296,8 +296,11 @@ class _BusRouteEditorScreenState extends State<BusRouteEditorScreen> {
           point: _end!,
           width: 36,
           height: 36,
-          child: const Icon(Icons.location_on,
-              color: AppColors.primary, size: 32),
+          child: const Icon(
+            Icons.location_on,
+            color: AppColors.primary,
+            size: 32,
+          ),
         ),
       for (var i = 0; i < _stops.length; i++)
         Marker(
@@ -316,9 +319,10 @@ class _BusRouteEditorScreenState extends State<BusRouteEditorScreen> {
               child: Text(
                 '${i + 1}',
                 style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12),
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
               ),
             ),
           ),
@@ -332,8 +336,7 @@ class _BusRouteEditorScreenState extends State<BusRouteEditorScreen> {
           if (widget.existing != null)
             IconButton(
               tooltip: 'Delete route',
-              icon: const Icon(Icons.delete_outline,
-                  color: AppColors.primary),
+              icon: const Icon(Icons.delete_outline, color: AppColors.primary),
               onPressed: _delete,
             ),
           IconButton(
@@ -480,13 +483,18 @@ class _ModeBar extends StatelessWidget {
           label: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 16,
-                  color: selected ? Colors.white : AppColors.gray),
+              Icon(
+                icon,
+                size: 16,
+                color: selected ? Colors.white : AppColors.gray,
+              ),
               const SizedBox(width: 4),
-              Text(label,
-                  style: TextStyle(
-                      color:
-                          selected ? Colors.white : AppColors.charcoal)),
+              Text(
+                label,
+                style: TextStyle(
+                  color: selected ? Colors.white : AppColors.charcoal,
+                ),
+              ),
             ],
           ),
           selectedColor: AppColors.primary,
@@ -624,11 +632,14 @@ class _PlacesSearchSheetState extends State<_PlacesSearchSheet> {
                 itemBuilder: (_, i) {
                   final s = _results[i];
                   return ListTile(
-                    leading: const Icon(Icons.place_outlined,
-                        color: AppColors.primary),
-                    title: Text(s.primaryText,
-                        style:
-                            const TextStyle(fontWeight: FontWeight.w600)),
+                    leading: const Icon(
+                      Icons.place_outlined,
+                      color: AppColors.primary,
+                    ),
+                    title: Text(
+                      s.primaryText,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
                     subtitle: s.secondaryText.isEmpty
                         ? null
                         : Text(s.secondaryText),
@@ -682,13 +693,13 @@ class _StopsStrip extends StatelessWidget {
             onTap: () => onTap(i),
             child: Container(
               width: 160,
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 10, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: AppColors.offWhite,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                    color: AppColors.lightGray.withValues(alpha: 0.5)),
+                  color: AppColors.lightGray.withValues(alpha: 0.5),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -698,11 +709,14 @@ class _StopsStrip extends StatelessWidget {
                       CircleAvatar(
                         radius: 11,
                         backgroundColor: AppColors.accent,
-                        child: Text('${i + 1}',
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold)),
+                        child: Text(
+                          '${i + 1}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                       const SizedBox(width: 6),
                       Expanded(
@@ -710,7 +724,9 @@ class _StopsStrip extends StatelessWidget {
                           s.name,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                              fontWeight: FontWeight.w600, fontSize: 13),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
                         ),
                       ),
                     ],

@@ -13,7 +13,9 @@ class BusPickupService {
   static final _c = Supabase.instance.client;
 
   /// Uses the current device GPS as the pickup point.
-  static Future<PickupRequest> requestFromCurrentLocation(String routeId) async {
+  static Future<PickupRequest> requestFromCurrentLocation(
+    String routeId,
+  ) async {
     if (!await Geolocator.isLocationServiceEnabled()) {
       throw 'Location services are off';
     }
@@ -26,9 +28,7 @@ class BusPickupService {
       throw 'Location permission denied';
     }
     final pos = await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-      ),
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
     );
     return requestAt(routeId, LatLng(pos.latitude, pos.longitude));
   }
@@ -37,11 +37,14 @@ class BusPickupService {
   static Future<PickupRequest> requestAt(String routeId, LatLng point) async {
     final me = _c.auth.currentUser?.id;
     if (me == null) throw 'Not signed in';
-    final row = await _c.rpc('request_bus_pickup', params: {
-      'p_route': routeId,
-      'p_lat': point.latitude,
-      'p_lng': point.longitude,
-    });
+    final row = await _c.rpc(
+      'request_bus_pickup',
+      params: {
+        'p_route': routeId,
+        'p_lat': point.latitude,
+        'p_lng': point.longitude,
+      },
+    );
     return PickupRequest.fromMap(Map<String, dynamic>.from(row as Map));
   }
 
@@ -80,10 +83,17 @@ class BusPickupService {
             .eq('route_id', routeId)
             .neq('status', 'cancelled')
             .order('created_at', ascending: false);
-        controller.add((rows as List)
-            .map((r) => PickupRequest.fromMap(Map<String, dynamic>.from(r as Map)))
-            .toList());
-      } catch (_) {/* surface via stream's error path in future */}
+        controller.add(
+          (rows as List)
+              .map(
+                (r) =>
+                    PickupRequest.fromMap(Map<String, dynamic>.from(r as Map)),
+              )
+              .toList(),
+        );
+      } catch (_) {
+        /* surface via stream's error path in future */
+      }
     }
 
     final channel = _c.channel('bus_pickups:$routeId')

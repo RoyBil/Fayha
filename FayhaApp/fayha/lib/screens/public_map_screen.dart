@@ -93,6 +93,7 @@ Future<void> smoothMove(
       z0 + (targetZoom - z0) * t,
     );
   }
+
   ac.addListener(tick);
   try {
     await ac.forward();
@@ -101,7 +102,6 @@ Future<void> smoothMove(
     ac.dispose();
   }
 }
-
 
 class _MapPin {
   final LatLng point;
@@ -136,13 +136,23 @@ class _RealMapState extends State<_RealMap> with TickerProviderStateMixin {
   void _zoom(double delta) {
     final c = widget.controller.camera;
     final newZoom = (c.zoom + delta).clamp(2.0, 18.0);
-    smoothMove(this, widget.controller, c.center, newZoom,
-        duration: const Duration(milliseconds: 550));
+    smoothMove(
+      this,
+      widget.controller,
+      c.center,
+      newZoom,
+      duration: const Duration(milliseconds: 550),
+    );
   }
 
   void _recenter() {
-    smoothMove(this, widget.controller, widget.center, widget.zoom,
-        duration: const Duration(milliseconds: 1100));
+    smoothMove(
+      this,
+      widget.controller,
+      widget.center,
+      widget.zoom,
+      duration: const Duration(milliseconds: 1100),
+    );
   }
 
   @override
@@ -165,7 +175,8 @@ class _RealMapState extends State<_RealMap> with TickerProviderStateMixin {
                   minZoom: 2,
                   maxZoom: 18,
                   interactionOptions: const InteractionOptions(
-                    flags: InteractiveFlag.pinchZoom |
+                    flags:
+                        InteractiveFlag.pinchZoom |
                         InteractiveFlag.doubleTapZoom |
                         InteractiveFlag.drag |
                         InteractiveFlag.flingAnimation |
@@ -182,17 +193,21 @@ class _RealMapState extends State<_RealMap> with TickerProviderStateMixin {
                     additionalOptions: const {'r': ''},
                   ),
                   MarkerLayer(
-                    markers: widget.pins.map((p) => Marker(
-                      point: p.point,
-                      width: 140,
-                      height: 60,
-                      alignment: Alignment.center,
-                      rotate: false,
-                      child: GestureDetector(
-                        onTap: p.onTap,
-                        child: _PinMarker(label: p.label, color: p.color),
-                      ),
-                    )).toList(),
+                    markers: widget.pins
+                        .map(
+                          (p) => Marker(
+                            point: p.point,
+                            width: 140,
+                            height: 60,
+                            alignment: Alignment.center,
+                            rotate: false,
+                            child: GestureDetector(
+                              onTap: p.onTap,
+                              child: _PinMarker(label: p.label, color: p.color),
+                            ),
+                          ),
+                        )
+                        .toList(),
                   ),
                   const RichAttributionWidget(
                     attributions: [
@@ -202,7 +217,8 @@ class _RealMapState extends State<_RealMap> with TickerProviderStateMixin {
                 ],
               ),
               Positioned(
-                right: 10, top: 10,
+                right: 10,
+                top: 10,
                 child: Column(
                   children: [
                     _ZoomButton(icon: Icons.add, onTap: () => _zoom(1)),
@@ -233,13 +249,18 @@ class _PinMarker extends StatelessWidget {
       clipBehavior: Clip.none,
       children: [
         Container(
-          width: 18, height: 18,
+          width: 18,
+          height: 18,
           decoration: BoxDecoration(
             color: color,
             shape: BoxShape.circle,
             border: Border.all(color: Colors.white, width: 2.5),
             boxShadow: const [
-              BoxShadow(color: Colors.black38, blurRadius: 3, offset: Offset(0, 1)),
+              BoxShadow(
+                color: Colors.black38,
+                blurRadius: 3,
+                offset: Offset(0, 1),
+              ),
             ],
           ),
         ),
@@ -252,13 +273,19 @@ class _PinMarker extends StatelessWidget {
               borderRadius: BorderRadius.circular(4),
               border: Border.all(color: color.withValues(alpha: 0.6), width: 1),
               boxShadow: const [
-                BoxShadow(color: Colors.black26, blurRadius: 2, offset: Offset(0, 1)),
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 2,
+                  offset: Offset(0, 1),
+                ),
               ],
             ),
             child: Text(
               label,
               style: TextStyle(
-                fontSize: 10, fontWeight: FontWeight.w700, color: color,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: color,
               ),
             ),
           ),
@@ -291,7 +318,8 @@ class _ZoomButton extends StatelessWidget {
   }
 }
 
-Future<void> _open(String url) => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+Future<void> _open(String url) =>
+    launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
 
 // ============ Info sheet ============
 
@@ -334,7 +362,8 @@ class _InfoSheet extends StatelessWidget {
             Center(
               child: Container(
                 margin: const EdgeInsets.only(top: 8),
-                width: 36, height: 4,
+                width: 36,
+                height: 4,
                 decoration: BoxDecoration(
                   color: AppColors.lightGray,
                   borderRadius: BorderRadius.circular(2),
@@ -359,7 +388,9 @@ class _InfoSheet extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.35),
+                      ),
                     ),
                     child: Icon(icon, color: AppColors.cream, size: 26),
                   ),
@@ -393,7 +424,10 @@ class _InfoSheet extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
               child: ElegantCard(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 6,
+                ),
                 child: Column(
                   children: [
                     for (int i = 0; i < facts.length; i++) ...[
@@ -492,7 +526,8 @@ class _BranchesTab extends StatefulWidget {
   State<_BranchesTab> createState() => _BranchesTabState();
 }
 
-class _BranchesTabState extends State<_BranchesTab> with TickerProviderStateMixin {
+class _BranchesTabState extends State<_BranchesTab>
+    with TickerProviderStateMixin {
   static const LatLng _defaultCenter = LatLng(34.05, 35.75);
   static const double _defaultZoom = 8.0;
   static const double _focusZoom = 15.0;
@@ -525,8 +560,13 @@ class _BranchesTabState extends State<_BranchesTab> with TickerProviderStateMixi
   }
 
   Future<void> _focus(BranchLocation b) async {
-    await smoothMove(this, _ctrl, LatLng(b.lat, b.lng), _focusZoom,
-        duration: const Duration(milliseconds: 1400));
+    await smoothMove(
+      this,
+      _ctrl,
+      LatLng(b.lat, b.lng),
+      _focusZoom,
+      duration: const Duration(milliseconds: 1400),
+    );
     if (!mounted) return;
     _showInfo(context, _branchSheet(b));
   }
@@ -555,84 +595,105 @@ class _BranchesTabState extends State<_BranchesTab> with TickerProviderStateMixi
           return const Center(child: CircularProgressIndicator());
         }
         final branches = snap.data ?? const <BranchLocation>[];
-        final pins = branches.map((b) => _MapPin(
-          point: LatLng(b.lat, b.lng),
-          color: b.color,
-          label: b.name,
-          onTap: () => _focus(b),
-        )).toList();
+        final pins = branches
+            .map(
+              (b) => _MapPin(
+                point: LatLng(b.lat, b.lng),
+                color: b.color,
+                label: b.name,
+                onTap: () => _focus(b),
+              ),
+            )
+            .toList();
         return ListView(
-      padding: const EdgeInsets.only(bottom: 24),
-      children: [
-        const SizedBox(height: 16),
-        _RealMap(
-          controller: _ctrl,
-          pins: pins,
-          center: _defaultCenter,
-          zoom: _defaultZoom,
-        ),
-        const SizedBox(height: 12),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Wrap(
-            spacing: 8, runSpacing: 6,
-            children: branches
-                .map((b) => _LegendChip(label: b.name, color: b.color))
-                .toList(),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: SectionHeader(
-            eyebrow: 'Practice',
-            title: 'Where We Rehearse',
-            subtitle: 'Tap a branch to see details and zoom on the map.',
-          ),
-        ),
-        const SizedBox(height: 12),
-        ...branches.map((b) => Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
-          child: ElegantCard(
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => BranchDetailScreen(branch: b),
+          padding: const EdgeInsets.only(bottom: 24),
+          children: [
+            const SizedBox(height: 16),
+            _RealMap(
+              controller: _ctrl,
+              pins: pins,
+              center: _defaultCenter,
+              zoom: _defaultZoom,
+            ),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                children: branches
+                    .map((b) => _LegendChip(label: b.name, color: b.color))
+                    .toList(),
               ),
             ),
-            child: Row(
-              children: [
-                Container(
-                  width: 6, height: 56,
-                  decoration: BoxDecoration(color: b.color, borderRadius: BorderRadius.circular(3)),
-                ),
-                const SizedBox(width: 14),
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: b.color.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: SectionHeader(
+                eyebrow: 'Practice',
+                title: 'Where We Rehearse',
+                subtitle: 'Tap a branch to see details and zoom on the map.',
+              ),
+            ),
+            const SizedBox(height: 12),
+            ...branches.map(
+              (b) => Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+                child: ElegantCard(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BranchDetailScreen(branch: b),
+                    ),
                   ),
-                  child: Icon(Icons.location_on, color: b.color, size: 22),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
                     children: [
-                      Text(b.name, style: Theme.of(context).textTheme.titleLarge),
-                      const SizedBox(height: 2),
-                      Text(b.practiceLocation, style: Theme.of(context).textTheme.bodyMedium),
+                      Container(
+                        width: 6,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: b.color,
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: b.color.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          Icons.location_on,
+                          color: b.color,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              b.name,
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              b.practiceLocation,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right, color: AppColors.gray),
                     ],
                   ),
                 ),
-                const Icon(Icons.chevron_right, color: AppColors.gray),
-              ],
+              ),
             ),
-          ),
-        )),
-      ],
-    );
+          ],
+        );
       },
     );
   }
@@ -659,8 +720,13 @@ class _VenuesTabState extends State<_VenuesTab> with TickerProviderStateMixin {
   }
 
   Future<void> _focus(Venue v) async {
-    await smoothMove(this, _ctrl, LatLng(v.lat, v.lng), _focusZoom,
-        duration: const Duration(milliseconds: 1700));
+    await smoothMove(
+      this,
+      _ctrl,
+      LatLng(v.lat, v.lng),
+      _focusZoom,
+      duration: const Duration(milliseconds: 1700),
+    );
     if (!mounted) return;
     _showInfo(context, _venueSheet(v));
   }
@@ -673,10 +739,15 @@ class _VenuesTabState extends State<_VenuesTab> with TickerProviderStateMixin {
     facts: [
       _Fact(Icons.event, 'Date', v.date),
       _Fact(Icons.theater_comedy, 'Event', v.event),
-      _Fact(Icons.place, 'Coordinates', '${v.lat.toStringAsFixed(4)}, ${v.lng.toStringAsFixed(4)}'),
+      _Fact(
+        Icons.place,
+        'Coordinates',
+        '${v.lat.toStringAsFixed(4)}, ${v.lng.toStringAsFixed(4)}',
+      ),
     ],
     description: v.notes,
-    mapUrl: 'https://www.google.com/maps/search/${Uri.encodeComponent('${v.city}, ${v.country}')}',
+    mapUrl:
+        'https://www.google.com/maps/search/${Uri.encodeComponent('${v.city}, ${v.country}')}',
   );
 
   @override
@@ -689,70 +760,91 @@ class _VenuesTabState extends State<_VenuesTab> with TickerProviderStateMixin {
         }
         final venues = [...(snap.data ?? const <Venue>[])]
           ..sort((a, b) => b.sortDate.compareTo(a.sortDate));
-        final pins = venues.map((v) => _MapPin(
-          point: LatLng(v.lat, v.lng),
-          color: AppColors.accentDark,
-          label: v.city,
-          onTap: () => _focus(v),
-        )).toList();
+        final pins = venues
+            .map(
+              (v) => _MapPin(
+                point: LatLng(v.lat, v.lng),
+                color: AppColors.accentDark,
+                label: v.city,
+                onTap: () => _focus(v),
+              ),
+            )
+            .toList();
         return ListView(
-      padding: const EdgeInsets.only(bottom: 24),
-      children: [
-        const SizedBox(height: 16),
-        _RealMap(
-          controller: _ctrl,
-          pins: pins,
-          center: _defaultCenter,
-          zoom: _defaultZoom,
-        ),
-        const SizedBox(height: 16),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: SectionHeader(
-            eyebrow: 'On Tour',
-            title: 'Performance Venues',
-            subtitle: 'Tap a venue to see details. 20+ countries from China to Canada.',
-          ),
-        ),
-        const SizedBox(height: 12),
-        ...venues.map((v) => Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
-          child: ElegantCard(
-            onTap: () => _focus(v),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppColors.accent.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.public, color: AppColors.accentDark, size: 22),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          padding: const EdgeInsets.only(bottom: 24),
+          children: [
+            const SizedBox(height: 16),
+            _RealMap(
+              controller: _ctrl,
+              pins: pins,
+              center: _defaultCenter,
+              zoom: _defaultZoom,
+            ),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: SectionHeader(
+                eyebrow: 'On Tour',
+                title: 'Performance Venues',
+                subtitle:
+                    'Tap a venue to see details. 20+ countries from China to Canada.',
+              ),
+            ),
+            const SizedBox(height: 12),
+            ...venues.map(
+              (v) => Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+                child: ElegantCard(
+                  onTap: () => _focus(v),
+                  child: Row(
                     children: [
-                      Text('${v.city}, ${v.country}', style: Theme.of(context).textTheme.titleLarge),
-                      const SizedBox(height: 2),
-                      Row(
-                        children: [
-                          const Icon(Icons.event, size: 12, color: AppColors.gray),
-                          const SizedBox(width: 4),
-                          Text(v.date, style: Theme.of(context).textTheme.bodySmall),
-                        ],
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.accent.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.public,
+                          color: AppColors.accentDark,
+                          size: 22,
+                        ),
                       ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${v.city}, ${v.country}',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: 2),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.event,
+                                  size: 12,
+                                  color: AppColors.gray,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  v.date,
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right, color: AppColors.gray),
                     ],
                   ),
                 ),
-                const Icon(Icons.chevron_right, color: AppColors.gray),
-              ],
+              ),
             ),
-          ),
-        )),
-      ],
-    );
+          ],
+        );
       },
     );
   }
@@ -776,12 +868,19 @@ class _LegendChip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 8, height: 8,
+            width: 8,
+            height: 8,
             decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
           const SizedBox(width: 6),
-          Text(label,
-              style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600)),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );

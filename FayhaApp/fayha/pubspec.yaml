@@ -33,6 +33,16 @@ dependencies:
   # Android / iOS WebView platform impls don't always register and
   # YoutubePlayer throws "WebViewPlatform.instance == null".
   webview_flutter: ^4.10.0
+  # Audio compression for MP3 files > 3 MB before upload.
+  ffmpeg_kit_flutter_new: ^4.3.2
+  # Push notifications — requires native Firebase setup:
+  #   Android: add android/app/google-services.json and apply the
+  #            google-services Gradle plugin (see supabase/push_fcm.sql).
+  #   iOS:     add ios/Runner/GoogleService-Info.plist (drag into Xcode)
+  #            and enable Push Notifications + Background Modes capabilities.
+  firebase_core: ^3.6.0
+  firebase_messaging: ^15.1.3
+  flutter_local_notifications: ^17.2.2
 
 dev_dependencies:
   flutter_test:

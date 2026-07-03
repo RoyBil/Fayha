@@ -19,6 +19,7 @@ class ComposeGalleryPostScreen extends StatefulWidget {
 
 class _ComposeGalleryPostScreenState extends State<ComposeGalleryPostScreen> {
   final _caption = TextEditingController();
+  String? _category;
   // Picked file: either a path on disk (mobile/desktop, streamed) or
   // raw bytes (web, where dart:io isn't available).
   String? _mediaPath;
@@ -53,6 +54,7 @@ class _ComposeGalleryPostScreenState extends State<ComposeGalleryPostScreen> {
     if (e != null) {
       _caption.text = e.caption ?? '';
       _type = e.mediaType;
+      _category = e.category;
     }
   }
 
@@ -63,7 +65,15 @@ class _ComposeGalleryPostScreenState extends State<ComposeGalleryPostScreen> {
   }
 
   static const _videoExts = {
-    'mp4', 'mov', 'm4v', 'webm', 'avi', 'mkv', '3gp', 'mpeg', 'mpg'
+    'mp4',
+    'mov',
+    'm4v',
+    'webm',
+    'avi',
+    'mkv',
+    '3gp',
+    'mpeg',
+    'mpg',
   };
 
   /// Single picker for either a photo or a video.
@@ -171,20 +181,23 @@ class _ComposeGalleryPostScreenState extends State<ComposeGalleryPostScreen> {
         _uploadProgress = null; // indeterminate while DB writes
         _uploadStatus = 'Saving post…';
       });
-      final caption =
-          _caption.text.trim().isEmpty ? null : _caption.text.trim();
+      final caption = _caption.text.trim().isEmpty
+          ? null
+          : _caption.text.trim();
       if (_isEdit) {
         await GalleryService.updatePost(
           id: widget.existing!.id,
           caption: _caption.text.trim(),
           photoUrl: newUrl,
           mediaType: newType,
+          category: _category,
         );
       } else {
         await GalleryService.addPost(
           photoUrl: newUrl!,
           mediaType: newType!,
           caption: caption,
+          category: _category,
         );
       }
       if (!mounted) return;
@@ -197,8 +210,11 @@ class _ComposeGalleryPostScreenState extends State<ComposeGalleryPostScreen> {
         _uploadProgress = null;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(
-            _isEdit ? 'Could not save changes: $e' : 'Could not post: $e')),
+        SnackBar(
+          content: Text(
+            _isEdit ? 'Could not save changes: $e' : 'Could not post: $e',
+          ),
+        ),
       );
     }
   }
@@ -210,7 +226,8 @@ class _ComposeGalleryPostScreenState extends State<ComposeGalleryPostScreen> {
     final showExistingPreview = !hasNewMedia && existingUrl != null;
     return Scaffold(
       appBar: AppBar(
-          title: Text(_isEdit ? 'Edit Gallery Post' : 'New Gallery Post')),
+        title: Text(_isEdit ? 'Edit Gallery Post' : 'New Gallery Post'),
+      ),
       body: Stack(
         children: [
           AbsorbPointer(
@@ -238,8 +255,11 @@ class _ComposeGalleryPostScreenState extends State<ComposeGalleryPostScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.cloud_upload_outlined,
-                    color: AppColors.primary, size: 40),
+                const Icon(
+                  Icons.cloud_upload_outlined,
+                  color: AppColors.primary,
+                  size: 40,
+                ),
                 const SizedBox(height: 12),
                 Text(
                   _uploadStatus!,
@@ -257,63 +277,94 @@ class _ComposeGalleryPostScreenState extends State<ComposeGalleryPostScreen> {
   }
 
   Widget _form(
-      bool hasNewMedia, bool showExistingPreview, String? existingUrl) {
+    bool hasNewMedia,
+    bool showExistingPreview,
+    String? existingUrl,
+  ) {
     return ListView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-          children: [
-            Container(
-              height: 240,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: (hasNewMedia || showExistingPreview)
-                      ? AppColors.primary
-                      : AppColors.offWhite,
-                  width: (hasNewMedia || showExistingPreview) ? 1.5 : 1,
-                ),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+      children: [
+        Container(
+          height: 240,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: (hasNewMedia || showExistingPreview)
+                  ? AppColors.primary
+                  : AppColors.offWhite,
+              width: (hasNewMedia || showExistingPreview) ? 1.5 : 1,
+            ),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: _preview(hasNewMedia, showExistingPreview, existingUrl),
+        ),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          onPressed: _pickMedia,
+          icon: const Icon(Icons.perm_media_outlined, size: 18),
+          label: Text(
+            hasNewMedia
+                ? 'Choose a different photo or video'
+                : 'Choose a photo or video',
+          ),
+        ),
+        const SizedBox(height: 18),
+        TextField(
+          controller: _caption,
+          maxLines: 3,
+          maxLength: 280,
+          decoration: const InputDecoration(
+            labelText: 'Caption (optional)',
+            alignLabelWithHint: true,
+          ),
+        ),
+        const SizedBox(height: 12),
+        InputDecorator(
+          decoration: const InputDecoration(labelText: 'Category (optional)'),
+          child: DropdownButton<String>(
+            value: _category,
+            isExpanded: true,
+            underline: const SizedBox.shrink(),
+            items: [
+              const DropdownMenuItem<String>(
+                value: null,
+                child: Text('— No category —'),
               ),
-              clipBehavior: Clip.antiAlias,
-              child: _preview(hasNewMedia, showExistingPreview, existingUrl),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: _pickMedia,
-              icon: const Icon(Icons.perm_media_outlined, size: 18),
-              label: Text(hasNewMedia
-                  ? 'Choose a different photo or video'
-                  : 'Choose a photo or video'),
-            ),
-            const SizedBox(height: 18),
-            TextField(
-              controller: _caption,
-              maxLines: 3,
-              maxLength: 280,
-              decoration: const InputDecoration(
-                labelText: 'Caption (optional)',
-                alignLabelWithHint: true,
+              ...kGalleryCategories.map(
+                (c) => DropdownMenuItem(value: c, child: Text(c)),
               ),
-            ),
-            const SizedBox(height: 6),
-            FilledButton.icon(
-              onPressed: _saving ? null : _save,
-              icon: _saving
-                  ? const SizedBox(
-                      height: 18,
-                      width: 18,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: AppColors.cream),
-                    )
-                  : Icon(_isEdit ? Icons.save : Icons.upload, size: 18),
-              label: Text(_isEdit ? 'Save Changes' : 'Post to Gallery'),
-            ),
-          ],
-        );
+            ],
+            onChanged: (v) => setState(() => _category = v),
+          ),
+        ),
+        const SizedBox(height: 14),
+        FilledButton.icon(
+          onPressed: _saving ? null : _save,
+          icon: _saving
+              ? const SizedBox(
+                  height: 18,
+                  width: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.cream,
+                  ),
+                )
+              : Icon(_isEdit ? Icons.save : Icons.upload, size: 18),
+          label: Text(_isEdit ? 'Save Changes' : 'Post to Gallery'),
+        ),
+      ],
+    );
   }
 
   Widget _preview(
-      bool hasNewMedia, bool showExistingPreview, String? existingUrl) {
-    if (hasNewMedia && _type == GalleryMediaType.image && _imagePreview != null) {
+    bool hasNewMedia,
+    bool showExistingPreview,
+    String? existingUrl,
+  ) {
+    if (hasNewMedia &&
+        _type == GalleryMediaType.image &&
+        _imagePreview != null) {
       return Image.memory(_imagePreview!, fit: BoxFit.cover);
     }
     if (hasNewMedia && _type == GalleryMediaType.video) {
@@ -327,13 +378,16 @@ class _ComposeGalleryPostScreenState extends State<ComposeGalleryPostScreen> {
             children: [
               const Icon(Icons.movie, size: 48, color: AppColors.cream),
               const SizedBox(height: 6),
-              const Text('Video selected',
-                  style: TextStyle(color: AppColors.cream)),
+              const Text(
+                'Video selected',
+                style: TextStyle(color: AppColors.cream),
+              ),
               if (_mediaSize > 0) ...[
                 const SizedBox(height: 2),
-                Text(_formatBytes(_mediaSize),
-                    style: const TextStyle(
-                        color: AppColors.cream, fontSize: 12)),
+                Text(
+                  _formatBytes(_mediaSize),
+                  style: const TextStyle(color: AppColors.cream, fontSize: 12),
+                ),
               ],
             ],
           ),
@@ -356,8 +410,7 @@ class _ComposeGalleryPostScreenState extends State<ComposeGalleryPostScreen> {
       child: const Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.perm_media_outlined,
-              size: 48, color: AppColors.primary),
+          Icon(Icons.perm_media_outlined, size: 48, color: AppColors.primary),
           SizedBox(height: 8),
           Text('Tap to pick a photo or video'),
         ],

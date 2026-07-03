@@ -29,15 +29,15 @@ class _ComposeMessageScreenState extends State<ComposeMessageScreen> {
   Future<void> _send() async {
     if (!_formKey.currentState!.validate()) return;
     if (_audience == 'branch' && _branch == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pick a branch')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Pick a branch')));
       return;
     }
     if (_audience == 'voice' && _voice == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pick a voice section')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Pick a voice section')));
       return;
     }
     setState(() => _sending = true);
@@ -54,9 +54,9 @@ class _ComposeMessageScreenState extends State<ComposeMessageScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _sending = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not send: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not send: $e')));
     }
   }
 
@@ -100,7 +100,9 @@ class _ComposeMessageScreenState extends State<ComposeMessageScreen> {
                   prefixIcon: Icon(Icons.groups_outlined),
                 ),
                 items: MessagesService.audiences
-                    .map((a) => DropdownMenuItem(value: a.$1, child: Text(a.$2)))
+                    .map(
+                      (a) => DropdownMenuItem(value: a.$1, child: Text(a.$2)),
+                    )
                     .toList(),
                 onChanged: (v) => setState(() => _audience = v ?? 'members'),
               ),
@@ -137,9 +139,12 @@ class _ComposeMessageScreenState extends State<ComposeMessageScreen> {
                 onPressed: _sending ? null : _send,
                 icon: _sending
                     ? const SizedBox(
-                        height: 18, width: 18,
+                        height: 18,
+                        width: 18,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: AppColors.cream),
+                          strokeWidth: 2,
+                          color: AppColors.cream,
+                        ),
                       )
                     : const Icon(Icons.send, size: 18),
                 label: const Text('Send Message'),

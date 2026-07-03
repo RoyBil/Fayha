@@ -31,7 +31,10 @@ class _SplashScreenState extends State<SplashScreen>
       curve: const Interval(0.0, 0.45, curve: Curves.easeOut),
     );
     _logoScale = Tween<double>(begin: 0.82, end: 1.0).animate(
-      CurvedAnimation(parent: _ctrl, curve: const Interval(0.0, 0.55, curve: Curves.easeOutCubic)),
+      CurvedAnimation(
+        parent: _ctrl,
+        curve: const Interval(0.0, 0.55, curve: Curves.easeOutCubic),
+      ),
     );
     _lineGrow = CurvedAnimation(
       parent: _ctrl,
@@ -57,12 +60,14 @@ class _SplashScreenState extends State<SplashScreen>
 
   void _goNext() {
     if (!mounted) return;
-    Navigator.of(context).pushReplacement(PageRouteBuilder(
-      transitionDuration: const Duration(milliseconds: 700),
-      pageBuilder: (_, __, ___) => widget.next,
-      transitionsBuilder: (_, anim, __, child) =>
-          FadeTransition(opacity: anim, child: child),
-    ));
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 700),
+        pageBuilder: (_, __, ___) => widget.next,
+        transitionsBuilder: (_, anim, __, child) =>
+            FadeTransition(opacity: anim, child: child),
+      ),
+    );
   }
 
   @override
@@ -77,7 +82,11 @@ class _SplashScreenState extends State<SplashScreen>
       body: Container(
         decoration: const BoxDecoration(
           gradient: RadialGradient(
-            colors: [AppColors.primary, AppColors.primaryDark, AppColors.charcoal],
+            colors: [
+              AppColors.primary,
+              AppColors.primaryDark,
+              AppColors.charcoal,
+            ],
             radius: 1.2,
             center: Alignment.center,
           ),
@@ -87,9 +96,11 @@ class _SplashScreenState extends State<SplashScreen>
             children: [
               // Decorative corner accent
               Positioned(
-                top: -60, right: -60,
+                top: -60,
+                right: -60,
                 child: Container(
-                  width: 220, height: 220,
+                  width: 220,
+                  height: 220,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
@@ -100,9 +111,11 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
               ),
               Positioned(
-                bottom: -80, left: -80,
+                bottom: -80,
+                left: -80,
                 child: Container(
-                  width: 260, height: 260,
+                  width: 260,
+                  height: 260,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
@@ -183,10 +196,12 @@ class _SplashScreenState extends State<SplashScreen>
                         child: Column(
                           children: [
                             SizedBox(
-                              width: 80, height: 2,
+                              width: 80,
+                              height: 2,
                               child: LinearProgressIndicator(
-                                backgroundColor:
-                                    AppColors.cream.withValues(alpha: 0.12),
+                                backgroundColor: AppColors.cream.withValues(
+                                  alpha: 0.12,
+                                ),
                                 color: AppColors.accent,
                                 minHeight: 2,
                               ),
@@ -238,11 +253,15 @@ class _Monogram extends StatelessWidget {
         gaplessPlayback: true,
         frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
           if (wasSynchronouslyLoaded || frame != null) return child;
-          final w = (MediaQuery.of(context).size.width * 0.7).clamp(180.0, 360.0);
+          final w = (MediaQuery.of(context).size.width * 0.7).clamp(
+            180.0,
+            360.0,
+          );
           return SizedBox(width: w, height: w * 0.55);
         },
         errorBuilder: (_, __, ___) => SizedBox(
-          width: 140, height: 140,
+          width: 140,
+          height: 140,
           child: Center(
             child: Text(
               'F',

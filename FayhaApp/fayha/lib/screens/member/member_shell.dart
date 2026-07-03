@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../main.dart' show navigatorKey;
 import '../../services/auth_service.dart';
 import '../../services/notifications_service.dart';
+import '../../services/push_notification_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/avatar.dart';
@@ -23,6 +26,10 @@ class _MemberShellState extends State<MemberShell> {
   int _index = 0;
   int _unread = 0;
   String? _lastMemberId;
+  bool _pushInitialised = false;
+
+  // Supabase real-time channels for live badge refresh.
+  final _channels = <RealtimeChannel>[];
 
   final _screens = const <Widget>[
     MemberHomeScreen(),
@@ -34,6 +41,19 @@ class _MemberShellState extends State<MemberShell> {
 
   static const _titles = ['Home', 'Songs', 'News', 'Map', 'More'];
 
+  // Tables whose INSERT events should trigger a badge refresh.
+  static const _watchedTables = [
+    'messages',
+    'news_posts',
+    'concerts',
+    'direct_messages',
+    'polls',
+    'member_notifications',
+    'gallery_posts',
+    'trip_groups',
+    'testimonials',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -43,19 +63,53 @@ class _MemberShellState extends State<MemberShell> {
     // every notification ever.
     AppState.instance.addListener(_onAppStateChange);
     _onAppStateChange();
+    _subscribeRealtime();
   }
 
   @override
   void dispose() {
     AppState.instance.removeListener(_onAppStateChange);
+    _unsubscribeRealtime();
     super.dispose();
   }
+
+  // ── Real-time badge ───────────────────────────────────────────────────────
+
+  void _subscribeRealtime() {
+    final client = Supabase.instance.client;
+    for (final table in _watchedTables) {
+      final channel = client
+          .channel('shell_badge_$table')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.insert,
+            schema: 'public',
+            table: table,
+            callback: (_) => _refreshUnread(),
+          )
+          .subscribe();
+      _channels.add(channel);
+    }
+  }
+
+  void _unsubscribeRealtime() {
+    final client = Supabase.instance.client;
+    for (final ch in _channels) {
+      client.removeChannel(ch);
+    }
+    _channels.clear();
+  }
+
+  // ── App-state change (member sign-in / switch) ────────────────────────────
 
   void _onAppStateChange() {
     final id = AppState.instance.currentMember?.id;
     if (id != _lastMemberId) {
       _lastMemberId = id;
       _refreshUnread();
+      if (id != null && !_pushInitialised) {
+        _pushInitialised = true;
+        PushNotificationService.init(navigatorKey);
+      }
     }
   }
 
@@ -97,6 +151,8 @@ class _MemberShellState extends State<MemberShell> {
       ),
     );
     if (confirmed != true) return;
+    await PushNotificationService.clearToken();
+    _pushInitialised = false;
     await AuthService.signOut();
     if (!context.mounted) return;
     Navigator.of(context).popUntil((route) => route.isFirst);
@@ -108,7 +164,10 @@ class _MemberShellState extends State<MemberShell> {
       listenable: AppState.instance,
       builder: (_, __) {
         final m = AppState.instance.currentMember;
-        if (m == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        if (m == null)
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         return Scaffold(
           appBar: AppBar(
             automaticallyImplyLeading: false,
@@ -121,12 +180,20 @@ class _MemberShellState extends State<MemberShell> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(_titles[_index],
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                      Text(
+                        _titles[_index],
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                       Text(
                         '${m.voiceSection} · ${m.branch}',
                         style: const TextStyle(
-                            fontSize: 11, color: AppColors.gray, fontWeight: FontWeight.w500),
+                          fontSize: 11,
+                          color: AppColors.gray,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
@@ -147,14 +214,20 @@ class _MemberShellState extends State<MemberShell> {
                       top: 8,
                       child: Container(
                         constraints: const BoxConstraints(
-                            minWidth: 16, minHeight: 16),
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 4, vertical: 1),
+                          horizontal: 4,
+                          vertical: 1,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.accent,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                              color: AppColors.cream, width: 1.5),
+                            color: AppColors.cream,
+                            width: 1.5,
+                          ),
                         ),
                         child: Text(
                           _unread > 9 ? '9+' : '$_unread',

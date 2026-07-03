@@ -34,19 +34,20 @@ class _QrCheckInScreenState extends State<QrCheckInScreen> {
     final serviceOn = await Geolocator.isLocationServiceEnabled();
     if (!serviceOn) {
       throw const _LocationRequiredError(
-          'Turn on Location Services in your phone settings, then scan again.');
+        'Turn on Location Services in your phone settings, then scan again.',
+      );
     }
     var perm = await Geolocator.checkPermission();
     if (perm == LocationPermission.denied) {
       perm = await Geolocator.requestPermission();
     }
     if (perm == LocationPermission.denied) {
-      throw const _LocationRequiredError(
-          'Allow location access to check in.');
+      throw const _LocationRequiredError('Allow location access to check in.');
     }
     if (perm == LocationPermission.deniedForever) {
       throw const _LocationRequiredError(
-          'Location is blocked. Enable it for this app in your phone settings.');
+        'Location is blocked. Enable it for this app in your phone settings.',
+      );
     }
     try {
       final pos = await Geolocator.getCurrentPosition(
@@ -58,7 +59,8 @@ class _QrCheckInScreenState extends State<QrCheckInScreen> {
       return (lat: pos.latitude, lng: pos.longitude);
     } catch (e) {
       throw _LocationRequiredError(
-          'Could not read your location ($e). Move outside if you\'re inside a building, then try again.');
+        'Could not read your location ($e). Move outside if you\'re inside a building, then try again.',
+      );
     }
   }
 
@@ -232,8 +234,11 @@ class _QrCheckInScreenState extends State<QrCheckInScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.check_circle,
-                size: 64, color: AppColors.secondary),
+            const Icon(
+              Icons.check_circle,
+              size: 64,
+              color: AppColors.secondary,
+            ),
             const SizedBox(height: 14),
             Text(
               _status ?? 'Checked in',

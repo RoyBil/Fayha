@@ -23,10 +23,10 @@ class _SongDetailScreenState extends State<SongDetailScreen>
 
   /// One player per voice section (S1, S2, A1, A2, T1, T2, B1, B2).
   late final List<AudioPlayer> _players;
-  late final List<double> _volumes;     // current volume 0..1
-  late final List<bool> _muted;         // per-section mute
+  late final List<double> _volumes; // current volume 0..1
+  late final List<bool> _muted; // per-section mute
 
-  bool _ready = false;        // sources loaded
+  bool _ready = false; // sources loaded
   bool _loading = true;
   String? _loadError;
   bool _playing = false;
@@ -147,8 +147,9 @@ class _SongDetailScreenState extends State<SongDetailScreen>
 
   Future<void> _seekAll(double value) async {
     if (_total.inMilliseconds == 0) return;
-    final target =
-        Duration(milliseconds: (value * _total.inMilliseconds).round());
+    final target = Duration(
+      milliseconds: (value * _total.inMilliseconds).round(),
+    );
     await Future.wait(_players.map((p) => p.seek(target)));
     if (mounted) setState(() => _pos = target);
   }
@@ -167,7 +168,9 @@ class _SongDetailScreenState extends State<SongDetailScreen>
     final mine = _myIndex();
     if (mine < 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Set your voice section in your profile first')),
+        const SnackBar(
+          content: Text('Set your voice section in your profile first'),
+        ),
       );
       return;
     }
@@ -276,14 +279,17 @@ class _SongDetailScreenState extends State<SongDetailScreen>
       builder: (_) => AlertDialog(
         title: const Text('Delete song?'),
         content: Text(
-            '"${widget.song.title}" and all 8 audio parts will be removed.'),
+          '"${widget.song.title}" and all 8 audio parts will be removed.',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Delete')),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
@@ -297,9 +303,9 @@ class _SongDetailScreenState extends State<SongDetailScreen>
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not delete: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not delete: $e')));
     }
   }
 
@@ -311,18 +317,19 @@ class _SongDetailScreenState extends State<SongDetailScreen>
     try {
       if (currentlyMemorized) {
         await MemberSongsService.remove(
-            memberId: me.id, songId: widget.song.id);
+          memberId: me.id,
+          songId: widget.song.id,
+        );
       } else {
-        await MemberSongsService.add(
-            memberId: me.id, songId: widget.song.id);
+        await MemberSongsService.add(memberId: me.id, songId: widget.song.id);
       }
     } catch (e) {
       AppState.instance.toggleMemorized(widget.song.id);
       if (!mounted) return;
       setState(() {});
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not save: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not save: $e')));
     }
   }
 
@@ -346,8 +353,9 @@ class _SongDetailScreenState extends State<SongDetailScreen>
           IconButton(
             tooltip: memorized ? 'Memorized' : 'Mark as memorized',
             icon: Icon(
-                memorized ? Icons.check_circle : Icons.check_circle_outline,
-                color: memorized ? AppColors.secondary : AppColors.gray),
+              memorized ? Icons.check_circle : Icons.check_circle_outline,
+              color: memorized ? AppColors.secondary : AppColors.gray,
+            ),
             onPressed: () => _toggleMemorized(memorized),
           ),
           if (canManage)
@@ -360,19 +368,23 @@ class _SongDetailScreenState extends State<SongDetailScreen>
               itemBuilder: (_) => const [
                 PopupMenuItem(
                   value: 'edit',
-                  child: Row(children: [
-                    Icon(Icons.edit_outlined, size: 18),
-                    SizedBox(width: 10),
-                    Text('Edit song'),
-                  ]),
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit_outlined, size: 18),
+                      SizedBox(width: 10),
+                      Text('Edit song'),
+                    ],
+                  ),
                 ),
                 PopupMenuItem(
                   value: 'delete',
-                  child: Row(children: [
-                    Icon(Icons.delete_outline, size: 18),
-                    SizedBox(width: 10),
-                    Text('Delete song'),
-                  ]),
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_outline, size: 18),
+                      SizedBox(width: 10),
+                      Text('Delete song'),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -408,13 +420,16 @@ class _SongDetailScreenState extends State<SongDetailScreen>
       return Padding(
         padding: const EdgeInsets.all(24),
         child: Center(
-          child: Text('Could not load audio: $_loadError',
-              textAlign: TextAlign.center),
+          child: Text(
+            'Could not load audio: $_loadError',
+            textAlign: TextAlign.center,
+          ),
         ),
       );
     }
     final allMuted = _muted.every((e) => e);
-    final onlyMineUnmuted = mine >= 0 &&
+    final onlyMineUnmuted =
+        mine >= 0 &&
         !_muted[mine] &&
         _muted
             .asMap()
@@ -459,8 +474,10 @@ class _SongDetailScreenState extends State<SongDetailScreen>
               Slider(
                 value: _total.inMilliseconds == 0
                     ? 0
-                    : (_pos.inMilliseconds / _total.inMilliseconds)
-                        .clamp(0.0, 1.0),
+                    : (_pos.inMilliseconds / _total.inMilliseconds).clamp(
+                        0.0,
+                        1.0,
+                      ),
                 onChanged: _seekAll,
                 activeColor: AppColors.primary,
               ),
@@ -480,10 +497,13 @@ class _SongDetailScreenState extends State<SongDetailScreen>
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: onlyMineUnmuted ? _unmuteAll : _soloMine,
-                icon: Icon(onlyMineUnmuted ? Icons.public : Icons.headphones,
-                    size: 16),
-                label:
-                    Text(onlyMineUnmuted ? 'Listen to all' : 'Solo my voice'),
+                icon: Icon(
+                  onlyMineUnmuted ? Icons.public : Icons.headphones,
+                  size: 16,
+                ),
+                label: Text(
+                  onlyMineUnmuted ? 'Listen to all' : 'Solo my voice',
+                ),
               ),
             ),
             const SizedBox(width: 10),
@@ -524,8 +544,10 @@ class _SongDetailScreenState extends State<SongDetailScreen>
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
       children: [
         if ((widget.song.lyrics ?? '').isEmpty)
-          Text('No lyrics added for this song yet.',
-              style: theme.textTheme.bodyMedium)
+          Text(
+            'No lyrics added for this song yet.',
+            style: theme.textTheme.bodyMedium,
+          )
         else
           ElegantCard(
             child: SelectableText(
@@ -545,9 +567,12 @@ class _SongDetailScreenState extends State<SongDetailScreen>
         if ((widget.song.subtitle ?? '').isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: Text(widget.song.subtitle!,
-                style: theme.textTheme.titleMedium
-                    ?.copyWith(fontStyle: FontStyle.italic)),
+            child: Text(
+              widget.song.subtitle!,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontStyle: FontStyle.italic,
+              ),
+            ),
           ),
         if ((widget.song.composers ?? '').isNotEmpty)
           _AboutRow(
@@ -558,8 +583,10 @@ class _SongDetailScreenState extends State<SongDetailScreen>
         if ((widget.song.description ?? '').isNotEmpty) ...[
           const SizedBox(height: 14),
           ElegantCard(
-            child: Text(widget.song.description!,
-                style: theme.textTheme.bodyMedium?.copyWith(height: 1.6)),
+            child: Text(
+              widget.song.description!,
+              style: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
+            ),
           ),
         ],
         if ((widget.song.youtubeUrl ?? '').isNotEmpty) ...[
@@ -647,7 +674,9 @@ class _PartMixerRow extends StatelessWidget {
                         const SizedBox(width: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.accent.withValues(alpha: 0.25),
                             borderRadius: BorderRadius.circular(4),
@@ -666,9 +695,11 @@ class _PartMixerRow extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(muted ? Icons.volume_off : Icons.volume_up,
-                      size: 20,
-                      color: muted ? AppColors.gray : AppColors.primary),
+                  icon: Icon(
+                    muted ? Icons.volume_off : Icons.volume_up,
+                    size: 20,
+                    color: muted ? AppColors.gray : AppColors.primary,
+                  ),
                   onPressed: onToggleMute,
                   tooltip: muted ? 'Unmute' : 'Mute',
                 ),
@@ -683,8 +714,7 @@ class _PartMixerRow extends StatelessWidget {
               child: Slider(
                 value: volume,
                 onChanged: muted ? null : onVolume,
-                activeColor:
-                    muted ? AppColors.gray : AppColors.primary,
+                activeColor: muted ? AppColors.gray : AppColors.primary,
                 inactiveColor: AppColors.offWhite,
               ),
             ),

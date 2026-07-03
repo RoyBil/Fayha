@@ -13,12 +13,14 @@ class AudienceData {
         .select()
         .order('sort_date', ascending: false);
     return (rows as List)
-        .map((r) => NewsItem(
-              date: r['date_label'] as String,
-              title: r['title'] as String,
-              body: r['body'] as String,
-              posterUrl: r['poster_url'] as String?,
-            ))
+        .map(
+          (r) => NewsItem(
+            date: r['date_label'] as String,
+            title: r['title'] as String,
+            body: r['body'] as String,
+            posterUrl: r['poster_url'] as String?,
+          ),
+        )
         .toList();
   }
 
@@ -26,14 +28,16 @@ class AudienceData {
   static Future<List<RepertoireSong>> fetchSongs() async {
     final rows = await _c.from('songs').select().order('sort_order');
     return (rows as List)
-        .map((r) => RepertoireSong(
-              id: r['id'] as String,
-              title: r['title'] as String,
-              subtitle: (r['subtitle'] as String?) ?? '',
-              composers: (r['composers'] as String?) ?? '',
-              lyrics: (r['lyrics'] as String?) ?? '',
-              audioUrl: r['audio_url'] as String?,
-            ))
+        .map(
+          (r) => RepertoireSong(
+            id: r['id'] as String,
+            title: r['title'] as String,
+            subtitle: (r['subtitle'] as String?) ?? '',
+            composers: (r['composers'] as String?) ?? '',
+            lyrics: (r['lyrics'] as String?) ?? '',
+            audioUrl: r['audio_url'] as String?,
+          ),
+        )
         .toList();
   }
 
@@ -44,13 +48,15 @@ class AudienceData {
         .not('youtube_url', 'is', null)
         .order('sort_order');
     return (rows as List)
-        .map((r) => NotablePiece(
-              title: r['title'] as String,
-              subtitle: (r['subtitle'] as String?) ?? '',
-              composers: (r['composers'] as String?) ?? '',
-              description: (r['description'] as String?) ?? '',
-              youtubeUrl: r['youtube_url'] as String,
-            ))
+        .map(
+          (r) => NotablePiece(
+            title: r['title'] as String,
+            subtitle: (r['subtitle'] as String?) ?? '',
+            composers: (r['composers'] as String?) ?? '',
+            description: (r['description'] as String?) ?? '',
+            youtubeUrl: r['youtube_url'] as String,
+          ),
+        )
         .toList();
   }
 
@@ -82,34 +88,35 @@ class AudienceData {
         .select()
         .order('performed_at', ascending: false);
     return (rows as List)
-        .map((r) => Venue(
-              city: r['city'] as String,
-              country: r['country'] as String,
-              date: r['date_label'] as String,
-              sortDate: DateTime.parse(r['performed_at'] as String),
-              lat: (r['lat'] as num).toDouble(),
-              lng: (r['lng'] as num).toDouble(),
-              event: (r['event'] as String?) ?? '',
-              notes: (r['notes'] as String?) ?? '',
-            ))
+        .map(
+          (r) => Venue(
+            city: r['city'] as String,
+            country: r['country'] as String,
+            date: r['date_label'] as String,
+            sortDate: DateTime.parse(r['performed_at'] as String),
+            lat: (r['lat'] as num).toDouble(),
+            lng: (r['lng'] as num).toDouble(),
+            event: (r['event'] as String?) ?? '',
+            notes: (r['notes'] as String?) ?? '',
+          ),
+        )
         .toList();
   }
 
   // ===== TRAINED CHOIRS =====
   static Future<List<TrainedChoir>> fetchTrainedChoirs() async {
-    final rows = await _c
-        .from('trained_choirs')
-        .select()
-        .order('sort_order');
+    final rows = await _c.from('trained_choirs').select().order('sort_order');
     return (rows as List)
-        .map((r) => TrainedChoir(
-              name: r['name'] as String,
-              location: r['location'] as String,
-              period: r['period'] as String,
-              conductor: r['conductor'] as String,
-              note: (r['note'] as String?) ?? '',
-              instagramUrl: (r['instagram_url'] as String?) ?? '',
-            ))
+        .map(
+          (r) => TrainedChoir(
+            name: r['name'] as String,
+            location: r['location'] as String,
+            period: r['period'] as String,
+            conductor: r['conductor'] as String,
+            note: (r['note'] as String?) ?? '',
+            instagramUrl: (r['instagram_url'] as String?) ?? '',
+          ),
+        )
         .toList();
   }
 
@@ -117,11 +124,13 @@ class AudienceData {
   static Future<List<Achievement>> fetchAchievements() async {
     final rows = await _c.from('achievements').select().order('sort_order');
     return (rows as List)
-        .map((r) => Achievement(
-              r['year'] as int,
-              r['title'] as String,
-              r['event'] as String,
-            ))
+        .map(
+          (r) => Achievement(
+            r['year'] as int,
+            r['title'] as String,
+            r['event'] as String,
+          ),
+        )
         .toList();
   }
 
@@ -129,11 +138,13 @@ class AudienceData {
   static Future<List<SocialProject>> fetchSocialProjects() async {
     final rows = await _c.from('social_projects').select().order('sort_order');
     return (rows as List)
-        .map((r) => SocialProject(
-              name: r['name'] as String,
-              period: r['period'] as String,
-              description: r['description'] as String,
-            ))
+        .map(
+          (r) => SocialProject(
+            name: r['name'] as String,
+            period: r['period'] as String,
+            description: r['description'] as String,
+          ),
+        )
         .toList();
   }
 
@@ -144,13 +155,15 @@ class AudienceData {
         .select()
         .order('submitted_at', ascending: false);
     return (rows as List)
-        .map((r) => Testimonial(
-              author: r['author'] as String,
-              voiceSection: (r['voice_section'] as String?) ?? '',
-              body: r['body'] as String,
-              status: TestimonialStatus.approved,
-              submittedAt: DateTime.parse(r['submitted_at'] as String),
-            ))
+        .map(
+          (r) => Testimonial(
+            author: r['author'] as String,
+            voiceSection: (r['voice_section'] as String?) ?? '',
+            body: r['body'] as String,
+            status: TestimonialStatus.approved,
+            submittedAt: DateTime.parse(r['submitted_at'] as String),
+          ),
+        )
         .toList();
   }
 
@@ -176,17 +189,19 @@ class AudienceData {
         .eq('importance', 'important')
         .order('posted_at', ascending: false);
     return (rows as List)
-        .map((r) => SocialPost(
-              id: r['id'] as String?,
-              platform: r['platform'] as String,
-              author: r['author'] as String,
-              body: (r['body'] as String?) ?? '',
-              postedAgo: (r['posted_label'] as String?) ?? '',
-              permalink: r['permalink'] as String?,
-              mediaUrl: r['media_url'] as String?,
-              mediaType: r['media_type'] as String?,
-              importance: SocialImportance.important,
-            ))
+        .map(
+          (r) => SocialPost(
+            id: r['id'] as String?,
+            platform: r['platform'] as String,
+            author: r['author'] as String,
+            body: (r['body'] as String?) ?? '',
+            postedAgo: (r['posted_label'] as String?) ?? '',
+            permalink: r['permalink'] as String?,
+            mediaUrl: r['media_url'] as String?,
+            mediaType: r['media_type'] as String?,
+            importance: SocialImportance.important,
+          ),
+        )
         .toList();
   }
 

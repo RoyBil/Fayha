@@ -69,9 +69,10 @@ class LiveLocationService {
       throw 'Location permission denied';
     }
 
-    await _c.from('members').update({
-      'live_location_enabled': true,
-    }).eq('id', me.id);
+    await _c
+        .from('members')
+        .update({'live_location_enabled': true})
+        .eq('id', me.id);
     me.liveLocationEnabled = true;
     AppState.instance.bumpStats();
     await _pushOnce();
@@ -110,12 +111,15 @@ class LiveLocationService {
     final me = AppState.instance.currentMember;
     if (me == null) return;
     stopTimer();
-    await _c.from('members').update({
-      'live_location_enabled': false,
-      'live_lat': null,
-      'live_lng': null,
-      'live_at': null,
-    }).eq('id', me.id);
+    await _c
+        .from('members')
+        .update({
+          'live_location_enabled': false,
+          'live_lat': null,
+          'live_lng': null,
+          'live_at': null,
+        })
+        .eq('id', me.id);
     me.liveLocationEnabled = false;
     AppState.instance.bumpStats();
   }
@@ -133,24 +137,22 @@ class LiveLocationService {
   /// Maestro-only: every member currently sharing their live location.
   static Future<List<LiveMemberLocation>> fetchAll() async {
     final rows = await _c.from('live_locations').select();
-    return (rows as List)
-        .map((r) {
-          final m = r as Map<String, dynamic>;
-          return LiveMemberLocation(
-            id: m['id'] as String,
-            name: (m['name'] as String?) ?? 'Member',
-            branch: (m['branch'] as String?) ?? '',
-            voiceSection: (m['voice_section'] as String?) ?? '',
-            role: (m['role'] as String?) ?? 'member',
-            photoUrl: m['photo_url'] as String?,
-            lat: (m['live_lat'] as num).toDouble(),
-            lng: (m['live_lng'] as num).toDouble(),
-            at: m['live_at'] != null
-                ? DateTime.parse(m['live_at'] as String).toLocal()
-                : null,
-          );
-        })
-        .toList();
+    return (rows as List).map((r) {
+      final m = r as Map<String, dynamic>;
+      return LiveMemberLocation(
+        id: m['id'] as String,
+        name: (m['name'] as String?) ?? 'Member',
+        branch: (m['branch'] as String?) ?? '',
+        voiceSection: (m['voice_section'] as String?) ?? '',
+        role: (m['role'] as String?) ?? 'member',
+        photoUrl: m['photo_url'] as String?,
+        lat: (m['live_lat'] as num).toDouble(),
+        lng: (m['live_lng'] as num).toDouble(),
+        at: m['live_at'] != null
+            ? DateTime.parse(m['live_at'] as String).toLocal()
+            : null,
+      );
+    }).toList();
   }
 
   /// Pushes a single position to Supabase, updating the cached
@@ -163,11 +165,14 @@ class LiveLocationService {
         stopTimer();
         return;
       }
-      await _c.from('members').update({
-        'live_lat': pos.latitude,
-        'live_lng': pos.longitude,
-        'live_at': DateTime.now().toUtc().toIso8601String(),
-      }).eq('id', me.id);
+      await _c
+          .from('members')
+          .update({
+            'live_lat': pos.latitude,
+            'live_lng': pos.longitude,
+            'live_at': DateTime.now().toUtc().toIso8601String(),
+          })
+          .eq('id', me.id);
     } catch (_) {
       // Swallow errors — next event/heartbeat will try again.
     }

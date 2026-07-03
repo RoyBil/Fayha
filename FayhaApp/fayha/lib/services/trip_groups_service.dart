@@ -13,6 +13,8 @@ class TripGroup {
   final DateTime? departureDate;
   final DateTime? returnDate;
   final DateTime createdAt;
+  final List<TripDocumentType> requiredDocTypes;
+
   /// Members assigned to this group (populated when fetched with members).
   final List<TripGroupMember> members;
 
@@ -24,11 +26,26 @@ class TripGroup {
     this.departureDate,
     this.returnDate,
     required this.createdAt,
+    this.requiredDocTypes = const [
+      TripDocumentType.passport,
+      TripDocumentType.profilePhoto,
+    ],
     this.members = const [],
   });
 
-  factory TripGroup.fromMap(Map<String, dynamic> m,
-      {List<TripGroupMember>? members}) {
+  factory TripGroup.fromMap(
+    Map<String, dynamic> m, {
+    List<TripGroupMember>? members,
+  }) {
+    final rawTypes = m['required_doc_types'];
+    final requiredDocTypes = rawTypes is List
+        ? rawTypes
+              .map((v) => TripGroupDocument._docTypeFrom(v as String?))
+              .toList()
+        : <TripDocumentType>[
+            TripDocumentType.passport,
+            TripDocumentType.profilePhoto,
+          ];
     return TripGroup(
       id: m['id'] as String,
       name: (m['name'] as String?) ?? '',
@@ -41,6 +58,7 @@ class TripGroup {
           ? DateTime.parse(m['return_date'] as String)
           : null,
       createdAt: DateTime.parse(m['created_at'] as String),
+      requiredDocTypes: requiredDocTypes,
       members: members ?? const [],
     );
   }
@@ -81,23 +99,35 @@ enum TripInfoCategory { announcement, visa, tickets, hotel, schedule, other }
 extension TripInfoCategoryX on TripInfoCategory {
   String get label {
     switch (this) {
-      case TripInfoCategory.announcement: return 'Announcement';
-      case TripInfoCategory.visa:         return 'Visa';
-      case TripInfoCategory.tickets:      return 'Tickets';
-      case TripInfoCategory.hotel:        return 'Hotel';
-      case TripInfoCategory.schedule:     return 'Schedule';
-      case TripInfoCategory.other:        return 'Other';
+      case TripInfoCategory.announcement:
+        return 'Announcement';
+      case TripInfoCategory.visa:
+        return 'Visa';
+      case TripInfoCategory.tickets:
+        return 'Tickets';
+      case TripInfoCategory.hotel:
+        return 'Hotel';
+      case TripInfoCategory.schedule:
+        return 'Schedule';
+      case TripInfoCategory.other:
+        return 'Other';
     }
   }
 
   String get dbValue {
     switch (this) {
-      case TripInfoCategory.announcement: return 'announcement';
-      case TripInfoCategory.visa:         return 'visa';
-      case TripInfoCategory.tickets:      return 'tickets';
-      case TripInfoCategory.hotel:        return 'hotel';
-      case TripInfoCategory.schedule:     return 'schedule';
-      case TripInfoCategory.other:        return 'other';
+      case TripInfoCategory.announcement:
+        return 'announcement';
+      case TripInfoCategory.visa:
+        return 'visa';
+      case TripInfoCategory.tickets:
+        return 'tickets';
+      case TripInfoCategory.hotel:
+        return 'hotel';
+      case TripInfoCategory.schedule:
+        return 'schedule';
+      case TripInfoCategory.other:
+        return 'other';
     }
   }
 }
@@ -138,36 +168,58 @@ class TripGroupInfo {
 
   static TripInfoCategory _categoryFrom(String? v) {
     switch (v) {
-      case 'visa':         return TripInfoCategory.visa;
-      case 'tickets':      return TripInfoCategory.tickets;
-      case 'hotel':        return TripInfoCategory.hotel;
-      case 'schedule':     return TripInfoCategory.schedule;
-      case 'announcement': return TripInfoCategory.announcement;
-      default:             return TripInfoCategory.other;
+      case 'visa':
+        return TripInfoCategory.visa;
+      case 'tickets':
+        return TripInfoCategory.tickets;
+      case 'hotel':
+        return TripInfoCategory.hotel;
+      case 'schedule':
+        return TripInfoCategory.schedule;
+      case 'announcement':
+        return TripInfoCategory.announcement;
+      default:
+        return TripInfoCategory.other;
     }
   }
 }
 
-enum TripDocumentType { passport, visa, insurance, other }
+enum TripDocumentType { passport, profilePhoto, visa, insurance, other }
 
 extension TripDocumentTypeX on TripDocumentType {
   String get label {
     switch (this) {
-      case TripDocumentType.passport:   return 'Passport';
-      case TripDocumentType.visa:       return 'Visa';
-      case TripDocumentType.insurance:  return 'Insurance';
-      case TripDocumentType.other:      return 'Other';
+      case TripDocumentType.passport:
+        return 'Passport';
+      case TripDocumentType.profilePhoto:
+        return 'Profile Photo';
+      case TripDocumentType.visa:
+        return 'Visa';
+      case TripDocumentType.insurance:
+        return 'Insurance';
+      case TripDocumentType.other:
+        return 'Other';
     }
   }
 
   String get dbValue {
     switch (this) {
-      case TripDocumentType.passport:  return 'passport';
-      case TripDocumentType.visa:      return 'visa';
-      case TripDocumentType.insurance: return 'insurance';
-      case TripDocumentType.other:     return 'other';
+      case TripDocumentType.passport:
+        return 'passport';
+      case TripDocumentType.profilePhoto:
+        return 'profile_photo';
+      case TripDocumentType.visa:
+        return 'visa';
+      case TripDocumentType.insurance:
+        return 'insurance';
+      case TripDocumentType.other:
+        return 'other';
     }
   }
+
+  bool get isRequired =>
+      this == TripDocumentType.passport ||
+      this == TripDocumentType.profilePhoto;
 }
 
 class TripGroupDocument {
@@ -207,10 +259,16 @@ class TripGroupDocument {
 
   static TripDocumentType _docTypeFrom(String? v) {
     switch (v) {
-      case 'passport':  return TripDocumentType.passport;
-      case 'visa':      return TripDocumentType.visa;
-      case 'insurance': return TripDocumentType.insurance;
-      default:          return TripDocumentType.other;
+      case 'passport':
+        return TripDocumentType.passport;
+      case 'profile_photo':
+        return TripDocumentType.profilePhoto;
+      case 'visa':
+        return TripDocumentType.visa;
+      case 'insurance':
+        return TripDocumentType.insurance;
+      default:
+        return TripDocumentType.other;
     }
   }
 }
@@ -230,7 +288,9 @@ class TripGroupsService {
         .from('trip_groups')
         .select()
         .order('created_at', ascending: false);
-    return (rows as List).map((r) => TripGroup.fromMap(r as Map<String, dynamic>)).toList();
+    return (rows as List)
+        .map((r) => TripGroup.fromMap(r as Map<String, dynamic>))
+        .toList();
   }
 
   /// Groups the current user belongs to (member view).
@@ -261,18 +321,27 @@ class TripGroupsService {
     String? destination,
     DateTime? departureDate,
     DateTime? returnDate,
+    List<TripDocumentType>? requiredDocTypes,
   }) async {
     final me = _c.auth.currentUser?.id;
-    final row = await _c.from('trip_groups').insert({
-      'name': name,
-      if (description != null) 'description': description,
-      if (destination != null) 'destination': destination,
-      if (departureDate != null)
-        'departure_date': departureDate.toIso8601String().split('T').first,
-      if (returnDate != null)
-        'return_date': returnDate.toIso8601String().split('T').first,
-      if (me != null) 'created_by': me,
-    }).select().single();
+    final row = await _c
+        .from('trip_groups')
+        .insert({
+          'name': name,
+          if (description != null) 'description': description,
+          if (destination != null) 'destination': destination,
+          if (departureDate != null)
+            'departure_date': departureDate.toIso8601String().split('T').first,
+          if (returnDate != null)
+            'return_date': returnDate.toIso8601String().split('T').first,
+          if (me != null) 'created_by': me,
+          if (requiredDocTypes != null)
+            'required_doc_types': requiredDocTypes
+                .map((t) => t.dbValue)
+                .toList(),
+        })
+        .select()
+        .single();
     return TripGroup.fromMap(row);
   }
 
@@ -283,6 +352,7 @@ class TripGroupsService {
     String? destination,
     DateTime? departureDate,
     DateTime? returnDate,
+    List<TripDocumentType>? requiredDocTypes,
   }) async {
     final updates = <String, dynamic>{
       if (name != null) 'name': name,
@@ -292,6 +362,8 @@ class TripGroupsService {
         'departure_date': departureDate.toIso8601String().split('T').first,
       if (returnDate != null)
         'return_date': returnDate.toIso8601String().split('T').first,
+      if (requiredDocTypes != null)
+        'required_doc_types': requiredDocTypes.map((t) => t.dbValue).toList(),
     };
     if (updates.isEmpty) return;
     await _c.from('trip_groups').update(updates).eq('id', groupId);
@@ -306,7 +378,9 @@ class TripGroupsService {
   static Future<List<TripGroupMember>> fetchMembers(String groupId) async {
     final rows = await _c
         .from('trip_group_members')
-        .select('group_id, member_id, members!trip_group_members_member_id_fkey(name, photo_url, voice_section, branch)')
+        .select(
+          'group_id, member_id, members!trip_group_members_member_id_fkey(name, photo_url, voice_section, branch)',
+        )
         .eq('group_id', groupId);
     return (rows as List)
         .map((r) => TripGroupMember.fromMap(r as Map<String, dynamic>))
@@ -383,7 +457,9 @@ class TripGroupsService {
   // ---------- Documents ----------
 
   static Future<List<TripGroupDocument>> fetchDocuments(
-      String groupId, String memberId) async {
+    String groupId,
+    String memberId,
+  ) async {
     final rows = await _c
         .from('trip_group_documents')
         .select()
@@ -395,8 +471,29 @@ class TripGroupsService {
         .toList();
   }
 
+  /// Returns a map of memberId → set of document types that member has
+  /// uploaded for [groupId].  Used to derive per-member status badges.
+  static Future<Map<String, Set<TripDocumentType>>> fetchDocumentTypes(
+    String groupId,
+  ) async {
+    final rows = await _c
+        .from('trip_group_documents')
+        .select('member_id, document_type')
+        .eq('group_id', groupId);
+    final result = <String, Set<TripDocumentType>>{};
+    for (final r in rows as List) {
+      final memberId = r['member_id'] as String;
+      final type = TripGroupDocument._docTypeFrom(
+        r['document_type'] as String?,
+      );
+      result.putIfAbsent(memberId, () => {}).add(type);
+    }
+    return result;
+  }
+
   static Future<List<TripGroupDocument>> fetchAllDocuments(
-      String groupId) async {
+    String groupId,
+  ) async {
     final rows = await _c
         .from('trip_group_documents')
         .select('*, members!trip_group_documents_member_id_fkey(name)')
@@ -417,7 +514,9 @@ class TripGroupsService {
   }) async {
     final path =
         'info/$groupId/${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
-    await _c.storage.from('trip_documents').uploadBinary(
+    await _c.storage
+        .from('trip_documents')
+        .uploadBinary(
           path,
           bytes,
           fileOptions: const FileOptions(upsert: false),
@@ -436,19 +535,21 @@ class TripGroupsService {
   }) async {
     final path =
         '$groupId/$memberId/${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
-    await _c.storage.from('trip_documents').uploadBinary(
-          path,
-          bytes,
-          fileOptions: FileOptions(upsert: false),
-        );
+    await _c.storage
+        .from('trip_documents')
+        .uploadBinary(path, bytes, fileOptions: FileOptions(upsert: false));
     final url = _c.storage.from('trip_documents').getPublicUrl(path);
-    final row = await _c.from('trip_group_documents').insert({
-      'group_id': groupId,
-      'member_id': memberId,
-      'document_type': documentType.dbValue,
-      'file_name': fileName,
-      'file_url': url,
-    }).select().single();
+    final row = await _c
+        .from('trip_group_documents')
+        .insert({
+          'group_id': groupId,
+          'member_id': memberId,
+          'document_type': documentType.dbValue,
+          'file_name': fileName,
+          'file_url': url,
+        })
+        .select()
+        .single();
     return TripGroupDocument.fromMap(row);
   }
 

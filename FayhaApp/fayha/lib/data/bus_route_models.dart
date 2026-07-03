@@ -6,19 +6,27 @@ enum TripStatus { scheduled, inProgress, completed, cancelled }
 
 TripStatus _statusFromString(String? s) {
   switch (s) {
-    case 'in_progress': return TripStatus.inProgress;
-    case 'completed':   return TripStatus.completed;
-    case 'cancelled':   return TripStatus.cancelled;
-    default:            return TripStatus.scheduled;
+    case 'in_progress':
+      return TripStatus.inProgress;
+    case 'completed':
+      return TripStatus.completed;
+    case 'cancelled':
+      return TripStatus.cancelled;
+    default:
+      return TripStatus.scheduled;
   }
 }
 
 String tripStatusToString(TripStatus s) {
   switch (s) {
-    case TripStatus.scheduled:  return 'scheduled';
-    case TripStatus.inProgress: return 'in_progress';
-    case TripStatus.completed:  return 'completed';
-    case TripStatus.cancelled:  return 'cancelled';
+    case TripStatus.scheduled:
+      return 'scheduled';
+    case TripStatus.inProgress:
+      return 'in_progress';
+    case TripStatus.completed:
+      return 'completed';
+    case TripStatus.cancelled:
+      return 'cancelled';
   }
 }
 
@@ -34,13 +42,20 @@ enum TripEventType {
 
 TripEventType tripEventTypeFromString(String s) {
   switch (s) {
-    case 'ROUTE_STARTED':     return TripEventType.routeStarted;
-    case 'STOP_APPROACHING':  return TripEventType.stopApproaching;
-    case 'STOP_ARRIVED':      return TripEventType.stopArrived;
-    case 'STOP_LEFT':         return TripEventType.stopLeft;
-    case 'ROUTE_COMPLETED':   return TripEventType.routeCompleted;
-    case 'ROUTE_CANCELLED':   return TripEventType.routeCancelled;
-    default:                  return TripEventType.unknown;
+    case 'ROUTE_STARTED':
+      return TripEventType.routeStarted;
+    case 'STOP_APPROACHING':
+      return TripEventType.stopApproaching;
+    case 'STOP_ARRIVED':
+      return TripEventType.stopArrived;
+    case 'STOP_LEFT':
+      return TripEventType.stopLeft;
+    case 'ROUTE_COMPLETED':
+      return TripEventType.routeCompleted;
+    case 'ROUTE_CANCELLED':
+      return TripEventType.routeCancelled;
+    default:
+      return TripEventType.unknown;
   }
 }
 
@@ -119,10 +134,9 @@ class BusRoute {
           : Map<String, dynamic>.from(geo as Map);
       for (final c in (decoded['coordinates'] as List? ?? const [])) {
         // GeoJSON is [lng, lat]
-        polyline.add(LatLng(
-          (c[1] as num).toDouble(),
-          (c[0] as num).toDouble(),
-        ));
+        polyline.add(
+          LatLng((c[1] as num).toDouble(), (c[0] as num).toDouble()),
+        );
       }
     }
 

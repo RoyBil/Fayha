@@ -44,7 +44,9 @@ class _NewsScreenState extends State<NewsScreen> {
       } else {
         _subscribedConcerts.add(index);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('You will be notified before this concert')),
+          const SnackBar(
+            content: Text('You will be notified before this concert'),
+          ),
         );
       }
     });
@@ -60,8 +62,9 @@ class _NewsScreenState extends State<NewsScreen> {
           future: _announcements,
           builder: (context, snap) {
             final msgs = (snap.data ?? const <ChoirMessage>[])
-                .where((m) =>
-                    m.audience == 'everyone' || m.audience == 'audience')
+                .where(
+                  (m) => m.audience == 'everyone' || m.audience == 'audience',
+                )
                 .toList();
             if (msgs.isEmpty) return const SizedBox.shrink();
             return Column(
@@ -72,25 +75,30 @@ class _NewsScreenState extends State<NewsScreen> {
                   title: 'Announcements',
                 ),
                 const SizedBox(height: 16),
-                ...msgs.map((m) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: ElegantCard(
-                        background: AppColors.offWhite,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(m.title,
-                                style: Theme.of(context).textTheme.titleLarge),
-                            const SizedBox(height: 6),
-                            Text(m.body,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(height: 1.55)),
-                          ],
-                        ),
+                ...msgs.map(
+                  (m) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: ElegantCard(
+                      background: AppColors.offWhite,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            m.title,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            m.body,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.copyWith(height: 1.55),
+                          ),
+                        ],
                       ),
-                    )),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 24),
               ],
             );
@@ -116,15 +124,17 @@ class _NewsScreenState extends State<NewsScreen> {
             final items = snap.data ?? const <NewsItem>[];
             return Column(
               children: items
-                  .map((item) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _NewsCard(
-                          date: item.date,
-                          title: item.title,
-                          body: item.body,
-                          posterUrl: item.posterUrl,
-                        ),
-                      ))
+                  .map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _NewsCard(
+                        date: item.date,
+                        title: item.title,
+                        body: item.body,
+                        posterUrl: item.posterUrl,
+                      ),
+                    ),
+                  )
                   .toList(),
             );
           },
@@ -210,10 +220,12 @@ class _NewsScreenState extends State<NewsScreen> {
             }
             return Column(
               children: branches
-                  .map((b) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _RehearsalCard(branch: b),
-                      ))
+                  .map(
+                    (b) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _RehearsalCard(branch: b),
+                    ),
+                  )
                   .toList(),
             );
           },
@@ -257,7 +269,8 @@ class _NewsCard extends StatelessWidget {
           if (posterUrl != null && posterUrl!.isNotEmpty)
             ClipRRect(
               borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(12)),
+                top: Radius.circular(12),
+              ),
               child: Image.network(
                 posterUrl!,
                 height: 170,
@@ -285,12 +298,18 @@ class _NewsCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Text('Read more',
-                        style: theme.textTheme.labelMedium
-                            ?.copyWith(color: AppColors.primary)),
+                    Text(
+                      'Read more',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: AppColors.primary,
+                      ),
+                    ),
                     const SizedBox(width: 4),
-                    const Icon(Icons.arrow_forward,
-                        size: 14, color: AppColors.primary),
+                    const Icon(
+                      Icons.arrow_forward,
+                      size: 14,
+                      color: AppColors.primary,
+                    ),
                   ],
                 ),
               ],
@@ -350,11 +369,17 @@ class _SocialSection extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(p.author, style: theme.textTheme.titleSmall),
-                        Text('${p.platform} · ${p.postedAgo}',
-                            style: theme.textTheme.labelSmall),
+                        Text(
+                          '${p.platform} · ${p.postedAgo}',
+                          style: theme.textTheme.labelSmall,
+                        ),
                         const SizedBox(height: 6),
-                        Text(p.body,
-                            style: theme.textTheme.bodyMedium?.copyWith(height: 1.45)),
+                        Text(
+                          p.body,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            height: 1.45,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -379,12 +404,32 @@ class _ConcertCard extends StatelessWidget {
   });
 
   static const _monthsShort = [
-    'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
-    'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC',
+    'JAN',
+    'FEB',
+    'MAR',
+    'APR',
+    'MAY',
+    'JUN',
+    'JUL',
+    'AUG',
+    'SEP',
+    'OCT',
+    'NOV',
+    'DEC',
   ];
   static const _months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
   String _time(DateTime d) {
@@ -463,7 +508,11 @@ class _ConcertCard extends StatelessWidget {
                 const SizedBox(height: 3),
                 Row(
                   children: [
-                    const Icon(Icons.place_outlined, size: 13, color: AppColors.gray),
+                    const Icon(
+                      Icons.place_outlined,
+                      size: 13,
+                      color: AppColors.gray,
+                    ),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
@@ -482,7 +531,9 @@ class _ConcertCard extends StatelessWidget {
             onPressed: onToggle,
             tooltip: subscribed ? 'Reminder on' : 'Remind me',
             icon: Icon(
-              subscribed ? Icons.notifications_active : Icons.notifications_outlined,
+              subscribed
+                  ? Icons.notifications_active
+                  : Icons.notifications_outlined,
               color: subscribed ? AppColors.secondary : AppColors.gray,
               size: 22,
             ),
@@ -514,7 +565,8 @@ class _RehearsalCard extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 6, height: 56,
+            width: 6,
+            height: 56,
             decoration: BoxDecoration(
               color: branch.color,
               borderRadius: BorderRadius.circular(3),
@@ -534,12 +586,19 @@ class _RehearsalCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${branch.name} Branch', style: theme.textTheme.titleMedium),
+                Text(
+                  '${branch.name} Branch',
+                  style: theme.textTheme.titleMedium,
+                ),
                 const SizedBox(height: 2),
                 Text(branch.practiceLocation, style: theme.textTheme.bodySmall),
                 const SizedBox(height: 2),
-                Text(branch.rehearsalSchedule,
-                    style: theme.textTheme.labelMedium?.copyWith(color: AppColors.primary)),
+                Text(
+                  branch.rehearsalSchedule,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: AppColors.primary,
+                  ),
+                ),
               ],
             ),
           ),

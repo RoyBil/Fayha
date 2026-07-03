@@ -44,68 +44,151 @@ class _StandardParts implements List<SongPart> {
     SongPart(section: 'Bass 1', type: 'Vocal'),
     SongPart(section: 'Bass 2', type: 'Vocal'),
   ];
-  @override SongPart operator [](int index) => _list[index];
-  @override int get length => _list.length;
-  @override Iterator<SongPart> get iterator => _list.iterator;
-  @override List<R> cast<R>() => _list.cast<R>();
-  @override SongPart get first => _list.first;
-  @override SongPart get last => _list.last;
-  @override bool get isEmpty => _list.isEmpty;
-  @override bool get isNotEmpty => _list.isNotEmpty;
-  @override SongPart get single => _list.single;
-  @override SongPart elementAt(int index) => _list.elementAt(index);
-  @override bool contains(Object? e) => _list.contains(e);
-  @override Iterable<T> map<T>(T Function(SongPart e) f) => _list.map(f);
-  @override Iterable<SongPart> where(bool Function(SongPart e) f) => _list.where(f);
-  @override Iterable<T> whereType<T>() => _list.whereType<T>();
-  @override Iterable<T> expand<T>(Iterable<T> Function(SongPart e) f) => _list.expand(f);
-  @override void forEach(void Function(SongPart e) f) => _list.forEach(f);
-  @override SongPart reduce(SongPart Function(SongPart, SongPart) f) => _list.reduce(f);
-  @override T fold<T>(T initial, T Function(T, SongPart) f) => _list.fold(initial, f);
-  @override bool every(bool Function(SongPart e) f) => _list.every(f);
-  @override String join([String s = '']) => _list.join(s);
-  @override bool any(bool Function(SongPart e) f) => _list.any(f);
-  @override List<SongPart> toList({bool growable = true}) => _list.toList(growable: growable);
-  @override Set<SongPart> toSet() => _list.toSet();
-  @override Iterable<SongPart> take(int n) => _list.take(n);
-  @override Iterable<SongPart> takeWhile(bool Function(SongPart e) f) => _list.takeWhile(f);
-  @override Iterable<SongPart> skip(int n) => _list.skip(n);
-  @override Iterable<SongPart> skipWhile(bool Function(SongPart e) f) => _list.skipWhile(f);
-  @override SongPart firstWhere(bool Function(SongPart) test, {SongPart Function()? orElse}) => _list.firstWhere(test, orElse: orElse);
-  @override SongPart lastWhere(bool Function(SongPart) test, {SongPart Function()? orElse}) => _list.lastWhere(test, orElse: orElse);
-  @override SongPart singleWhere(bool Function(SongPart) test, {SongPart Function()? orElse}) => _list.singleWhere(test, orElse: orElse);
-  @override Iterable<SongPart> followedBy(Iterable<SongPart> other) => _list.followedBy(other);
-  @override Iterable<SongPart> get reversed => _list.reversed;
-  @override List<SongPart> sublist(int start, [int? end]) => _list.sublist(start, end);
-  @override Iterable<SongPart> getRange(int start, int end) => _list.getRange(start, end);
-  @override int indexOf(SongPart e, [int start = 0]) => _list.indexOf(e, start);
-  @override int indexWhere(bool Function(SongPart) test, [int start = 0]) => _list.indexWhere(test, start);
-  @override int lastIndexOf(SongPart e, [int? start]) => _list.lastIndexOf(e, start);
-  @override int lastIndexWhere(bool Function(SongPart) test, [int? start]) => _list.lastIndexWhere(test, start);
-  @override Map<int, SongPart> asMap() => _list.asMap();
-  @override List<SongPart> operator +(List<SongPart> other) => _list + other;
+  @override
+  SongPart operator [](int index) => _list[index];
+  @override
+  int get length => _list.length;
+  @override
+  Iterator<SongPart> get iterator => _list.iterator;
+  @override
+  List<R> cast<R>() => _list.cast<R>();
+  @override
+  SongPart get first => _list.first;
+  @override
+  SongPart get last => _list.last;
+  @override
+  bool get isEmpty => _list.isEmpty;
+  @override
+  bool get isNotEmpty => _list.isNotEmpty;
+  @override
+  SongPart get single => _list.single;
+  @override
+  SongPart elementAt(int index) => _list.elementAt(index);
+  @override
+  bool contains(Object? e) => _list.contains(e);
+  @override
+  Iterable<T> map<T>(T Function(SongPart e) f) => _list.map(f);
+  @override
+  Iterable<SongPart> where(bool Function(SongPart e) f) => _list.where(f);
+  @override
+  Iterable<T> whereType<T>() => _list.whereType<T>();
+  @override
+  Iterable<T> expand<T>(Iterable<T> Function(SongPart e) f) => _list.expand(f);
+  @override
+  void forEach(void Function(SongPart e) f) => _list.forEach(f);
+  @override
+  SongPart reduce(SongPart Function(SongPart, SongPart) f) => _list.reduce(f);
+  @override
+  T fold<T>(T initial, T Function(T, SongPart) f) => _list.fold(initial, f);
+  @override
+  bool every(bool Function(SongPart e) f) => _list.every(f);
+  @override
+  String join([String s = '']) => _list.join(s);
+  @override
+  bool any(bool Function(SongPart e) f) => _list.any(f);
+  @override
+  List<SongPart> toList({bool growable = true}) =>
+      _list.toList(growable: growable);
+  @override
+  Set<SongPart> toSet() => _list.toSet();
+  @override
+  Iterable<SongPart> take(int n) => _list.take(n);
+  @override
+  Iterable<SongPart> takeWhile(bool Function(SongPart e) f) =>
+      _list.takeWhile(f);
+  @override
+  Iterable<SongPart> skip(int n) => _list.skip(n);
+  @override
+  Iterable<SongPart> skipWhile(bool Function(SongPart e) f) =>
+      _list.skipWhile(f);
+  @override
+  SongPart firstWhere(
+    bool Function(SongPart) test, {
+    SongPart Function()? orElse,
+  }) => _list.firstWhere(test, orElse: orElse);
+  @override
+  SongPart lastWhere(
+    bool Function(SongPart) test, {
+    SongPart Function()? orElse,
+  }) => _list.lastWhere(test, orElse: orElse);
+  @override
+  SongPart singleWhere(
+    bool Function(SongPart) test, {
+    SongPart Function()? orElse,
+  }) => _list.singleWhere(test, orElse: orElse);
+  @override
+  Iterable<SongPart> followedBy(Iterable<SongPart> other) =>
+      _list.followedBy(other);
+  @override
+  Iterable<SongPart> get reversed => _list.reversed;
+  @override
+  List<SongPart> sublist(int start, [int? end]) => _list.sublist(start, end);
+  @override
+  Iterable<SongPart> getRange(int start, int end) => _list.getRange(start, end);
+  @override
+  int indexOf(SongPart e, [int start = 0]) => _list.indexOf(e, start);
+  @override
+  int indexWhere(bool Function(SongPart) test, [int start = 0]) =>
+      _list.indexWhere(test, start);
+  @override
+  int lastIndexOf(SongPart e, [int? start]) => _list.lastIndexOf(e, start);
+  @override
+  int lastIndexWhere(bool Function(SongPart) test, [int? start]) =>
+      _list.lastIndexWhere(test, start);
+  @override
+  Map<int, SongPart> asMap() => _list.asMap();
+  @override
+  List<SongPart> operator +(List<SongPart> other) => _list + other;
   // Unsupported mutating ops
-  @override set length(int v) => throw UnsupportedError('const');
-  @override set first(SongPart v) => throw UnsupportedError('const');
-  @override set last(SongPart v) => throw UnsupportedError('const');
-  @override void operator []=(int i, SongPart v) => throw UnsupportedError('const');
-  @override void add(SongPart v) => throw UnsupportedError('const');
-  @override void addAll(Iterable<SongPart> e) => throw UnsupportedError('const');
-  @override void sort([int Function(SongPart, SongPart)? c]) => throw UnsupportedError('const');
-  @override void shuffle([random]) => throw UnsupportedError('const');
-  @override void clear() => throw UnsupportedError('const');
-  @override void insert(int i, SongPart e) => throw UnsupportedError('const');
-  @override void insertAll(int i, Iterable<SongPart> e) => throw UnsupportedError('const');
-  @override void setAll(int i, Iterable<SongPart> e) => throw UnsupportedError('const');
-  @override bool remove(Object? v) => throw UnsupportedError('const');
-  @override SongPart removeAt(int i) => throw UnsupportedError('const');
-  @override SongPart removeLast() => throw UnsupportedError('const');
-  @override void removeWhere(bool Function(SongPart) t) => throw UnsupportedError('const');
-  @override void retainWhere(bool Function(SongPart) t) => throw UnsupportedError('const');
-  @override void setRange(int s, int e, Iterable<SongPart> i, [int sk = 0]) => throw UnsupportedError('const');
-  @override void removeRange(int s, int e) => throw UnsupportedError('const');
-  @override void fillRange(int s, int e, [SongPart? v]) => throw UnsupportedError('const');
-  @override void replaceRange(int s, int e, Iterable<SongPart> i) => throw UnsupportedError('const');
+  @override
+  set length(int v) => throw UnsupportedError('const');
+  @override
+  set first(SongPart v) => throw UnsupportedError('const');
+  @override
+  set last(SongPart v) => throw UnsupportedError('const');
+  @override
+  void operator []=(int i, SongPart v) => throw UnsupportedError('const');
+  @override
+  void add(SongPart v) => throw UnsupportedError('const');
+  @override
+  void addAll(Iterable<SongPart> e) => throw UnsupportedError('const');
+  @override
+  void sort([int Function(SongPart, SongPart)? c]) =>
+      throw UnsupportedError('const');
+  @override
+  void shuffle([random]) => throw UnsupportedError('const');
+  @override
+  void clear() => throw UnsupportedError('const');
+  @override
+  void insert(int i, SongPart e) => throw UnsupportedError('const');
+  @override
+  void insertAll(int i, Iterable<SongPart> e) =>
+      throw UnsupportedError('const');
+  @override
+  void setAll(int i, Iterable<SongPart> e) => throw UnsupportedError('const');
+  @override
+  bool remove(Object? v) => throw UnsupportedError('const');
+  @override
+  SongPart removeAt(int i) => throw UnsupportedError('const');
+  @override
+  SongPart removeLast() => throw UnsupportedError('const');
+  @override
+  void removeWhere(bool Function(SongPart) t) =>
+      throw UnsupportedError('const');
+  @override
+  void retainWhere(bool Function(SongPart) t) =>
+      throw UnsupportedError('const');
+  @override
+  void setRange(int s, int e, Iterable<SongPart> i, [int sk = 0]) =>
+      throw UnsupportedError('const');
+  @override
+  void removeRange(int s, int e) => throw UnsupportedError('const');
+  @override
+  void fillRange(int s, int e, [SongPart? v]) =>
+      throw UnsupportedError('const');
+  @override
+  void replaceRange(int s, int e, Iterable<SongPart> i) =>
+      throw UnsupportedError('const');
 }
 
 class NewsPost {
@@ -248,7 +331,11 @@ class ClothingItem {
   final String type;
   String size;
   int quantity;
-  ClothingItem({required this.type, required this.size, required this.quantity});
+  ClothingItem({
+    required this.type,
+    required this.size,
+    required this.quantity,
+  });
 }
 
 class AppNotification {
@@ -402,19 +489,22 @@ class MockData {
     SocialPost(
       platform: 'Instagram',
       author: '@fayhachoir',
-      body: 'Tonight in Tripoli — full house, full hearts. Thank you to everyone who came!',
+      body:
+          'Tonight in Tripoli — full house, full hearts. Thank you to everyone who came!',
       postedAgo: '2 days ago',
     ),
     SocialPost(
       platform: 'Facebook',
       author: 'Fayha National Choir',
-      body: 'Behind the scenes from the Angham w Salam rehearsal — 200 voices in one hall.',
+      body:
+          'Behind the scenes from the Angham w Salam rehearsal — 200 voices in one hall.',
       postedAgo: '5 days ago',
     ),
     SocialPost(
       platform: 'Instagram',
       author: '@fayhachoir',
-      body: 'Workshop with the European Choral Association: a week of exchange in the heart of Beirut.',
+      body:
+          'Workshop with the European Choral Association: a week of exchange in the heart of Beirut.',
       postedAgo: '2 weeks ago',
     ),
   ];
@@ -426,10 +516,26 @@ class MockData {
       hours: 2.5,
       type: 'Rehearsal',
       entries: [
-        AttendanceEntry(memberName: 'Roy Bilain', voiceSection: 'Tenor 2', present: true),
-        AttendanceEntry(memberName: 'Nour Khoury', voiceSection: 'Soprano', present: true),
-        AttendanceEntry(memberName: 'Karim Saade', voiceSection: 'Bass 1', present: false),
-        AttendanceEntry(memberName: 'Layla Hadad', voiceSection: 'Alto', present: true),
+        AttendanceEntry(
+          memberName: 'Roy Bilain',
+          voiceSection: 'Tenor 2',
+          present: true,
+        ),
+        AttendanceEntry(
+          memberName: 'Nour Khoury',
+          voiceSection: 'Soprano',
+          present: true,
+        ),
+        AttendanceEntry(
+          memberName: 'Karim Saade',
+          voiceSection: 'Bass 1',
+          present: false,
+        ),
+        AttendanceEntry(
+          memberName: 'Layla Hadad',
+          voiceSection: 'Alto',
+          present: true,
+        ),
       ],
     ),
     RehearsalRecord(
@@ -438,8 +544,16 @@ class MockData {
       hours: 1.5,
       type: 'Sectional',
       entries: [
-        AttendanceEntry(memberName: 'Roy Bilain', voiceSection: 'Tenor 2', present: true),
-        AttendanceEntry(memberName: 'Bassam Faour', voiceSection: 'Tenor 1', present: true),
+        AttendanceEntry(
+          memberName: 'Roy Bilain',
+          voiceSection: 'Tenor 2',
+          present: true,
+        ),
+        AttendanceEntry(
+          memberName: 'Bassam Faour',
+          voiceSection: 'Tenor 1',
+          present: true,
+        ),
       ],
     ),
     RehearsalRecord(
@@ -448,9 +562,21 @@ class MockData {
       hours: 3,
       type: 'Rehearsal',
       entries: [
-        AttendanceEntry(memberName: 'Roy Bilain', voiceSection: 'Tenor 2', present: true),
-        AttendanceEntry(memberName: 'Nour Khoury', voiceSection: 'Soprano', present: false),
-        AttendanceEntry(memberName: 'Layla Hadad', voiceSection: 'Alto', present: true),
+        AttendanceEntry(
+          memberName: 'Roy Bilain',
+          voiceSection: 'Tenor 2',
+          present: true,
+        ),
+        AttendanceEntry(
+          memberName: 'Nour Khoury',
+          voiceSection: 'Soprano',
+          present: false,
+        ),
+        AttendanceEntry(
+          memberName: 'Layla Hadad',
+          voiceSection: 'Alto',
+          present: true,
+        ),
       ],
     ),
   ];
@@ -512,11 +638,13 @@ class MockData {
 
   static final List<DmMessage> maestroDm = [
     DmMessage(
-      body: 'Maestro, would it be possible to switch my second tenor part for "Fog El Nakhel"? My range is more comfortable on the lower line.',
+      body:
+          'Maestro, would it be possible to switch my second tenor part for "Fog El Nakhel"? My range is more comfortable on the lower line.',
       sentAt: DateTime(2026, 5, 13, 21, 14),
     ),
     DmMessage(
-      body: 'Of course Roy — try it next rehearsal and we will hear how it sits.',
+      body:
+          'Of course Roy — try it next rehearsal and we will hear how it sits.',
       sentAt: DateTime(2026, 5, 13, 22, 2),
       fromMaestro: true,
     ),
@@ -583,14 +711,54 @@ class MockData {
   ];
 
   static final List<VillagePin> villages = [
-    VillagePin(name: 'Tripoli', date: DateTime.utc(2003, 5, 1), lat: 34.4367, lng: 35.8497),
-    VillagePin(name: 'Beirut', date: DateTime.utc(2010, 11, 3), lat: 33.8938, lng: 35.5018),
-    VillagePin(name: 'Aley', date: DateTime.utc(2022, 7, 12), lat: 33.8000, lng: 35.6000),
-    VillagePin(name: 'Chouf', date: DateTime.utc(2022, 9, 8), lat: 33.6900, lng: 35.6900),
-    VillagePin(name: 'Saida', date: DateTime.utc(2018, 4, 21), lat: 33.5571, lng: 35.3717),
-    VillagePin(name: 'Bekaa', date: DateTime.utc(2014, 6, 15), lat: 33.8463, lng: 35.9019),
-    VillagePin(name: 'Byblos', date: DateTime.utc(2016, 8, 19), lat: 34.1232, lng: 35.6519),
-    VillagePin(name: 'Nahr El Bared', date: DateTime.utc(2011, 5, 4), lat: 34.5400, lng: 35.9700),
+    VillagePin(
+      name: 'Tripoli',
+      date: DateTime.utc(2003, 5, 1),
+      lat: 34.4367,
+      lng: 35.8497,
+    ),
+    VillagePin(
+      name: 'Beirut',
+      date: DateTime.utc(2010, 11, 3),
+      lat: 33.8938,
+      lng: 35.5018,
+    ),
+    VillagePin(
+      name: 'Aley',
+      date: DateTime.utc(2022, 7, 12),
+      lat: 33.8000,
+      lng: 35.6000,
+    ),
+    VillagePin(
+      name: 'Chouf',
+      date: DateTime.utc(2022, 9, 8),
+      lat: 33.6900,
+      lng: 35.6900,
+    ),
+    VillagePin(
+      name: 'Saida',
+      date: DateTime.utc(2018, 4, 21),
+      lat: 33.5571,
+      lng: 35.3717,
+    ),
+    VillagePin(
+      name: 'Bekaa',
+      date: DateTime.utc(2014, 6, 15),
+      lat: 33.8463,
+      lng: 35.9019,
+    ),
+    VillagePin(
+      name: 'Byblos',
+      date: DateTime.utc(2016, 8, 19),
+      lat: 34.1232,
+      lng: 35.6519,
+    ),
+    VillagePin(
+      name: 'Nahr El Bared',
+      date: DateTime.utc(2011, 5, 4),
+      lat: 34.5400,
+      lng: 35.9700,
+    ),
   ];
 
   static const String maestroBio =

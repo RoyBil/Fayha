@@ -70,40 +70,42 @@ class _MembersDirectoryScreenState extends State<MembersDirectoryScreen>
       ),
       body: BrandedBackground(
         child: RefreshIndicator(
-        onRefresh: _reload,
-        child: FutureBuilder<List<Member>>(
-          future: _future,
-          builder: (context, snap) {
-            if (snap.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (snap.hasError) {
-              return ListView(children: [
-                const SizedBox(height: 80),
-                EmptyState(
-                  icon: Icons.error_outline,
-                  title: 'Could not load members',
-                  message: '${snap.error}',
-                ),
-              ]);
-            }
-            final roster = snap.data ?? const <Member>[];
-            return TabBarView(
-              controller: _tabs,
-              children: [
-                _MembersList(members: roster, onTap: _showMember),
-                ...ChoirData.branches.map(
-                  (b) => _MembersList(
-                    members: roster.where((m) => m.branch == b).toList(),
-                    onTap: _showMember,
-                    branchName: b,
+          onRefresh: _reload,
+          child: FutureBuilder<List<Member>>(
+            future: _future,
+            builder: (context, snap) {
+              if (snap.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snap.hasError) {
+                return ListView(
+                  children: [
+                    const SizedBox(height: 80),
+                    EmptyState(
+                      icon: Icons.error_outline,
+                      title: 'Could not load members',
+                      message: '${snap.error}',
+                    ),
+                  ],
+                );
+              }
+              final roster = snap.data ?? const <Member>[];
+              return TabBarView(
+                controller: _tabs,
+                children: [
+                  _MembersList(members: roster, onTap: _showMember),
+                  ...ChoirData.branches.map(
+                    (b) => _MembersList(
+                      members: roster.where((m) => m.branch == b).toList(),
+                      onTap: _showMember,
+                      branchName: b,
+                    ),
                   ),
-                ),
-              ],
-            );
-          },
+                ],
+              );
+            },
+          ),
         ),
-      ),
       ),
     );
   }
@@ -122,16 +124,18 @@ class _MembersList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (members.isEmpty) {
-      return ListView(children: [
-        const SizedBox(height: 80),
-        EmptyState(
-          icon: Icons.group_outlined,
-          title: branchName == null
-              ? 'No members yet'
-              : 'No $branchName members yet',
-          message: 'Once members join, they\'ll show up here.',
-        ),
-      ]);
+      return ListView(
+        children: [
+          const SizedBox(height: 80),
+          EmptyState(
+            icon: Icons.group_outlined,
+            title: branchName == null
+                ? 'No members yet'
+                : 'No $branchName members yet',
+            message: 'Once members join, they\'ll show up here.',
+          ),
+        ],
+      );
     }
     // Sort: Maestro first, then admins, then alphabetical.
     final sorted = [...members]
@@ -141,8 +145,11 @@ class _MembersList extends StatelessWidget {
           if (m.role == 'admin') return 1;
           return 2;
         }
+
         final r = rank(a).compareTo(rank(b));
-        return r != 0 ? r : a.name.toLowerCase().compareTo(b.name.toLowerCase());
+        return r != 0
+            ? r
+            : a.name.toLowerCase().compareTo(b.name.toLowerCase());
       });
 
     return ListView.builder(
@@ -169,8 +176,10 @@ class _MembersList extends StatelessWidget {
                       Row(
                         children: [
                           Expanded(
-                            child: Text(m.name,
-                                style: Theme.of(context).textTheme.titleMedium),
+                            child: Text(
+                              m.name,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
                           ),
                           if (m.singerLevel != null) ...[
                             _LevelChip(level: m.singerLevel!),
@@ -179,19 +188,26 @@ class _MembersList extends StatelessWidget {
                           if (m.role != 'member')
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: AppColors.accent.withValues(alpha: 0.18),
                                 borderRadius: BorderRadius.circular(4),
                                 border: Border.all(
-                                    color: AppColors.accentDark
-                                        .withValues(alpha: 0.5)),
+                                  color: AppColors.accentDark.withValues(
+                                    alpha: 0.5,
+                                  ),
+                                ),
                               ),
-                              child: Text(roleLabel,
-                                  style: const TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.accentDark)),
+                              child: Text(
+                                roleLabel,
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.accentDark,
+                                ),
+                              ),
                             ),
                         ],
                       ),
@@ -202,11 +218,15 @@ class _MembersList extends StatelessWidget {
                             width: 8,
                             height: 8,
                             decoration: BoxDecoration(
-                                color: color, shape: BoxShape.circle),
+                              color: color,
+                              shape: BoxShape.circle,
+                            ),
                           ),
                           const SizedBox(width: 6),
-                          Text('${m.branch} · ${m.voiceSection}',
-                              style: Theme.of(context).textTheme.bodySmall),
+                          Text(
+                            '${m.branch} · ${m.voiceSection}',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
                         ],
                       ),
                     ],
@@ -230,19 +250,27 @@ class _LevelChip extends StatelessWidget {
 
   static String _label(String v) {
     switch (v) {
-      case 'beginner': return 'Beginner';
-      case 'intermediate': return 'Intermediate';
-      case 'professional': return 'Pro';
-      default: return v;
+      case 'beginner':
+        return 'Beginner';
+      case 'intermediate':
+        return 'Intermediate';
+      case 'professional':
+        return 'Pro';
+      default:
+        return v;
     }
   }
 
   static Color _color(String v) {
     switch (v) {
-      case 'beginner': return AppColors.gray;
-      case 'intermediate': return AppColors.primary;
-      case 'professional': return AppColors.accentDark;
-      default: return AppColors.gray;
+      case 'beginner':
+        return AppColors.gray;
+      case 'intermediate':
+        return AppColors.primary;
+      case 'professional':
+        return AppColors.accentDark;
+      default:
+        return AppColors.gray;
     }
   }
 
@@ -258,11 +286,7 @@ class _LevelChip extends StatelessWidget {
       ),
       child: Text(
         _label(level),
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          color: c,
-        ),
+        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: c),
       ),
     );
   }

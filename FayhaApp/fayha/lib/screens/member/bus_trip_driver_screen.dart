@@ -147,8 +147,7 @@ class _BusTripDriverScreenState extends State<BusTripDriverScreen> {
 
   void _toast(String m) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(m)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
   }
 
   @override
@@ -170,23 +169,14 @@ class _BusTripDriverScreenState extends State<BusTripDriverScreen> {
       body: Column(
         children: [
           if (_trip == null)
-            _PreStartCard(
-              route: r,
-              busy: _busy,
-              onStart: _start,
-            )
+            _PreStartCard(route: r, busy: _busy, onStart: _start)
           else
-            _ActiveTripBar(
-              route: r,
-              position: _position,
-              nextStop: nextStop,
-            ),
+            _ActiveTripBar(route: r, position: _position, nextStop: nextStop),
           Expanded(
             child: FlutterMap(
               mapController: _mapCtrl,
               options: MapOptions(
-                initialCenter:
-                    _position?.location ?? r.startPoint,
+                initialCenter: _position?.location ?? r.startPoint,
                 initialZoom: 13,
               ),
               children: [
@@ -198,57 +188,68 @@ class _BusTripDriverScreenState extends State<BusTripDriverScreen> {
                   additionalOptions: const {'r': ''},
                 ),
                 if (r.polyline.length >= 2)
-                  PolylineLayer(polylines: [
-                    Polyline(
-                      points: r.polyline,
-                      color: AppColors.primary,
-                      strokeWidth: 4,
-                    ),
-                  ]),
-                MarkerLayer(markers: [
-                  Marker(
-                    point: r.startPoint,
-                    width: 32,
-                    height: 32,
-                    child: const Icon(Icons.flag,
-                        color: AppColors.secondary, size: 28),
+                  PolylineLayer(
+                    polylines: [
+                      Polyline(
+                        points: r.polyline,
+                        color: AppColors.primary,
+                        strokeWidth: 4,
+                      ),
+                    ],
                   ),
-                  Marker(
-                    point: r.endPoint,
-                    width: 32,
-                    height: 32,
-                    child: const Icon(Icons.location_on,
-                        color: AppColors.primary, size: 28),
-                  ),
-                  for (var i = 0; i < r.stops.length; i++)
+                MarkerLayer(
+                  markers: [
                     Marker(
-                      point: r.stops[i].location,
-                      width: 26,
-                      height: 26,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.accent,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          '${i + 1}',
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold),
-                        ),
+                      point: r.startPoint,
+                      width: 32,
+                      height: 32,
+                      child: const Icon(
+                        Icons.flag,
+                        color: AppColors.secondary,
+                        size: 28,
                       ),
                     ),
-                  if (_position != null)
                     Marker(
-                      point: _position!.location,
-                      width: 44,
-                      height: 44,
-                      child: _BusMarker(heading: _position!.heading),
+                      point: r.endPoint,
+                      width: 32,
+                      height: 32,
+                      child: const Icon(
+                        Icons.location_on,
+                        color: AppColors.primary,
+                        size: 28,
+                      ),
                     ),
-                ]),
+                    for (var i = 0; i < r.stops.length; i++)
+                      Marker(
+                        point: r.stops[i].location,
+                        width: 26,
+                        height: 26,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.accent,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            '${i + 1}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    if (_position != null)
+                      Marker(
+                        point: _position!.location,
+                        width: 44,
+                        height: 44,
+                        child: _BusMarker(heading: _position!.heading),
+                      ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -314,9 +315,9 @@ class _PreStartCard extends StatelessWidget {
         children: [
           Text(
             'Ready to drive',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppColors.primary,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(color: AppColors.primary),
           ),
           const SizedBox(height: 4),
           Text(
@@ -337,7 +338,9 @@ class _PreStartCard extends StatelessWidget {
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2.5, color: Colors.white),
+                        strokeWidth: 2.5,
+                        color: Colors.white,
+                      ),
                     )
                   : const Icon(Icons.play_arrow),
               label: const Text('Start Trip'),
@@ -346,8 +349,7 @@ class _PreStartCard extends StatelessWidget {
           const SizedBox(height: 10),
           Row(
             children: [
-              const Icon(Icons.info_outline,
-                  size: 14, color: AppColors.gray),
+              const Icon(Icons.info_outline, size: 14, color: AppColors.gray),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
@@ -375,7 +377,8 @@ class _ActiveTripBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final stale = position == null ||
+    final stale =
+        position == null ||
         DateTime.now().difference(position!.recordedAt) >
             const Duration(seconds: 25);
     return Container(
@@ -445,22 +448,25 @@ class _EventStrip extends StatelessWidget {
           itemBuilder: (_, i) {
             final e = events[i];
             return Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 10, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                    color: AppColors.lightGray.withValues(alpha: 0.5)),
+                  color: AppColors.lightGray.withValues(alpha: 0.5),
+                ),
               ),
               child: Row(
                 children: [
-                  Icon(_iconFor(e.type),
-                      size: 14, color: AppColors.primary),
+                  Icon(_iconFor(e.type), size: 14, color: AppColors.primary),
                   const SizedBox(width: 4),
-                  Text(_labelFor(e.type),
-                      style: const TextStyle(
-                          fontSize: 12, fontWeight: FontWeight.w600)),
+                  Text(
+                    _labelFor(e.type),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ],
               ),
             );
@@ -472,25 +478,39 @@ class _EventStrip extends StatelessWidget {
 
   IconData _iconFor(TripEventType t) {
     switch (t) {
-      case TripEventType.routeStarted:    return Icons.play_arrow;
-      case TripEventType.stopApproaching: return Icons.near_me;
-      case TripEventType.stopArrived:     return Icons.flag;
-      case TripEventType.stopLeft:        return Icons.arrow_forward;
-      case TripEventType.routeCompleted:  return Icons.check_circle;
-      case TripEventType.routeCancelled:  return Icons.cancel;
-      case TripEventType.unknown:         return Icons.info_outline;
+      case TripEventType.routeStarted:
+        return Icons.play_arrow;
+      case TripEventType.stopApproaching:
+        return Icons.near_me;
+      case TripEventType.stopArrived:
+        return Icons.flag;
+      case TripEventType.stopLeft:
+        return Icons.arrow_forward;
+      case TripEventType.routeCompleted:
+        return Icons.check_circle;
+      case TripEventType.routeCancelled:
+        return Icons.cancel;
+      case TripEventType.unknown:
+        return Icons.info_outline;
     }
   }
 
   String _labelFor(TripEventType t) {
     switch (t) {
-      case TripEventType.routeStarted:    return 'Started';
-      case TripEventType.stopApproaching: return 'Approaching';
-      case TripEventType.stopArrived:     return 'Arrived';
-      case TripEventType.stopLeft:        return 'Departed';
-      case TripEventType.routeCompleted:  return 'Completed';
-      case TripEventType.routeCancelled:  return 'Cancelled';
-      case TripEventType.unknown:         return 'Event';
+      case TripEventType.routeStarted:
+        return 'Started';
+      case TripEventType.stopApproaching:
+        return 'Approaching';
+      case TripEventType.stopArrived:
+        return 'Arrived';
+      case TripEventType.stopLeft:
+        return 'Departed';
+      case TripEventType.routeCompleted:
+        return 'Completed';
+      case TripEventType.routeCancelled:
+        return 'Cancelled';
+      case TripEventType.unknown:
+        return 'Event';
     }
   }
 }
@@ -510,12 +530,15 @@ class _BusMarker extends StatelessWidget {
           shape: BoxShape.circle,
           border: Border.all(color: Colors.white, width: 3),
           boxShadow: const [
-            BoxShadow(color: Colors.black38, blurRadius: 6, offset: Offset(0, 2)),
+            BoxShadow(
+              color: Colors.black38,
+              blurRadius: 6,
+              offset: Offset(0, 2),
+            ),
           ],
         ),
         alignment: Alignment.center,
-        child: const Icon(Icons.directions_bus,
-            color: Colors.white, size: 22),
+        child: const Icon(Icons.directions_bus, color: Colors.white, size: 22),
       ),
     );
   }

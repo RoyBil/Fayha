@@ -24,10 +24,10 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
   final _password = TextEditingController();
   final _confirmPassword = TextEditingController();
 
-  String get _fullName =>
-      [_firstName.text.trim(), _lastName.text.trim()]
-          .where((s) => s.isNotEmpty)
-          .join(' ');
+  String get _fullName => [
+    _firstName.text.trim(),
+    _lastName.text.trim(),
+  ].where((s) => s.isNotEmpty).join(' ');
 
   String? _branch;
   String? _voice;
@@ -42,9 +42,7 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
   // clothing inventory
   static const _clothingTypes = ['Costume', 'T-shirt', 'Sweatshirt', 'Caps'];
   static const _sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'One Size'];
-  final Map<String, bool> _hasItem = {
-    for (final t in _clothingTypes) t: false,
-  };
+  final Map<String, bool> _hasItem = {for (final t in _clothingTypes) t: false};
   final Map<String, String> _itemSize = {
     for (final t in _clothingTypes) t: (t == 'Caps' ? 'One Size' : 'M'),
   };
@@ -62,15 +60,18 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
   @override
   void initState() {
     super.initState();
-    AudienceData.fetchVenues().then((v) {
-      if (!mounted) return;
-      setState(() {
-        _allTrips = [...v]..sort((a, b) => a.sortDate.compareTo(b.sortDate));
-        _tripsLoading = false;
-      });
-    }).catchError((_) {
-      if (mounted) setState(() => _tripsLoading = false);
-    });
+    AudienceData.fetchVenues()
+        .then((v) {
+          if (!mounted) return;
+          setState(() {
+            _allTrips = [...v]
+              ..sort((a, b) => a.sortDate.compareTo(b.sortDate));
+            _tripsLoading = false;
+          });
+        })
+        .catchError((_) {
+          if (mounted) setState(() => _tripsLoading = false);
+        });
   }
 
   @override
@@ -175,15 +176,17 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
     }
   }
 
-  void _toast(String msg) => ScaffoldMessenger.of(context)
-      .showSnackBar(SnackBar(content: Text(msg)));
+  void _toast(String msg) =>
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
 
   String _friendlyError(Object e) {
     final s = e.toString();
-    if (s.contains('already registered') || s.contains('already been registered')) {
+    if (s.contains('already registered') ||
+        s.contains('already been registered')) {
       return 'That email is already registered. Try signing in.';
     }
-    if (s.contains('Password')) return 'Password must be at least 6 characters.';
+    if (s.contains('Password'))
+      return 'Password must be at least 6 characters.';
     return 'Could not register: $s';
   }
 
@@ -210,11 +213,18 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
               color: AppColors.accent.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.hourglass_bottom, color: AppColors.accentDark, size: 48),
+            child: const Icon(
+              Icons.hourglass_bottom,
+              color: AppColors.accentDark,
+              size: 48,
+            ),
           ),
           const SizedBox(height: 24),
-          Text('Awaiting Approval',
-              style: theme.textTheme.headlineSmall, textAlign: TextAlign.center),
+          Text(
+            'Awaiting Approval',
+            style: theme.textTheme.headlineSmall,
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 10),
           Text(
             'Your account has been created and is pending approval. The Maestro and admin team will review and confirm your access. You can sign in once approved.',
@@ -261,7 +271,11 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
                       onTap: _pickPhoto,
                       child: const Padding(
                         padding: EdgeInsets.all(8),
-                        child: Icon(Icons.camera_alt, size: 16, color: AppColors.dark),
+                        child: Icon(
+                          Icons.camera_alt,
+                          size: 16,
+                          color: AppColors.dark,
+                        ),
                       ),
                     ),
                   ),
@@ -271,7 +285,9 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
             const SizedBox(height: 8),
             Center(
               child: Text(
-                _photoBytes == null ? 'Add a profile photo (optional)' : 'Photo selected',
+                _photoBytes == null
+                    ? 'Add a profile photo (optional)'
+                    : 'Photo selected',
                 style: theme.textTheme.labelMedium,
               ),
             ),
@@ -296,9 +312,7 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
                 Expanded(
                   child: TextFormField(
                     controller: _lastName,
-                    decoration: const InputDecoration(
-                      labelText: 'Last name',
-                    ),
+                    decoration: const InputDecoration(labelText: 'Last name'),
                     onChanged: (_) => setState(() {}),
                     validator: (v) =>
                         (v == null || v.trim().isEmpty) ? 'Required' : null,
@@ -329,9 +343,11 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
                 labelText: 'Password',
                 prefixIcon: const Icon(Icons.lock_outline),
                 suffixIcon: IconButton(
-                  icon: Icon(_obscure
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined),
+                  icon: Icon(
+                    _obscure
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                  ),
                   onPressed: () => setState(() => _obscure = !_obscure),
                 ),
               ),
@@ -363,7 +379,8 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
                 labelText: 'Phone number',
                 prefixIcon: Icon(Icons.phone_outlined),
               ),
-              validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'Required' : null,
             ),
             if (!_isMaestroEmail) ...[
               const SizedBox(height: 14),
@@ -391,8 +408,11 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.workspace_premium,
-                        size: 20, color: AppColors.accentDark),
+                    const Icon(
+                      Icons.workspace_premium,
+                      size: 20,
+                      color: AppColors.accentDark,
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -409,81 +429,96 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: _isReturning ? AppColors.primary : AppColors.offWhite,
+                    color: _isReturning
+                        ? AppColors.primary
+                        : AppColors.offWhite,
                     width: _isReturning ? 1.5 : 1,
                   ),
                 ),
                 child: SwitchListTile(
                   title: const Text('I am an existing choir member'),
-                  subtitle:
-                      const Text('Turn on to add your history with the choir'),
+                  subtitle: const Text(
+                    'Turn on to add your history with the choir',
+                  ),
                   value: _isReturning,
                   activeColor: AppColors.primary,
                   onChanged: (v) => setState(() => _isReturning = v),
                 ),
               ),
 
-            if (_isReturning) ...[
-              const SizedBox(height: 20),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.offWhite,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Your history with the choir',
-                        style: theme.textTheme.titleSmall),
-                    const SizedBox(height: 12),
-                    DropdownButtonFormField<String>(
-                      value: _voice,
-                      decoration: const InputDecoration(
-                        labelText: 'Voice section',
-                        prefixIcon: Icon(Icons.music_note_outlined),
-                        filled: true,
-                        fillColor: Colors.white,
+              if (_isReturning) ...[
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.offWhite,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Your history with the choir',
+                        style: theme.textTheme.titleSmall,
                       ),
-                      items: ChoirData.voiceSections
-                          .map((v) =>
-                              DropdownMenuItem(value: v, child: Text(v)))
-                          .toList(),
-                      onChanged: (v) => setState(() => _voice = v),
-                      validator: (v) =>
-                          _isReturning && v == null ? 'Required' : null,
-                    ),
-                    const SizedBox(height: 12),
-                    _dateTile(
-                      label: 'When did you join Fayha?',
-                      value: _joinDate,
-                      onPick: () async {
-                        final d = await _pickDate(initial: _joinDate);
-                        if (d != null) setState(() => _joinDate = d);
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        const Icon(Icons.flight_takeoff, size: 18, color: AppColors.primary),
-                        const SizedBox(width: 8),
-                        Text('Trips you joined with the choir',
-                            style: theme.textTheme.titleSmall),
-                        const Spacer(),
-                        if (_selectedTrips.isNotEmpty)
-                          Text('${_selectedTrips.length} selected',
-                              style: theme.textTheme.labelMedium
-                                  ?.copyWith(color: AppColors.primary)),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    _tripsPicker(theme),
-                  ],
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: _voice,
+                        decoration: const InputDecoration(
+                          labelText: 'Voice section',
+                          prefixIcon: Icon(Icons.music_note_outlined),
+                          filled: true,
+                          fillColor: Colors.white,
+                        ),
+                        items: ChoirData.voiceSections
+                            .map(
+                              (v) => DropdownMenuItem(value: v, child: Text(v)),
+                            )
+                            .toList(),
+                        onChanged: (v) => setState(() => _voice = v),
+                        validator: (v) =>
+                            _isReturning && v == null ? 'Required' : null,
+                      ),
+                      const SizedBox(height: 12),
+                      _dateTile(
+                        label: 'When did you join Fayha?',
+                        value: _joinDate,
+                        onPick: () async {
+                          final d = await _pickDate(initial: _joinDate);
+                          if (d != null) setState(() => _joinDate = d);
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.flight_takeoff,
+                            size: 18,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Trips you joined with the choir',
+                            style: theme.textTheme.titleSmall,
+                          ),
+                          const Spacer(),
+                          if (_selectedTrips.isNotEmpty)
+                            Text(
+                              '${_selectedTrips.length} selected',
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: AppColors.primary,
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      _tripsPicker(theme),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              _clothingSection(theme),
-            ],
+                const SizedBox(height: 20),
+                _clothingSection(theme),
+              ],
             ],
 
             const SizedBox(height: 24),
@@ -497,9 +532,12 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 child: _submitting
                     ? const SizedBox(
-                        height: 20, width: 20,
+                        height: 20,
+                        width: 20,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: AppColors.cream),
+                          strokeWidth: 2,
+                          color: AppColors.cream,
+                        ),
                       )
                     : const Text('Submit for Approval'),
               ),
@@ -533,10 +571,10 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
                     _tripsLoading
                         ? 'Loading trips…'
                         : _allTrips.isEmpty
-                            ? 'No choir trips on record yet'
-                            : _selectedTrips.isEmpty
-                                ? 'Choose the trips you joined'
-                                : '${_selectedTrips.length} trip(s) selected',
+                        ? 'No choir trips on record yet'
+                        : _selectedTrips.isEmpty
+                        ? 'Choose the trips you joined'
+                        : '${_selectedTrips.length} trip(s) selected',
                     style: TextStyle(
                       color: _selectedTrips.isEmpty
                           ? AppColors.gray
@@ -556,11 +594,13 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
             spacing: 8,
             runSpacing: 8,
             children: _selectedTrips
-                .map((t) => Chip(
-                      label: Text(t),
-                      backgroundColor: Colors.white,
-                      onDeleted: () => setState(() => _selectedTrips.remove(t)),
-                    ))
+                .map(
+                  (t) => Chip(
+                    label: Text(t),
+                    backgroundColor: Colors.white,
+                    onDeleted: () => setState(() => _selectedTrips.remove(t)),
+                  ),
+                )
                 .toList(),
           ),
         ],
@@ -595,7 +635,8 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
                 children: [
                   const SizedBox(height: 10),
                   Container(
-                    width: 36, height: 4,
+                    width: 36,
+                    height: 4,
                     decoration: BoxDecoration(
                       color: AppColors.lightGray,
                       borderRadius: BorderRadius.circular(2),
@@ -606,8 +647,10 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
                     child: Row(
                       children: [
                         Expanded(
-                          child: Text('Choir Trips',
-                              style: Theme.of(context).textTheme.headlineSmall),
+                          child: Text(
+                            'Choir Trips',
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
                         ),
                         TextButton(
                           onPressed: () => Navigator.pop(sheetContext),
@@ -654,7 +697,9 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 12),
+                                horizontal: 12,
+                                vertical: 12,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(8),
@@ -682,14 +727,18 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Text(label,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .titleSmall),
-                                        Text(v.date,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .labelSmall),
+                                        Text(
+                                          label,
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.titleSmall,
+                                        ),
+                                        Text(
+                                          v.date,
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.labelSmall,
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -716,8 +765,10 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
       children: [
         Text('Choir clothing you have', style: theme.textTheme.titleMedium),
         const SizedBox(height: 4),
-        Text('Tell us what uniform items you already own.',
-            style: theme.textTheme.bodySmall),
+        Text(
+          'Tell us what uniform items you already own.',
+          style: theme.textTheme.bodySmall,
+        ),
         const SizedBox(height: 10),
         ..._clothingTypes.map((t) {
           final has = _hasItem[t] ?? false;
@@ -740,8 +791,8 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
                       t == 'Suit'
                           ? Icons.checkroom
                           : t == 'Shirt'
-                              ? Icons.dry_cleaning
-                              : Icons.sports_baseball,
+                          ? Icons.dry_cleaning
+                          : Icons.sports_baseball,
                       size: 18,
                       color: AppColors.primary,
                     ),
@@ -772,12 +823,18 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
                               labelText: 'Size',
                               filled: true,
                               fillColor: Colors.white,
-                              contentPadding:
-                                  EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 8,
+                              ),
                             ),
                             items: _sizes
-                                .map((s) =>
-                                    DropdownMenuItem(value: s, child: Text(s)))
+                                .map(
+                                  (s) => DropdownMenuItem(
+                                    value: s,
+                                    child: Text(s),
+                                  ),
+                                )
                                 .toList(),
                             onChanged: (v) =>
                                 setState(() => _itemSize[t] = v ?? 'M'),
@@ -788,14 +845,20 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
                         IconButton(
                           icon: const Icon(Icons.remove_circle_outline),
                           onPressed: (_itemQty[t] ?? 1) > 1
-                              ? () => setState(() => _itemQty[t] = _itemQty[t]! - 1)
+                              ? () => setState(
+                                  () => _itemQty[t] = _itemQty[t]! - 1,
+                                )
                               : null,
                         ),
-                        Text('${_itemQty[t]}', style: theme.textTheme.titleMedium),
+                        Text(
+                          '${_itemQty[t]}',
+                          style: theme.textTheme.titleMedium,
+                        ),
                         IconButton(
                           icon: const Icon(Icons.add_circle_outline),
-                          onPressed: () =>
-                              setState(() => _itemQty[t] = (_itemQty[t] ?? 1) + 1),
+                          onPressed: () => setState(
+                            () => _itemQty[t] = (_itemQty[t] ?? 1) + 1,
+                          ),
                         ),
                       ],
                     ),
@@ -825,7 +888,11 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
         ),
         child: Row(
           children: [
-            const Icon(Icons.calendar_today, size: 18, color: AppColors.primary),
+            const Icon(
+              Icons.calendar_today,
+              size: 18,
+              color: AppColors.primary,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(

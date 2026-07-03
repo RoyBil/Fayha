@@ -26,8 +26,9 @@ class _TripGroupsScreenState extends State<TripGroupsScreen> {
 
   void _load() {
     setState(() {
-      _groups =
-          _isAdmin ? TripGroupsService.fetchAll() : TripGroupsService.fetchMine();
+      _groups = _isAdmin
+          ? TripGroupsService.fetchAll()
+          : TripGroupsService.fetchMine();
     });
   }
 
@@ -77,23 +78,25 @@ class _TripGroupsScreenState extends State<TripGroupsScreen> {
                       : 'Access documents and trip information for each trip.',
                 ),
                 const SizedBox(height: 20),
-                ...list.map((g) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _GroupCard(
-                        group: g,
-                        isAdmin: _isAdmin,
-                        onTap: () async {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => TripGroupDetailScreen(group: g),
-                            ),
-                          );
-                          _load();
-                        },
-                        onDelete: _isAdmin ? () => _confirmDelete(g) : null,
-                      ),
-                    )),
+                ...list.map(
+                  (g) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _GroupCard(
+                      group: g,
+                      isAdmin: _isAdmin,
+                      onTap: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => TripGroupDetailScreen(group: g),
+                          ),
+                        );
+                        _load();
+                      },
+                      onDelete: _isAdmin ? () => _confirmDelete(g) : null,
+                    ),
+                  ),
+                ),
               ],
             );
           },
@@ -115,13 +118,15 @@ class _TripGroupsScreenState extends State<TripGroupsScreen> {
         destination: result['destination'] as String?,
         departureDate: result['departure_date'] as DateTime?,
         returnDate: result['return_date'] as DateTime?,
+        requiredDocTypes:
+            result['required_doc_types'] as List<TripDocumentType>?,
       );
       _load();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not create group: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not create group: $e')));
     }
   }
 
@@ -150,9 +155,9 @@ class _TripGroupsScreenState extends State<TripGroupsScreen> {
       _load();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not delete: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not delete: $e')));
     }
   }
 }
@@ -183,7 +188,11 @@ class _GroupCard extends StatelessWidget {
               color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.flight_takeoff, color: AppColors.primary, size: 24),
+            child: const Icon(
+              Icons.flight_takeoff,
+              color: AppColors.primary,
+              size: 24,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -195,11 +204,16 @@ class _GroupCard extends StatelessWidget {
                   const SizedBox(height: 3),
                   Row(
                     children: [
-                      const Icon(Icons.place_outlined,
-                          size: 13, color: AppColors.gray),
+                      const Icon(
+                        Icons.place_outlined,
+                        size: 13,
+                        color: AppColors.gray,
+                      ),
                       const SizedBox(width: 4),
-                      Text(group.destination!,
-                          style: theme.textTheme.bodySmall),
+                      Text(
+                        group.destination!,
+                        style: theme.textTheme.bodySmall,
+                      ),
                     ],
                   ),
                 ],
@@ -207,13 +221,17 @@ class _GroupCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Row(
                     children: [
-                      const Icon(Icons.calendar_today_outlined,
-                          size: 13, color: AppColors.gray),
+                      const Icon(
+                        Icons.calendar_today_outlined,
+                        size: 13,
+                        color: AppColors.gray,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         _dateRange(group.departureDate!, group.returnDate),
-                        style: theme.textTheme.labelMedium
-                            ?.copyWith(color: AppColors.primary),
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: AppColors.primary,
+                        ),
                       ),
                     ],
                   ),
@@ -232,8 +250,11 @@ class _GroupCard extends StatelessWidget {
           ),
           if (onDelete != null)
             IconButton(
-              icon: const Icon(Icons.delete_outline,
-                  color: AppColors.gray, size: 20),
+              icon: const Icon(
+                Icons.delete_outline,
+                color: AppColors.gray,
+                size: 20,
+              ),
               onPressed: onDelete,
             )
           else
@@ -244,8 +265,7 @@ class _GroupCard extends StatelessWidget {
   }
 
   String _dateRange(DateTime from, DateTime? to) {
-    String fmt(DateTime d) =>
-        '${d.day}/${d.month}/${d.year}';
+    String fmt(DateTime d) => '${d.day}/${d.month}/${d.year}';
     return to != null ? '${fmt(from)} – ${fmt(to)}' : fmt(from);
   }
 }
@@ -265,6 +285,10 @@ class _GroupFormDialogState extends State<_GroupFormDialog> {
   final _dest = TextEditingController();
   DateTime? _departure;
   DateTime? _returnDate;
+  final Set<TripDocumentType> _requiredTypes = {
+    TripDocumentType.passport,
+    TripDocumentType.profilePhoto,
+  };
 
   @override
   void dispose() {
@@ -307,22 +331,19 @@ class _GroupFormDialogState extends State<_GroupFormDialog> {
           children: [
             TextField(
               controller: _name,
-              decoration:
-                  const InputDecoration(labelText: 'Group name *'),
+              decoration: const InputDecoration(labelText: 'Group name *'),
               autofocus: true,
             ),
             const SizedBox(height: 10),
             TextField(
               controller: _dest,
-              decoration:
-                  const InputDecoration(labelText: 'Destination'),
+              decoration: const InputDecoration(labelText: 'Destination'),
             ),
             const SizedBox(height: 10),
             TextField(
               controller: _desc,
               maxLines: 2,
-              decoration:
-                  const InputDecoration(labelText: 'Description'),
+              decoration: const InputDecoration(labelText: 'Description'),
             ),
             const SizedBox(height: 14),
             Text('Travel dates', style: theme.textTheme.labelMedium),
@@ -346,6 +367,29 @@ class _GroupFormDialogState extends State<_GroupFormDialog> {
                 ),
               ],
             ),
+            const SizedBox(height: 14),
+            Text('Required documents', style: theme.textTheme.labelMedium),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: TripDocumentType.values
+                  .where((t) => t != TripDocumentType.other)
+                  .map(
+                    (t) => FilterChip(
+                      label: Text(t.label),
+                      selected: _requiredTypes.contains(t),
+                      onSelected: (on) => setState(() {
+                        if (on) {
+                          _requiredTypes.add(t);
+                        } else {
+                          _requiredTypes.remove(t);
+                        }
+                      }),
+                    ),
+                  )
+                  .toList(),
+            ),
           ],
         ),
       ),
@@ -360,10 +404,15 @@ class _GroupFormDialogState extends State<_GroupFormDialog> {
             if (name.isEmpty) return;
             Navigator.pop(context, {
               'name': name,
-              'description': _desc.text.trim().isEmpty ? null : _desc.text.trim(),
-              'destination': _dest.text.trim().isEmpty ? null : _dest.text.trim(),
+              'description': _desc.text.trim().isEmpty
+                  ? null
+                  : _desc.text.trim(),
+              'destination': _dest.text.trim().isEmpty
+                  ? null
+                  : _dest.text.trim(),
               'departure_date': _departure,
               'return_date': _returnDate,
+              'required_doc_types': _requiredTypes.toList(),
             });
           },
           child: const Text('Create'),

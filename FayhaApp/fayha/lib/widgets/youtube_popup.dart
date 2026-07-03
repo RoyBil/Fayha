@@ -3,8 +3,11 @@ import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 /// Opens a YouTube video inside the app (no browser hand-off).
 /// Returns nothing — the dialog manages its own controller lifecycle.
-Future<void> showYoutubePopup(BuildContext context, String url,
-    {String? title}) {
+Future<void> showYoutubePopup(
+  BuildContext context,
+  String url, {
+  String? title,
+}) {
   final videoId = YoutubePlayerController.convertUrlToId(url);
   if (videoId == null) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -64,7 +67,9 @@ class _YoutubePopupState extends State<_YoutubePopup> {
     return Dialog(
       backgroundColor: Colors.black,
       insetPadding: const EdgeInsets.symmetric(
-          horizontal: inset, vertical: inset * 2),
+        horizontal: inset,
+        vertical: inset * 2,
+      ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: SizedBox(
         width: playerW,
@@ -79,9 +84,10 @@ class _YoutubePopupState extends State<_YoutubePopup> {
                     child: Text(
                       widget.title ?? 'YouTube',
                       style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14),
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),

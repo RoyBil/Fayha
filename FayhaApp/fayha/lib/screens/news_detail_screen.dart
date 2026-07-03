@@ -19,12 +19,21 @@ class NewsDetailScreen extends StatelessWidget {
   });
 
   static const _months = [
-    'January','February','March','April','May','June',
-    'July','August','September','October','November','December'
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
-  String _date(DateTime d) =>
-      '${d.day} ${_months[d.month - 1]} ${d.year}';
+  String _date(DateTime d) => '${d.day} ${_months[d.month - 1]} ${d.year}';
 
   @override
   Widget build(BuildContext context) {
@@ -48,8 +57,11 @@ class NewsDetailScreen extends StatelessWidget {
                   onTap: () => Navigator.maybePop(context),
                   child: const Padding(
                     padding: EdgeInsets.all(6),
-                    child: Icon(Icons.arrow_back,
-                        color: Colors.white, size: 20),
+                    child: Icon(
+                      Icons.arrow_back,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
                 ),
               ),
@@ -81,10 +93,7 @@ class NewsDetailScreen extends StatelessWidget {
                             gradient: LinearGradient(
                               begin: Alignment.center,
                               end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                Color(0x88000000),
-                              ],
+                              colors: [Colors.transparent, Color(0x88000000)],
                             ),
                           ),
                         ),
@@ -100,14 +109,15 @@ class NewsDetailScreen extends StatelessWidget {
                 if ((dateLabel ?? '').isNotEmpty)
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color:
-                          AppColors.accentDark.withValues(alpha: 0.15),
+                      color: AppColors.accentDark.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                          color: AppColors.accentDark
-                              .withValues(alpha: 0.5)),
+                        color: AppColors.accentDark.withValues(alpha: 0.5),
+                      ),
                     ),
                     child: Text(
                       dateLabel!.toUpperCase(),
@@ -127,8 +137,7 @@ class NewsDetailScreen extends StatelessWidget {
                 ElegantCard(
                   child: SelectableText(
                     body,
-                    style:
-                        theme.textTheme.bodyMedium?.copyWith(height: 1.7),
+                    style: theme.textTheme.bodyMedium?.copyWith(height: 1.7),
                   ),
                 ),
               ]),

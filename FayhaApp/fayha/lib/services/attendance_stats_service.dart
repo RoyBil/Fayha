@@ -32,19 +32,18 @@ class SessionRoster {
     required this.members,
   });
 
-  Iterable<SessionMember> get present => members.where(
-      (m) => m.present && m.lateMinutes == 0);
-  Iterable<SessionMember> get late => members.where(
-      (m) => m.present && m.lateMinutes > 0);
-  Iterable<SessionMember> get absent => members.where(
-      (m) => !m.present);
+  Iterable<SessionMember> get present =>
+      members.where((m) => m.present && m.lateMinutes == 0);
+  Iterable<SessionMember> get late =>
+      members.where((m) => m.present && m.lateMinutes > 0);
+  Iterable<SessionMember> get absent => members.where((m) => !m.present);
 }
 
 class DayStats {
   final DateTime date;
   final String branch;
   final String status; // 'held' | 'cancelled'
-  final int total;     // active members in that branch
+  final int total; // active members in that branch
   final int present;
   final int late;
   final int absent;
@@ -62,11 +61,11 @@ class DayStats {
   });
 
   double get presentRate => total == 0 ? 0 : present / total;
-  double get absentRate  => total == 0 ? 0 : absent / total;
+  double get absentRate => total == 0 ? 0 : absent / total;
 }
 
 class WeekStats {
-  final DateTime weekStart;     // Monday of the week (local time)
+  final DateTime weekStart; // Monday of the week (local time)
   final int sessions;
   final int presentTotal;
   final int lateTotal;
@@ -119,8 +118,7 @@ class AttendanceStatsService {
     final total = (memberRows as List).length;
 
     // Pull all attendance rows for these rehearsals in one round-trip.
-    final rehIds =
-        reList.map((r) => r['id'] as String).toList(growable: false);
+    final rehIds = reList.map((r) => r['id'] as String).toList(growable: false);
     final attRows = await _c
         .from('attendance')
         .select('rehearsal_id, present, late_minutes')
@@ -191,8 +189,7 @@ class AttendanceStatsService {
         avgLateMinutes: late == 0 ? 0 : (lateMin / late).round(),
         days: sorted,
       );
-    }).toList()
-      ..sort((a, b) => b.weekStart.compareTo(a.weekStart));
+    }).toList()..sort((a, b) => b.weekStart.compareTo(a.weekStart));
     return weeks;
   }
 

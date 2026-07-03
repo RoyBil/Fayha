@@ -20,10 +20,7 @@ class ConcertsService {
   static Future<List<Concert>> fetchRecentAndUpcoming({
     Duration lookBack = const Duration(days: 14),
   }) async {
-    final from = DateTime.now()
-        .subtract(lookBack)
-        .toUtc()
-        .toIso8601String();
+    final from = DateTime.now().subtract(lookBack).toUtc().toIso8601String();
     final rows = await _client
         .from('concerts')
         .select()
@@ -41,6 +38,7 @@ class ConcertsService {
       description: (row['description'] as String?) ?? '',
       kind: (row['kind'] as String?) ?? 'concert',
       posterUrl: row['poster_url'] as String?,
+      mapsUrl: row['maps_url'] as String?,
     );
   }
 }

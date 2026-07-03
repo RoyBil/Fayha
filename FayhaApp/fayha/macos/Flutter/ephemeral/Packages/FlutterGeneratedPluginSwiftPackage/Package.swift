@@ -24,6 +24,8 @@ let package = Package(
         .package(name: "mobile_scanner", path: "../.packages/mobile_scanner-5.2.3"),
         .package(name: "file_selector_macos", path: "../.packages/file_selector_macos-0.9.4+4"),
         .package(name: "geolocator_apple", path: "../.packages/geolocator_apple-2.3.13"),
+        .package(name: "firebase_messaging", path: "../.packages/firebase_messaging-15.2.10"),
+        .package(name: "firebase_core", path: "../.packages/firebase_core-3.15.2"),
         .package(name: "audioplayers_darwin", path: "../.packages/audioplayers_darwin-6.4.0"),
         .package(name: "FlutterFramework", path: "../.packages/FlutterFramework")
     ],
@@ -40,6 +42,8 @@ let package = Package(
                 .product(name: "mobile-scanner", package: "mobile_scanner"),
                 .product(name: "file-selector-macos", package: "file_selector_macos"),
                 .product(name: "geolocator-apple", package: "geolocator_apple"),
+                .product(name: "firebase-messaging", package: "firebase_messaging"),
+                .product(name: "firebase-core", package: "firebase_core"),
                 .product(name: "audioplayers-darwin", package: "audioplayers_darwin"),
                 .product(name: "FlutterFramework", package: "FlutterFramework")
             ]

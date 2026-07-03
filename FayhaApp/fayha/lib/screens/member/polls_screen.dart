@@ -67,13 +67,15 @@ class _PollsScreenState extends State<PollsScreen> {
       newMy.remove(o.id);
       for (final opt in p.options) {
         if (opt.id == o.id) {
-          newOpts.add(PollOption(
-            id: opt.id,
-            text: opt.text,
-            sortOrder: opt.sortOrder,
-            voteCount: (opt.voteCount - 1).clamp(0, 1 << 31),
-            voters: opt.voters,
-          ));
+          newOpts.add(
+            PollOption(
+              id: opt.id,
+              text: opt.text,
+              sortOrder: opt.sortOrder,
+              voteCount: (opt.voteCount - 1).clamp(0, 1 << 31),
+              voters: opt.voters,
+            ),
+          );
           newTotal = (newTotal - 1).clamp(0, 1 << 31);
         } else {
           newOpts.add(opt);
@@ -85,12 +87,14 @@ class _PollsScreenState extends State<PollsScreen> {
         final oldId = p.myVotes.isNotEmpty ? p.myVotes.first : null;
         for (final opt in p.options) {
           if (opt.id == oldId) {
-            newOpts.add(PollOption(
-              id: opt.id,
-              text: opt.text,
-              sortOrder: opt.sortOrder,
-              voteCount: (opt.voteCount - 1).clamp(0, 1 << 31),
-            ));
+            newOpts.add(
+              PollOption(
+                id: opt.id,
+                text: opt.text,
+                sortOrder: opt.sortOrder,
+                voteCount: (opt.voteCount - 1).clamp(0, 1 << 31),
+              ),
+            );
             newTotal = (newTotal - 1).clamp(0, 1 << 31);
           } else {
             newOpts.add(opt);
@@ -166,9 +170,9 @@ class _PollsScreenState extends State<PollsScreen> {
       if (!mounted) return;
       // Roll back.
       setState(() => _replacePoll(original));
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not save vote: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not save vote: $e')));
     } finally {
       _voting.remove(p.id);
     }
@@ -182,11 +186,13 @@ class _PollsScreenState extends State<PollsScreen> {
         content: Text('"${p.question}" and all its votes will be removed.'),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Delete')),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
@@ -196,9 +202,9 @@ class _PollsScreenState extends State<PollsScreen> {
       await _load();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not delete: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not delete: $e')));
     }
   }
 
@@ -216,57 +222,57 @@ class _PollsScreenState extends State<PollsScreen> {
           : null,
       body: BrandedBackground(
         child: RefreshIndicator(
-        onRefresh: _load,
-        child: Builder(
-          builder: (context) {
-            if (_loading) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (_loadError != null) {
-              return ListView(
-                children: [
-                  const SizedBox(height: 80),
-                  EmptyState(
-                    icon: Icons.error_outline,
-                    title: 'Could not load polls',
-                    message: _loadError,
-                  ),
-                ],
-              );
-            }
-            final polls = _polls ?? const <Poll>[];
-            if (polls.isEmpty) {
-              return ListView(
-                children: const [
-                  SizedBox(height: 80),
-                  EmptyState(
-                    icon: Icons.poll_outlined,
-                    title: 'No polls yet',
-                    message: 'Admins can create polls from this screen.',
-                  ),
-                ],
-              );
-            }
-            return ListView.builder(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
-              itemCount: polls.length,
-              itemBuilder: (context, i) {
-                final p = polls[i];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _PollCard(
-                    poll: p,
-                    onTapOption: (o) => _onTapOption(p, o),
-                    onDelete: AppState.instance.isMaestro
-                        ? () => _confirmDelete(p)
-                        : null,
-                  ),
+          onRefresh: _load,
+          child: Builder(
+            builder: (context) {
+              if (_loading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (_loadError != null) {
+                return ListView(
+                  children: [
+                    const SizedBox(height: 80),
+                    EmptyState(
+                      icon: Icons.error_outline,
+                      title: 'Could not load polls',
+                      message: _loadError,
+                    ),
+                  ],
                 );
-              },
-            );
-          },
+              }
+              final polls = _polls ?? const <Poll>[];
+              if (polls.isEmpty) {
+                return ListView(
+                  children: const [
+                    SizedBox(height: 80),
+                    EmptyState(
+                      icon: Icons.poll_outlined,
+                      title: 'No polls yet',
+                      message: 'Admins can create polls from this screen.',
+                    ),
+                  ],
+                );
+              }
+              return ListView.builder(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
+                itemCount: polls.length,
+                itemBuilder: (context, i) {
+                  final p = polls[i];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _PollCard(
+                      poll: p,
+                      onTapOption: (o) => _onTapOption(p, o),
+                      onDelete: AppState.instance.isMaestro
+                          ? () => _confirmDelete(p)
+                          : null,
+                    ),
+                  );
+                },
+              );
+            },
+          ),
         ),
-      ),
       ),
     );
   }
@@ -284,7 +290,18 @@ class _PollCard extends StatelessWidget {
 
   String _date(DateTime d) {
     const months = [
-      'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${months[d.month - 1]} ${d.day}';
   }
@@ -321,8 +338,11 @@ class _PollCard extends StatelessWidget {
                   color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.poll_outlined,
-                    color: AppColors.primary, size: 18),
+                child: const Icon(
+                  Icons.poll_outlined,
+                  color: AppColors.primary,
+                  size: 18,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -330,15 +350,22 @@ class _PollCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                        '${poll.createdByName ?? 'Admin'} · ${_date(poll.createdAt)}',
-                        style: theme.textTheme.labelMedium),
+                      '${poll.createdByName ?? 'Admin'} · ${_date(poll.createdAt)}',
+                      style: theme.textTheme.labelMedium,
+                    ),
                     const SizedBox(height: 2),
                     Wrap(
                       spacing: 6,
                       children: [
-                        _Chip(label: _audienceLabel(), color: AppColors.accentDark),
+                        _Chip(
+                          label: _audienceLabel(),
+                          color: AppColors.accentDark,
+                        ),
                         if (poll.multiChoice)
-                          const _Chip(label: 'Multi-choice', color: AppColors.primary),
+                          const _Chip(
+                            label: 'Multi-choice',
+                            color: AppColors.primary,
+                          ),
                         if (poll.isClosed)
                           const _Chip(label: 'Closed', color: AppColors.gray),
                       ],
@@ -371,8 +398,10 @@ class _PollCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
                 onTap: poll.isClosed ? null : () => onTapOption(o),
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     border: Border.all(
                       color: selected ? AppColors.primary : AppColors.offWhite,
@@ -388,25 +417,32 @@ class _PollCard extends StatelessWidget {
                           Icon(
                             poll.multiChoice
                                 ? (selected
-                                    ? Icons.check_box
-                                    : Icons.check_box_outline_blank)
+                                      ? Icons.check_box
+                                      : Icons.check_box_outline_blank)
                                 : (selected
-                                    ? Icons.radio_button_checked
-                                    : Icons.radio_button_off),
+                                      ? Icons.radio_button_checked
+                                      : Icons.radio_button_off),
                             size: 18,
-                            color: selected ? AppColors.primary : AppColors.gray,
+                            color: selected
+                                ? AppColors.primary
+                                : AppColors.gray,
                           ),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: Text(o.text, style: theme.textTheme.bodyLarge),
+                            child: Text(
+                              o.text,
+                              style: theme.textTheme.bodyLarge,
+                            ),
                           ),
                           if (voted)
-                            Text('${(pct * 100).round()}%',
-                                style: theme.textTheme.labelMedium?.copyWith(
-                                  color: selected
-                                      ? AppColors.primary
-                                      : AppColors.gray,
-                                )),
+                            Text(
+                              '${(pct * 100).round()}%',
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: selected
+                                    ? AppColors.primary
+                                    : AppColors.gray,
+                              ),
+                            ),
                         ],
                       ),
                       if (voted || poll.isClosed) ...[
@@ -444,14 +480,18 @@ class _PollCard extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.lock_outline,
-                      size: 14, color: AppColors.gray),
+                  const Icon(
+                    Icons.lock_outline,
+                    size: 14,
+                    color: AppColors.gray,
+                  ),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       'Poll closed · ${poll.totalVotes} final votes',
-                      style: theme.textTheme.labelMedium
-                          ?.copyWith(color: AppColors.gray),
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: AppColors.gray,
+                      ),
                     ),
                   ),
                 ],
@@ -489,55 +529,60 @@ class _VotersRow extends StatelessWidget {
       spacing: 6,
       runSpacing: 6,
       children: voters
-          .map((v) => InkWell(
-                borderRadius: BorderRadius.circular(20),
-                onTap: () => _openMember(context, v),
-                child: Container(
-                  padding: const EdgeInsets.fromLTRB(2, 2, 8, 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.offWhite,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 22,
-                        height: 22,
-                        margin: const EdgeInsets.only(right: 6),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.primary.withValues(alpha: 0.15),
-                          image: v.photoUrl != null
-                              ? DecorationImage(
-                                  image: NetworkImage(v.photoUrl!),
-                                  fit: BoxFit.cover)
-                              : null,
-                        ),
-                        child: v.photoUrl == null
-                            ? Center(
-                                child: Text(
-                                  v.name.isNotEmpty
-                                      ? v.name[0].toUpperCase()
-                                      : '?',
-                                  style: const TextStyle(
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 11,
-                                  ),
-                                ),
+          .map(
+            (v) => InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () => _openMember(context, v),
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(2, 2, 8, 2),
+                decoration: BoxDecoration(
+                  color: AppColors.offWhite,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 22,
+                      height: 22,
+                      margin: const EdgeInsets.only(right: 6),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.primary.withValues(alpha: 0.15),
+                        image: v.photoUrl != null
+                            ? DecorationImage(
+                                image: NetworkImage(v.photoUrl!),
+                                fit: BoxFit.cover,
                               )
                             : null,
                       ),
-                      Text(
-                        v.name.split(' ').first,
-                        style: const TextStyle(
-                            fontSize: 11, fontWeight: FontWeight.w600),
+                      child: v.photoUrl == null
+                          ? Center(
+                              child: Text(
+                                v.name.isNotEmpty
+                                    ? v.name[0].toUpperCase()
+                                    : '?',
+                                style: const TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            )
+                          : null,
+                    ),
+                    Text(
+                      v.name.split(' ').first,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ))
+              ),
+            ),
+          )
           .toList(),
     );
   }
@@ -556,9 +601,14 @@ class _Chip extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
         border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
-      child: Text(label,
-          style: TextStyle(
-              fontSize: 10, fontWeight: FontWeight.w600, color: color)),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
+      ),
     );
   }
 }

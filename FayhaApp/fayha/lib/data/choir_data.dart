@@ -69,6 +69,7 @@ class Concert {
   final String description;
   final String kind; // concert | rehearsal
   final String? posterUrl;
+  final String? mapsUrl;
   const Concert({
     this.id,
     required this.title,
@@ -77,13 +78,15 @@ class Concert {
     required this.description,
     this.kind = 'concert',
     this.posterUrl,
+    this.mapsUrl,
   });
   bool get isRehearsal => kind == 'rehearsal';
 }
 
 class ChoirData {
   static const String name = 'Fayha National Choir';
-  static const String tagline = 'A mixed Lebanese a cappella choir, revolutionizing Arabic choral music.';
+  static const String tagline =
+      'A mixed Lebanese a cappella choir, revolutionizing Arabic choral music.';
   static const String founded = '2003';
   static const String founder = 'Maestro Barkev Taslakian';
 
@@ -124,12 +127,28 @@ class ChoirData {
   ];
 
   static const List<Achievement> achievements = [
-    Achievement(2007, '1st Prize, Mixed Adult Choirs', 'Warsaw International Choir Festival'),
-    Achievement(2005, '2nd Prize, Mixed Adult Choirs', 'Warsaw International Choir Festival'),
-    Achievement(2023, 'Invited Choir', 'World Symposium on Choral Music (IFCM)'),
+    Achievement(
+      2007,
+      '1st Prize, Mixed Adult Choirs',
+      'Warsaw International Choir Festival',
+    ),
+    Achievement(
+      2005,
+      '2nd Prize, Mixed Adult Choirs',
+      'Warsaw International Choir Festival',
+    ),
+    Achievement(
+      2023,
+      'Invited Choir',
+      'World Symposium on Choral Music (IFCM)',
+    ),
     Achievement(2016, '1st Prize', 'ChoirFest Middle East'),
     Achievement(2018, '2nd Prize', 'ChoirFest Middle East'),
-    Achievement(2016, '1st Prize', '"Music and the Sea", International Festival, Greece'),
+    Achievement(
+      2016,
+      '1st Prize',
+      '"Music and the Sea", International Festival, Greece',
+    ),
     Achievement(2015, 'Music Rights Award', 'International Music Council'),
   ];
 
@@ -139,7 +158,8 @@ class ChoirData {
       location: 'Bekaa, Lebanon',
       period: '2023 – Present',
       conductor: 'George Faraj',
-      note: 'Studied within one of the choir\'s social projects and proceeded to start his own choir.',
+      note:
+          'Studied within one of the choir\'s social projects and proceeded to start his own choir.',
       instagramUrl: 'https://www.instagram.com/maqam.choir/',
     ),
     TrainedChoir(
@@ -147,7 +167,8 @@ class ChoirData {
       location: 'Cairo, Egypt',
       period: '2024 – Present',
       conductor: 'Islam Saeed',
-      note: 'Overseen by Fayha National Choir; conductor studies under Maestro Taslakian\'s leadership.',
+      note:
+          'Overseen by Fayha National Choir; conductor studies under Maestro Taslakian\'s leadership.',
       instagramUrl: 'https://www.instagram.com/shaghaf_choir/',
     ),
     TrainedChoir(
@@ -171,7 +192,8 @@ class ChoirData {
       location: 'Saida, Lebanon',
       period: '2022 – 2024',
       conductor: 'Roudy Francis',
-      note: 'Studied within one of the choir\'s social projects and proceeded to start his own choir.',
+      note:
+          'Studied within one of the choir\'s social projects and proceeded to start his own choir.',
       instagramUrl: 'https://www.instagram.com/fanchoirsaida/',
     ),
   ];
@@ -229,13 +251,15 @@ class ChoirData {
       title: 'Spring Recital',
       location: 'Al Madina Theatre, Beirut',
       date: DateTime(2026, 6, 14, 20, 0),
-      description: 'An evening of Arabic a cappella classics, featuring guest soloists.',
+      description:
+          'An evening of Arabic a cappella classics, featuring guest soloists.',
     ),
     Concert(
       title: 'Angham w Salam Community Concert',
       location: 'Cultural Center, Tripoli',
       date: DateTime(2026, 7, 5, 19, 30),
-      description: 'A nationwide community choir performance, 200+ voices on stage.',
+      description:
+          'A nationwide community choir performance, 200+ voices on stage.',
     ),
   ];
 
@@ -301,10 +325,5 @@ class ChoirData {
     'Whole choir',
   ];
 
-  static const List<String> branches = [
-    'Tripoli',
-    'Beirut',
-    'Aley',
-    'Chouf',
-  ];
+  static const List<String> branches = ['Tripoli', 'Beirut', 'Aley', 'Chouf'];
 }

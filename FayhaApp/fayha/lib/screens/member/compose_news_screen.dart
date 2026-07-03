@@ -100,8 +100,11 @@ class _ComposeNewsScreenState extends State<ComposeNewsScreen> {
       if (!mounted) return;
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(
-            _isEdit ? 'Could not save changes: $e' : 'Could not post news: $e')),
+        SnackBar(
+          content: Text(
+            _isEdit ? 'Could not save changes: $e' : 'Could not post news: $e',
+          ),
+        ),
       );
     }
   }
@@ -154,9 +157,12 @@ class _ComposeNewsScreenState extends State<ComposeNewsScreen> {
                 onPressed: _saving ? null : _save,
                 icon: _saving
                     ? const SizedBox(
-                        height: 18, width: 18,
+                        height: 18,
+                        width: 18,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: AppColors.cream),
+                          strokeWidth: 2,
+                          color: AppColors.cream,
+                        ),
                       )
                     : Icon(_isEdit ? Icons.save : Icons.publish, size: 18),
                 label: Text(_isEdit ? 'Save Changes' : 'Publish News'),
@@ -185,8 +191,11 @@ class _ComposeNewsScreenState extends State<ComposeNewsScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.image_outlined,
-                  size: 18, color: AppColors.primary),
+              const Icon(
+                Icons.image_outlined,
+                size: 18,
+                color: AppColors.primary,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -197,7 +206,9 @@ class _ComposeNewsScreenState extends State<ComposeNewsScreen> {
               TextButton.icon(
                 onPressed: _pickPoster,
                 icon: Icon(
-                    hasPoster ? Icons.swap_horiz : Icons.upload, size: 16),
+                  hasPoster ? Icons.swap_horiz : Icons.upload,
+                  size: 16,
+                ),
                 label: Text(hasPoster ? 'Replace' : 'Choose image'),
               ),
             ],

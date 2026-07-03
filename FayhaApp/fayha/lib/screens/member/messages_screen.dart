@@ -104,27 +104,29 @@ class _MessagesScreenState extends State<MessagesScreen> {
             return ListView(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
               children: threads
-                  .map((t) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _ThreadCard(
-                          thread: t,
-                          onTap: () async {
-                            await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => MaestroDmScreen(
-                                  memberId: t.memberId,
-                                  adminId: t.adminId,
-                                  title: t.iAmOnMemberSide
-                                      ? t.adminName
-                                      : t.memberName,
-                                ),
+                  .map(
+                    (t) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _ThreadCard(
+                        thread: t,
+                        onTap: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => MaestroDmScreen(
+                                memberId: t.memberId,
+                                adminId: t.adminId,
+                                title: t.iAmOnMemberSide
+                                    ? t.adminName
+                                    : t.memberName,
                               ),
-                            );
-                            _reload();
-                          },
-                        ),
-                      ))
+                            ),
+                          );
+                          _reload();
+                        },
+                      ),
+                    ),
+                  )
                   .toList(),
             );
           },
@@ -137,10 +139,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
 class _ThreadCard extends StatelessWidget {
   final DmThread thread;
   final VoidCallback onTap;
-  const _ThreadCard({
-    required this.thread,
-    required this.onTap,
-  });
+  const _ThreadCard({required this.thread, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -155,13 +154,14 @@ class _ThreadCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
-                    style: Theme.of(context).textTheme.titleMedium),
+                Text(title, style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 2),
-                Text(thread.lastBody,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  thread.lastBody,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ],
             ),
           ),
@@ -224,18 +224,14 @@ class _AdminPickerScreenState extends State<_AdminPickerScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(a.name,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium),
+                          Text(
+                            a.name,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
                           const SizedBox(height: 2),
                           Text(
-                            isMaestro
-                                ? 'Maestro'
-                                : 'Admin · ${a.branch}',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
+                            isMaestro ? 'Maestro' : 'Admin · ${a.branch}',
+                            style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(
                                   color: isMaestro
                                       ? AppColors.accentDark
@@ -248,8 +244,7 @@ class _AdminPickerScreenState extends State<_AdminPickerScreen> {
                         ],
                       ),
                     ),
-                    const Icon(Icons.chevron_right,
-                        color: AppColors.gray),
+                    const Icon(Icons.chevron_right, color: AppColors.gray),
                   ],
                 ),
               );

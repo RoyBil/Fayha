@@ -50,29 +50,33 @@ class _PrivateNewsScreenState extends State<PrivateNewsScreen> {
           return ListView(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
             children: [
-              const SectionHeader(
-                eyebrow: 'Official',
-                title: 'Choir News',
-              ),
+              const SectionHeader(eyebrow: 'Official', title: 'Choir News'),
               const SizedBox(height: 16),
-              ...news.map((n) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: ElegantCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(n.date.toUpperCase(),
-                              style: theme.textTheme.labelSmall),
-                          const SizedBox(height: 6),
-                          Text(n.title, style: theme.textTheme.titleLarge),
-                          const SizedBox(height: 8),
-                          Text(n.body,
-                              style: theme.textTheme.bodyMedium
-                                  ?.copyWith(height: 1.55)),
-                        ],
-                      ),
+              ...news.map(
+                (n) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: ElegantCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          n.date.toUpperCase(),
+                          style: theme.textTheme.labelSmall,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(n.title, style: theme.textTheme.titleLarge),
+                        const SizedBox(height: 8),
+                        Text(
+                          n.body,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            height: 1.55,
+                          ),
+                        ),
+                      ],
                     ),
-                  )),
+                  ),
+                ),
+              ),
             ],
           );
         },

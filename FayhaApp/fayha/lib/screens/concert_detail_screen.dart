@@ -11,11 +11,27 @@ class ConcertDetailScreen extends StatelessWidget {
   const ConcertDetailScreen({super.key, required this.concert});
 
   static const _months = [
-    'January','February','March','April','May','June',
-    'July','August','September','October','November','December'
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
   static const _weekdays = [
-    'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
   ];
 
   String _fullDate(DateTime d) =>
@@ -27,9 +43,10 @@ class ConcertDetailScreen extends StatelessWidget {
   }
 
   Future<void> _openMap() async {
-    final query = Uri.encodeComponent(concert.location);
-    final url = 'https://www.google.com/maps/search/?api=1&query=$query';
-    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    final raw = concert.mapsUrl != null && concert.mapsUrl!.isNotEmpty
+        ? concert.mapsUrl!
+        : 'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(concert.location)}';
+    await launchUrl(Uri.parse(raw), mode: LaunchMode.externalApplication);
   }
 
   @override
@@ -57,8 +74,11 @@ class ConcertDetailScreen extends StatelessWidget {
                   onTap: () => Navigator.maybePop(context),
                   child: const Padding(
                     padding: EdgeInsets.all(6),
-                    child: Icon(Icons.arrow_back,
-                        color: Colors.white, size: 20),
+                    child: Icon(
+                      Icons.arrow_back,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
                 ),
               ),
@@ -91,10 +111,7 @@ class ConcertDetailScreen extends StatelessWidget {
                             gradient: LinearGradient(
                               begin: Alignment.center,
                               end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                Color(0x88000000),
-                              ],
+                              colors: [Colors.transparent, Color(0x88000000)],
                             ),
                           ),
                         ),
@@ -109,12 +126,13 @@ class ConcertDetailScreen extends StatelessWidget {
               delegate: SliverChildListDelegate([
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: accent.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                        color: accent.withValues(alpha: 0.5)),
+                    border: Border.all(color: accent.withValues(alpha: 0.5)),
                   ),
                   child: Text(
                     kindLabel,
@@ -131,27 +149,32 @@ class ConcertDetailScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _row(theme, Icons.calendar_today,
-                          'Date', _fullDate(concert.date)),
+                      _row(
+                        theme,
+                        Icons.calendar_today,
+                        'Date',
+                        _fullDate(concert.date),
+                      ),
                       const Divider(height: 22),
-                      _row(theme, Icons.schedule, 'Time',
-                          _time(concert.date)),
+                      _row(theme, Icons.schedule, 'Time', _time(concert.date)),
                       const Divider(height: 22),
-                      _row(theme, Icons.place_outlined, 'Location',
-                          concert.location),
+                      _row(
+                        theme,
+                        Icons.place_outlined,
+                        'Location',
+                        concert.location,
+                      ),
                     ],
                   ),
                 ),
                 if (concert.description.isNotEmpty) ...[
                   const SizedBox(height: 20),
-                  Text('About this event',
-                      style: theme.textTheme.titleMedium),
+                  Text('About this event', style: theme.textTheme.titleMedium),
                   const SizedBox(height: 8),
                   ElegantCard(
                     child: Text(
                       concert.description,
-                      style:
-                          theme.textTheme.bodyMedium?.copyWith(height: 1.6),
+                      style: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
                     ),
                   ),
                 ],
@@ -159,7 +182,11 @@ class ConcertDetailScreen extends StatelessWidget {
                 FilledButton.icon(
                   onPressed: _openMap,
                   icon: const Icon(Icons.directions, size: 18),
-                  label: const Text('Get directions'),
+                  label: Text(
+                    concert.mapsUrl != null && concert.mapsUrl!.isNotEmpty
+                        ? 'Open in Google Maps'
+                        : 'Get directions',
+                  ),
                 ),
               ]),
             ),

@@ -14,8 +14,10 @@ class BranchDetailScreen extends StatelessWidget {
   const BranchDetailScreen({super.key, required this.branch});
 
   Future<void> _openMap() async {
-    await launchUrl(Uri.parse(branch.mapUrl),
-        mode: LaunchMode.externalApplication);
+    await launchUrl(
+      Uri.parse(branch.mapUrl),
+      mode: LaunchMode.externalApplication,
+    );
   }
 
   @override
@@ -24,9 +26,7 @@ class BranchDetailScreen extends StatelessWidget {
     final point = LatLng(branch.lat, branch.lng);
     return Scaffold(
       backgroundColor: AppColors.cream,
-      appBar: AppBar(
-        title: Text('${branch.name} Branch'),
-      ),
+      appBar: AppBar(title: Text('${branch.name} Branch')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
         children: [
@@ -43,8 +43,11 @@ class BranchDetailScreen extends StatelessWidget {
             ),
             child: Column(
               children: [
-                const Icon(Icons.account_balance,
-                    color: AppColors.cream, size: 40),
+                const Icon(
+                  Icons.account_balance,
+                  color: AppColors.cream,
+                  size: 40,
+                ),
                 const SizedBox(height: 8),
                 Text(
                   '${branch.name} Branch',
@@ -135,7 +138,8 @@ class BranchDetailScreen extends StatelessWidget {
               children: [
                 ClipRRect(
                   borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12)),
+                    top: Radius.circular(12),
+                  ),
                   child: SizedBox(
                     height: 220,
                     child: FlutterMap(
@@ -145,7 +149,8 @@ class BranchDetailScreen extends StatelessWidget {
                         minZoom: 4,
                         maxZoom: 19,
                         interactionOptions: const InteractionOptions(
-                          flags: InteractiveFlag.pinchZoom |
+                          flags:
+                              InteractiveFlag.pinchZoom |
                               InteractiveFlag.drag |
                               InteractiveFlag.doubleTapZoom |
                               InteractiveFlag.flingAnimation,
@@ -159,15 +164,20 @@ class BranchDetailScreen extends StatelessWidget {
                           userAgentPackageName: 'com.fayhanationalchoir.app',
                           additionalOptions: const {'r': ''},
                         ),
-                        MarkerLayer(markers: [
-                          Marker(
-                            point: point,
-                            width: 40,
-                            height: 40,
-                            child: Icon(Icons.account_balance,
-                                color: branch.color, size: 32),
-                          ),
-                        ]),
+                        MarkerLayer(
+                          markers: [
+                            Marker(
+                              point: point,
+                              width: 40,
+                              height: 40,
+                              child: Icon(
+                                Icons.account_balance,
+                                color: branch.color,
+                                size: 32,
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -196,11 +206,7 @@ class _Stat extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
-  const _Stat({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
+  const _Stat({required this.icon, required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -215,11 +221,12 @@ class _Stat extends StatelessWidget {
         children: [
           Icon(icon, size: 18, color: AppColors.primary),
           const SizedBox(height: 6),
-          Text(value,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(color: AppColors.primary)),
+          Text(
+            value,
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(color: AppColors.primary),
+          ),
           Text(label, style: Theme.of(context).textTheme.labelSmall),
         ],
       ),
@@ -231,11 +238,7 @@ class _Row extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
-  const _Row({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
+  const _Row({required this.icon, required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {

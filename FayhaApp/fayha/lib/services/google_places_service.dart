@@ -73,16 +73,13 @@ class GooglePlacesService {
   static Future<PlaceDetail?> details(String placeId) async {
     final key = apiKey;
     if (key == null || key.isEmpty) return null;
-    final uri = Uri.https(
-      'maps.googleapis.com',
-      '/maps/api/place/details/json',
-      {
-        'place_id': placeId,
-        'key': key,
-        'sessiontoken': session,
-        'fields': 'name,geometry/location,formatted_address',
-      },
-    );
+    final uri =
+        Uri.https('maps.googleapis.com', '/maps/api/place/details/json', {
+          'place_id': placeId,
+          'key': key,
+          'sessiontoken': session,
+          'fields': 'name,geometry/location,formatted_address',
+        });
     try {
       final res = await http.get(uri);
       if (res.statusCode != 200) return null;
@@ -121,7 +118,8 @@ class PlaceSuggestion {
     final structured = m['structured_formatting'] as Map?;
     return PlaceSuggestion(
       placeId: m['place_id'] as String,
-      primaryText: (structured?['main_text'] as String?) ??
+      primaryText:
+          (structured?['main_text'] as String?) ??
           (m['description'] as String? ?? ''),
       secondaryText: (structured?['secondary_text'] as String?) ?? '',
     );

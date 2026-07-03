@@ -49,15 +49,16 @@ class DriverLocationService {
 
     _tripId = tripId;
 
-    _posSub = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.bestForNavigation,
-        // We don't filter here — the throttle below caps push rate.
-      ),
-    ).listen((p) {
-      _lastSample = p;
-      _maybePush();
-    });
+    _posSub =
+        Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.bestForNavigation,
+            // We don't filter here — the throttle below caps push rate.
+          ),
+        ).listen((p) {
+          _lastSample = p;
+          _maybePush();
+        });
 
     _heartbeatTimer = Timer.periodic(_heartbeat, (_) {
       // Force a push even when stationary so the server sees a recent
@@ -73,7 +74,9 @@ class DriverLocationService {
         ),
       );
       await _push();
-    } catch (_) {/* will retry on next tick */}
+    } catch (_) {
+      /* will retry on next tick */
+    }
   }
 
   Future<void> stop() async {
@@ -102,13 +105,16 @@ class DriverLocationService {
     final p = _lastSample;
     if (trip == null || p == null) return;
     try {
-      await _c.rpc('ingest_bus_position', params: {
-        'p_trip': trip,
-        'p_lat': p.latitude,
-        'p_lng': p.longitude,
-        'p_heading': p.heading,
-        'p_speed_mps': p.speed,
-      });
+      await _c.rpc(
+        'ingest_bus_position',
+        params: {
+          'p_trip': trip,
+          'p_lat': p.latitude,
+          'p_lng': p.longitude,
+          'p_heading': p.heading,
+          'p_speed_mps': p.speed,
+        },
+      );
       _lastPushAt = DateTime.now();
     } catch (_) {
       // Swallow — next tick will retry. The driver UI can surface a

@@ -22,17 +22,23 @@ class TripService {
   }
 
   static Future<void> cancel(String tripId) async {
-    await _c.from('bus_trips').update({
-      'status': 'cancelled',
-      'ended_at': DateTime.now().toUtc().toIso8601String(),
-    }).eq('id', tripId);
+    await _c
+        .from('bus_trips')
+        .update({
+          'status': 'cancelled',
+          'ended_at': DateTime.now().toUtc().toIso8601String(),
+        })
+        .eq('id', tripId);
   }
 
   static Future<void> complete(String tripId) async {
-    await _c.from('bus_trips').update({
-      'status': 'completed',
-      'ended_at': DateTime.now().toUtc().toIso8601String(),
-    }).eq('id', tripId);
+    await _c
+        .from('bus_trips')
+        .update({
+          'status': 'completed',
+          'ended_at': DateTime.now().toUtc().toIso8601String(),
+        })
+        .eq('id', tripId);
   }
 
   /// The active trip (if any) for a route.

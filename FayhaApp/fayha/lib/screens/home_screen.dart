@@ -5,6 +5,7 @@ import '../data/choir_data.dart';
 import '../data/mock_data.dart';
 import '../services/audience_data.dart';
 import '../services/concerts_service.dart';
+import '../services/gallery_service.dart';
 import '../services/testimonials_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/avatar.dart';
@@ -32,6 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late Future<List<RepertoireSong>> _songs;
   late Future<List<SocialPost>> _social;
   Future<List<Testimonial>>? _testimonials;
+  late Future<List<GalleryPost>> _gallery;
 
   @override
   void initState() {
@@ -40,6 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _songs = AudienceData.fetchSongs();
     _social = AudienceData.fetchSocialPosts();
     _testimonials = TestimonialsService.fetchPublic();
+    _gallery = GalleryService.listPublic(limit: 6);
   }
 
   @override
@@ -171,6 +174,27 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
               const SizedBox(height: 36),
+
+              // ===== Gallery =====
+              FutureBuilder<List<GalleryPost>>(
+                future: _gallery,
+                builder: (context, snap) {
+                  final posts = snap.data ?? const <GalleryPost>[];
+                  if (snap.connectionState != ConnectionState.done ||
+                      posts.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const _SectionRow(eyebrow: 'Moments', title: 'Gallery'),
+                      const SizedBox(height: 12),
+                      _HomeGalleryGrid(posts: posts),
+                      const SizedBox(height: 36),
+                    ],
+                  );
+                },
+              ),
 
               // ===== Testimonials =====
               FutureBuilder<List<Testimonial>>(
@@ -564,8 +588,7 @@ class _SocialCard extends StatelessWidget {
     final url = post.permalink;
     if (url == null || url.isEmpty) return;
     try {
-      await launchUrl(Uri.parse(url),
-          mode: LaunchMode.externalApplication);
+      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     } catch (_) {}
   }
 
@@ -607,8 +630,7 @@ class _SocialCard extends StatelessWidget {
                 ),
               ),
               if (post.permalink != null)
-                const Icon(Icons.open_in_new,
-                    size: 16, color: AppColors.gray),
+                const Icon(Icons.open_in_new, size: 16, color: AppColors.gray),
             ],
           ),
           if ((post.mediaUrl ?? '').isNotEmpty) ...[
@@ -927,20 +949,27 @@ class _HomeTestimonialCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(t.author,
-                        style: theme.textTheme.titleMedium,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
+                    Text(
+                      t.author,
+                      style: theme.textTheme.titleMedium,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     if (t.voiceSection.isNotEmpty)
-                      Text(t.voiceSection,
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: AppColors.primary,
-                          )),
+                      Text(
+                        t.voiceSection,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: AppColors.primary,
+                        ),
+                      ),
                   ],
                 ),
               ),
-              const Icon(Icons.format_quote_rounded,
-                  color: AppColors.accent, size: 28),
+              const Icon(
+                Icons.format_quote_rounded,
+                color: AppColors.accent,
+                size: 28,
+              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -957,6 +986,68 @@ class _HomeTestimonialCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _HomeGalleryGrid extends StatelessWidget {
+  final List<GalleryPost> posts;
+  const _HomeGalleryGrid({required this.posts});
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: posts.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 6,
+        mainAxisSpacing: 6,
+      ),
+      itemBuilder: (context, i) {
+        final p = posts[i];
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              p.isVideo
+                  ? Container(
+                      color: AppColors.dark,
+                      child: const Center(
+                        child: Icon(
+                          Icons.play_circle_fill_rounded,
+                          color: Colors.white54,
+                          size: 32,
+                        ),
+                      ),
+                    )
+                  : Image.network(
+                      p.photoUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: AppColors.offWhite,
+                        child: const Icon(
+                          Icons.broken_image,
+                          color: AppColors.gray,
+                        ),
+                      ),
+                    ),
+              if (p.editorsChoice)
+                const Positioned(
+                  top: 4,
+                  left: 4,
+                  child: Icon(
+                    Icons.star_rounded,
+                    size: 14,
+                    color: AppColors.accent,
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -1000,10 +1091,7 @@ class _InstagramGlyph extends StatelessWidget {
             child: Container(
               width: size * 0.11,
               height: size * 0.11,
-              decoration: BoxDecoration(
-                color: color,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
             ),
           ),
         ],
@@ -1011,4 +1099,3 @@ class _InstagramGlyph extends StatelessWidget {
     );
   }
 }
-

@@ -119,7 +119,9 @@ class ChoirSongsService {
       'ogg' => 'audio/ogg',
       _ => 'audio/$ext',
     };
-    await _c.storage.from('choir_song_parts').uploadBinary(
+    await _c.storage
+        .from('choir_song_parts')
+        .uploadBinary(
           path,
           bytes,
           fileOptions: FileOptions(upsert: true, contentType: contentType),

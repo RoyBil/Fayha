@@ -15,6 +15,7 @@ class GalleryScreen extends StatefulWidget {
 
 class _GalleryScreenState extends State<GalleryScreen> {
   late Future<List<GalleryPost>> _future;
+  String? _filterCategory;
 
   /// IDs of posts the user has selected. Selection mode is active when
   /// [_selectionActive] is true; the set may still be empty.
@@ -23,20 +24,32 @@ class _GalleryScreenState extends State<GalleryScreen> {
 
   bool get _canManage {
     final m = AppState.instance.currentMember;
-    return m?.isContentEditor ?? false;
+    return (m?.isContentEditor ?? false) || (m?.canUploadGallery ?? false);
   }
+
+  bool get _isContentEditor =>
+      AppState.instance.currentMember?.isContentEditor ?? false;
 
   bool get _selectionMode => _selectionActive || _selected.isNotEmpty;
 
   @override
   void initState() {
     super.initState();
-    _future = GalleryService.list();
+    _future = GalleryService.list(category: _filterCategory);
   }
 
   void _reload() {
     setState(() {
-      _future = GalleryService.list();
+      _future = GalleryService.list(category: _filterCategory);
+      _selected.clear();
+      _selectionActive = false;
+    });
+  }
+
+  void _applyFilter(String? category) {
+    setState(() {
+      _filterCategory = category;
+      _future = GalleryService.list(category: _filterCategory);
       _selected.clear();
       _selectionActive = false;
     });
@@ -56,9 +69,9 @@ class _GalleryScreenState extends State<GalleryScreen> {
   }
 
   void _exitSelection() => setState(() {
-        _selected.clear();
-        _selectionActive = false;
-      });
+    _selected.clear();
+    _selectionActive = false;
+  });
 
   Future<void> _newPost() async {
     final saved = await Navigator.push<bool>(
@@ -76,6 +89,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
           posts: posts,
           initialIndex: index,
           canManage: _canManage,
+          canSetEditorsChoice: _isContentEditor,
         ),
       ),
     );
@@ -87,18 +101,19 @@ class _GalleryScreenState extends State<GalleryScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text(n == 1
-            ? 'Delete this post?'
-            : 'Delete $n posts?'),
+        title: Text(n == 1 ? 'Delete this post?' : 'Delete $n posts?'),
         content: const Text(
-            'They will be removed from the gallery for everyone.'),
+          'They will be removed from the gallery for everyone.',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Delete')),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
@@ -183,8 +198,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
                     const SectionHeader(
                       eyebrow: 'Gallery',
                       title: 'Moments from the Choir',
-                      subtitle:
-                          'Posted by editors. Tap to view full screen.',
+                      subtitle: 'Posted by editors. Tap to view full screen.',
                     ),
                     const SizedBox(height: 32),
                     Center(
@@ -212,35 +226,55 @@ class _GalleryScreenState extends State<GalleryScreen> {
                       ),
                     ),
                   ),
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 44,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+                        children: [
+                          _CategoryChip(
+                            label: 'All',
+                            selected: _filterCategory == null,
+                            onTap: () => _applyFilter(null),
+                          ),
+                          ...kGalleryCategories.map(
+                            (c) => _CategoryChip(
+                              label: c,
+                              selected: _filterCategory == c,
+                              onTap: () => _applyFilter(c),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                     sliver: SliverGrid(
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        mainAxisSpacing: 14,
-                        crossAxisSpacing: 6,
-                        // Tile = square thumbnail + caption strip below.
-                        childAspectRatio: 0.78,
-                      ),
-                      delegate: SliverChildBuilderDelegate(
-                        (context, i) {
-                          final p = posts[i];
-                          final selected = _selected.contains(p.id);
-                          return GestureDetector(
-                            onTap: () {
-                              if (_selectionMode) {
-                                _toggle(p);
-                              } else {
-                                _openViewer(posts, i);
-                              }
-                            },
-                            onLongPress: () => _toggle(p),
-                            child: _GridTile(post: p, selected: selected),
-                          );
-                        },
-                        childCount: posts.length,
-                      ),
+                            crossAxisCount: 3,
+                            mainAxisSpacing: 14,
+                            crossAxisSpacing: 6,
+                            // Tile = square thumbnail + caption strip below.
+                            childAspectRatio: 0.78,
+                          ),
+                      delegate: SliverChildBuilderDelegate((context, i) {
+                        final p = posts[i];
+                        final selected = _selected.contains(p.id);
+                        return GestureDetector(
+                          onTap: () {
+                            if (_selectionMode) {
+                              _toggle(p);
+                            } else {
+                              _openViewer(posts, i);
+                            }
+                          },
+                          onLongPress: () => _toggle(p),
+                          child: _GridTile(post: p, selected: selected),
+                        );
+                      }, childCount: posts.length),
                     ),
                   ),
                 ],
@@ -248,6 +282,40 @@ class _GalleryScreenState extends State<GalleryScreen> {
             },
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _CategoryChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _CategoryChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: FilterChip(
+        label: Text(label),
+        selected: selected,
+        onSelected: (_) => onTap(),
+        selectedColor: AppColors.primary.withValues(alpha: 0.15),
+        checkmarkColor: AppColors.primary,
+        labelStyle: TextStyle(
+          color: selected ? AppColors.primary : AppColors.dark,
+          fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+        ),
+        side: BorderSide(
+          color: selected ? AppColors.primary : AppColors.offWhite,
+        ),
+        backgroundColor: AppColors.offWhite,
+        showCheckmark: false,
       ),
     );
   }
@@ -290,8 +358,10 @@ class _GridTile extends StatelessWidget {
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => Container(
                           color: AppColors.offWhite,
-                          child: const Icon(Icons.broken_image,
-                              color: AppColors.gray),
+                          child: const Icon(
+                            Icons.broken_image,
+                            color: AppColors.gray,
+                          ),
                         ),
                         loadingBuilder: (ctx, child, ev) {
                           if (ev == null) return child;
@@ -301,8 +371,21 @@ class _GridTile extends StatelessWidget {
                     ),
                   if (post.isVideo)
                     const Center(
-                      child: Icon(Icons.play_circle_fill_rounded,
-                          size: 40, color: Colors.white),
+                      child: Icon(
+                        Icons.play_circle_fill_rounded,
+                        size: 40,
+                        color: Colors.white,
+                      ),
+                    ),
+                  if (post.editorsChoice && !selected)
+                    const Positioned(
+                      top: 4,
+                      left: 4,
+                      child: Icon(
+                        Icons.star_rounded,
+                        size: 16,
+                        color: AppColors.accent,
+                      ),
                     ),
                   if (selected)
                     Positioned(
@@ -314,8 +397,11 @@ class _GridTile extends StatelessWidget {
                           shape: BoxShape.circle,
                         ),
                         padding: const EdgeInsets.all(2),
-                        child: const Icon(Icons.check,
-                            size: 14, color: Colors.white),
+                        child: const Icon(
+                          Icons.check,
+                          size: 14,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                 ],
@@ -327,11 +413,9 @@ class _GridTile extends StatelessWidget {
         Text(
           caption.isEmpty ? ' ' : caption,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: caption.isEmpty
-                    ? Colors.transparent
-                    : AppColors.dark,
-                height: 1.2,
-              ),
+            color: caption.isEmpty ? Colors.transparent : AppColors.dark,
+            height: 1.2,
+          ),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
@@ -344,11 +428,13 @@ class GalleryViewerScreen extends StatefulWidget {
   final List<GalleryPost> posts;
   final int initialIndex;
   final bool canManage;
+  final bool canSetEditorsChoice;
   const GalleryViewerScreen({
     super.key,
     required this.posts,
     required this.initialIndex,
     required this.canManage,
+    this.canSetEditorsChoice = false,
   });
 
   @override
@@ -376,20 +462,44 @@ class _GalleryViewerScreenState extends State<GalleryViewerScreen> {
     super.dispose();
   }
 
+  Future<void> _toggleEditorsChoice() async {
+    final p = _posts[_index];
+    final newValue = !p.editorsChoice;
+    try {
+      await GalleryService.setEditorsChoice(p.id, value: newValue);
+      _changed = true;
+      final fresh = await GalleryService.list();
+      if (!mounted) return;
+      setState(() {
+        _posts = fresh;
+        if (_index >= _posts.length) _index = _posts.length - 1;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not update: $e')));
+    }
+  }
+
   Future<void> _delete() async {
     final p = _posts[_index];
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Delete this post?'),
-        content: const Text('This will remove it from the gallery for everyone.'),
+        content: const Text(
+          'This will remove it from the gallery for everyone.',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Delete')),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
@@ -408,9 +518,9 @@ class _GalleryViewerScreenState extends State<GalleryViewerScreen> {
       });
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not delete: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not delete: $e')));
     }
   }
 
@@ -418,8 +528,7 @@ class _GalleryViewerScreenState extends State<GalleryViewerScreen> {
     final p = _posts[_index];
     final saved = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(
-          builder: (_) => ComposeGalleryPostScreen(existing: p)),
+      MaterialPageRoute(builder: (_) => ComposeGalleryPostScreen(existing: p)),
     );
     if (saved == true) {
       _changed = true;
@@ -459,6 +568,21 @@ class _GalleryViewerScreenState extends State<GalleryViewerScreen> {
             onPressed: () => Navigator.pop(context, _changed),
           ),
           actions: [
+            if (widget.canSetEditorsChoice)
+              IconButton(
+                tooltip: _posts[_index].editorsChoice
+                    ? "Remove Editor's Choice"
+                    : "Mark as Editor's Choice",
+                icon: Icon(
+                  _posts[_index].editorsChoice
+                      ? Icons.star_rounded
+                      : Icons.star_border_rounded,
+                  color: _posts[_index].editorsChoice
+                      ? AppColors.accent
+                      : Colors.white,
+                ),
+                onPressed: _toggleEditorsChoice,
+              ),
             if (widget.canManage) ...[
               IconButton(
                 tooltip: 'Edit',
@@ -607,7 +731,9 @@ class _VideoStageState extends State<_VideoStage> {
     }
     final c = _ctrl;
     if (!_ready || c == null) {
-      return const Center(child: CircularProgressIndicator(color: Colors.white));
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      );
     }
     return GestureDetector(
       onTap: _togglePlay,
@@ -616,13 +742,18 @@ class _VideoStageState extends State<_VideoStage> {
         children: [
           Center(
             child: AspectRatio(
-              aspectRatio: c.value.aspectRatio == 0 ? 16 / 9 : c.value.aspectRatio,
+              aspectRatio: c.value.aspectRatio == 0
+                  ? 16 / 9
+                  : c.value.aspectRatio,
               child: VideoPlayer(c),
             ),
           ),
           if (!c.value.isPlaying)
-            const Icon(Icons.play_circle_fill_rounded,
-                size: 80, color: Colors.white70),
+            const Icon(
+              Icons.play_circle_fill_rounded,
+              size: 80,
+              color: Colors.white70,
+            ),
           Positioned(
             left: 0,
             right: 0,
