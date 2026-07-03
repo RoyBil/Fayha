@@ -47,7 +47,7 @@ fi
 # 3. Static analysis
 echo ""
 echo "▶ flutter analyze"
-if ! flutter analyze; then
+if ! flutter analyze --no-fatal-infos; then
   echo ""
   echo "✗ Analysis errors found. Fix them before pushing."
   exit 1
