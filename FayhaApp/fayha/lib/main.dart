@@ -1,15 +1,15 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'services/bus_route_service.dart';
 import 'services/google_config.dart';
 import 'services/google_places_service.dart';
+import 'services/push_notification_service.dart';
 import 'services/supabase_config.dart';
 import 'theme/app_theme.dart';
 import 'screens/home_screen.dart';
-import 'widgets/branded_background.dart';
 import 'screens/public_map_screen.dart';
 import 'screens/music_screen.dart';
 import 'screens/news_screen.dart';
@@ -18,8 +18,25 @@ import 'screens/splash_screen.dart';
 import 'screens/member_signin_screen.dart';
 import 'screens/member_signup_screen.dart';
 
+/// Global navigator key — allows PushNotificationService to route to
+/// screens after a tap on a notification when the app was backgrounded.
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Firebase must be initialised before Supabase so the background
+  // message handler is registered before any FCM delivery attempt.
+  try {
+    await Firebase.initializeApp();
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  } catch (e) {
+    // Firebase not configured (missing google-services.json /
+    // GoogleService-Info.plist) — push notifications will be disabled
+    // but the rest of the app works normally.
+    debugPrint('[FCM] Firebase init skipped: $e');
+  }
+
   await Supabase.initialize(
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.anonKey,
@@ -47,6 +64,7 @@ class FayhaApp extends StatelessWidget {
       title: 'Fayha National Choir',
       theme: AppTheme.light,
       debugShowCheckedModeBanner: false,
+      navigatorKey: navigatorKey,
       home: const SplashScreen(next: _RootScaffold()),
     );
   }
@@ -88,20 +106,27 @@ class _RootScaffoldState extends State<_RootScaffold> {
         title: isHome ? null : Text(_titles[_index]),
         actions: [
           TextButton(
-            onPressed: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const MemberSignInScreen())),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const MemberSignInScreen()),
+            ),
             style: TextButton.styleFrom(foregroundColor: AppColors.primary),
             child: const Text('Sign In'),
           ),
           Padding(
             padding: const EdgeInsets.only(right: 12, left: 4),
             child: FilledButton(
-              onPressed: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const MemberSignUpScreen())),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const MemberSignUpScreen()),
+              ),
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: AppColors.cream,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 minimumSize: const Size(0, 36),
               ),
               child: const Text('Sign Up'),
