@@ -163,7 +163,9 @@ class AdminService {
         .single();
     final id = row['id'] as String;
     await PushNotificationService.dispatch(
-      title: kind == 'concert' ? '🎵 New concert: $title' : '🎼 New rehearsal: $title',
+      title: kind == 'concert'
+          ? '🎵 New concert: $title'
+          : '🎼 New rehearsal: $title',
       body: 'At $location',
       kind: 'event',
       sourceId: id,
