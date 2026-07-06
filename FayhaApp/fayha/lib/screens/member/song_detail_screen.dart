@@ -41,6 +41,24 @@ class _SongDetailScreenState extends State<SongDetailScreen>
   void initState() {
     super.initState();
     _tabs = TabController(length: 3, vsync: this);
+    // Allow all tracks to play simultaneously on Android by not requesting
+    // exclusive audio focus — without this only one player wins focus and the
+    // rest are silenced.
+    AudioPlayer.global.setAudioContext(
+      AudioContext(
+        android: const AudioContextAndroid(
+          audioFocus: AndroidAudioFocus.none,
+          contentType: AndroidContentType.music,
+          usageType: AndroidUsageType.media,
+          audioMode: AndroidAudioMode.normal,
+          isSpeakerphoneOn: false,
+        ),
+        iOS: AudioContextIOS(
+          category: AVAudioSessionCategory.playback,
+          options: {AVAudioSessionOptions.mixWithOthers},
+        ),
+      ),
+    );
     _players = List.generate(choirVoiceParts.length, (_) => AudioPlayer());
     _volumes = List<double>.filled(choirVoiceParts.length, 0.8);
     _muted = List<bool>.filled(choirVoiceParts.length, false);
