@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../state/app_state.dart';
+import 'push_notification_service.dart';
 
 class DmMessage {
   final String id;
@@ -108,6 +109,15 @@ class DmService {
       'audio_duration_ms': audioDurationMs,
     });
     AppState.instance.bumpStats();
+    if (fromAdmin) {
+      final senderName = AppState.instance.currentMember?.name ?? 'Maestro';
+      await PushNotificationService.dispatch(
+        title: 'Message from $senderName',
+        body: body ?? (audioUrl != null ? '🎤 Voice message' : ''),
+        kind: 'dm',
+        memberIds: [memberId],
+      );
+    }
   }
 
   /// Uploads a recorded audio clip to the `voice_messages` bucket

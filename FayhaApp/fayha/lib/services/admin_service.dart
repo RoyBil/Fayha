@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../state/app_state.dart';
+import 'push_notification_service.dart';
 
 class AdminService {
   static final _c = Supabase.instance.client;
@@ -160,7 +161,14 @@ class AdminService {
         })
         .select('id')
         .single();
-    return row['id'] as String;
+    final id = row['id'] as String;
+    await PushNotificationService.dispatch(
+      title: kind == 'concert' ? '🎵 New concert: $title' : '🎼 New rehearsal: $title',
+      body: 'At $location',
+      kind: 'event',
+      sourceId: id,
+    );
+    return id;
   }
 
   /// Uploads an event poster to the `event_posters` bucket and
@@ -194,6 +202,11 @@ class AdminService {
       'poster_url': posterUrl,
       'sort_date': DateTime.now().toUtc().toIso8601String(),
     });
+    await PushNotificationService.dispatch(
+      title: '📢 $title',
+      body: body.length > 100 ? '${body.substring(0, 100)}…' : body,
+      kind: 'announcement',
+    );
   }
 
   // ===== News + events: list + edit + delete =====

@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../state/app_state.dart';
+import 'push_notification_service.dart';
 
 class ChoirMessage {
   final String id;
@@ -86,6 +87,11 @@ class MessagesService {
       'sender_id': me?.id,
       'sender_name': me?.name,
     });
+    await PushNotificationService.dispatch(
+      title: title,
+      body: body,
+      kind: 'message',
+    );
   }
 
   /// RLS automatically filters to messages the current user may see.

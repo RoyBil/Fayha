@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../state/app_state.dart';
+import 'push_notification_service.dart';
 
 class PollVoter {
   final String memberId;
@@ -206,6 +207,12 @@ class PollsService {
       await _c.from('poll_options').insert(optRows);
     }
     AppState.instance.bumpStats();
+    await PushNotificationService.dispatch(
+      title: '📊 New poll',
+      body: question,
+      kind: 'poll',
+      sourceId: pollId,
+    );
   }
 
   /// Cast a vote. For single-choice polls this replaces any previous vote
