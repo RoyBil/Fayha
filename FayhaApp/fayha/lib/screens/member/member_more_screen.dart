@@ -54,8 +54,7 @@ class MemberMoreScreen extends StatelessWidget {
               AppListTile(
                 icon: Icons.checklist_rtl,
                 iconColor: AppColors.secondary,
-                iconBackground:
-                    AppColors.secondary.withValues(alpha: 0.08),
+                iconBackground: AppColors.secondary.withValues(alpha: 0.08),
                 title: 'Attendance',
                 subtitle: m.isAdmin
                     ? 'Record the branch\'s rehearsal attendance'
@@ -73,16 +72,12 @@ class MemberMoreScreen extends StatelessWidget {
                 AppListTile(
                   icon: Icons.qr_code_scanner,
                   iconColor: AppColors.accentDark,
-                  iconBackground:
-                      AppColors.accent.withValues(alpha: 0.1),
+                  iconBackground: AppColors.accent.withValues(alpha: 0.1),
                   title: 'Scan to Check In',
-                  subtitle:
-                      'Scan the QR your admin shows to mark attendance',
+                  subtitle: 'Scan the QR your admin shows to mark attendance',
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => const QrCheckInScreen(),
-                    ),
+                    MaterialPageRoute(builder: (_) => const QrCheckInScreen()),
                   ),
                 ),
             ]),
@@ -106,8 +101,7 @@ class MemberMoreScreen extends StatelessWidget {
               AppListTile(
                 icon: Icons.forum_outlined,
                 iconColor: AppColors.accentDark,
-                iconBackground:
-                    AppColors.accent.withValues(alpha: 0.1),
+                iconBackground: AppColors.accent.withValues(alpha: 0.1),
                 title: 'Messages',
                 subtitle: m.isMaestro
                     ? 'Inbox of every member'
@@ -140,8 +134,7 @@ class MemberMoreScreen extends StatelessWidget {
               AppListTile(
                 icon: Icons.photo_library_outlined,
                 iconColor: AppColors.secondary,
-                iconBackground:
-                    AppColors.secondary.withValues(alpha: 0.08),
+                iconBackground: AppColors.secondary.withValues(alpha: 0.08),
                 title: 'Gallery',
                 subtitle: 'Moments from the choir',
                 onTap: () => Navigator.push(
@@ -170,33 +163,27 @@ class MemberMoreScreen extends StatelessWidget {
               AppListTile(
                 icon: Icons.directions_bus_outlined,
                 iconColor: AppColors.secondary,
-                iconBackground:
-                    AppColors.secondary.withValues(alpha: 0.08),
+                iconBackground: AppColors.secondary.withValues(alpha: 0.08),
                 title: 'Bus Routes',
                 subtitle: m.isAdmin || m.isMaestro
                     ? 'Manage routes · drive trips · live tracking'
                     : 'See live bus · request pickup',
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => const BusRoutesScreen(),
-                  ),
+                  MaterialPageRoute(builder: (_) => const BusRoutesScreen()),
                 ),
               ),
               AppListTile(
                 icon: Icons.flight_takeoff_outlined,
                 iconColor: AppColors.accentDark,
-                iconBackground:
-                    AppColors.accent.withValues(alpha: 0.1),
+                iconBackground: AppColors.accent.withValues(alpha: 0.1),
                 title: 'Trip Groups',
                 subtitle: m.isAdmin
                     ? 'Manage trip groups · assign members · share info'
                     : 'View your trip details and upload documents',
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => const TripGroupsScreen(),
-                  ),
+                  MaterialPageRoute(builder: (_) => const TripGroupsScreen()),
                 ),
               ),
             ]),
@@ -220,9 +207,7 @@ class MemberMoreScreen extends StatelessWidget {
                       : 'Approvals · members · attendance stats',
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => const AdminPanelScreen(),
-                    ),
+                    MaterialPageRoute(builder: (_) => const AdminPanelScreen()),
                   ),
                 ),
               ]),
@@ -332,8 +317,7 @@ class _TileGroup extends StatelessWidget {
         children: [
           for (int i = 0; i < visible.length; i++) ...[
             visible[i],
-            if (i < visible.length - 1)
-              const Divider(height: 1, indent: 56),
+            if (i < visible.length - 1) const Divider(height: 1, indent: 56),
           ],
         ],
       ),

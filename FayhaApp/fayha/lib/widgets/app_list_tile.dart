@@ -29,10 +29,9 @@ class AppListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = destructive
-        ? _errorColor
-        : (iconColor ?? AppColors.primary);
-    final bg = iconBackground ??
+    final color = destructive ? _errorColor : (iconColor ?? AppColors.primary);
+    final bg =
+        iconBackground ??
         (destructive
             ? _errorColor.withValues(alpha: 0.08)
             : AppColors.primary.withValues(alpha: 0.08));
@@ -62,10 +61,10 @@ class AppListTile extends StatelessWidget {
       trailing: (badge != null && badge! > 0)
           ? _Badge(badge!)
           : (trailing ??
-              Icon(
-                Icons.chevron_right,
-                color: destructive ? _errorColor : AppColors.gray,
-              )),
+                Icon(
+                  Icons.chevron_right,
+                  color: destructive ? _errorColor : AppColors.gray,
+                )),
     );
   }
 }
