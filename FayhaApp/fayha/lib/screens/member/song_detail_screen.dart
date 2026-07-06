@@ -70,9 +70,19 @@ class _SongDetailScreenState extends State<SongDetailScreen>
 
   Future<void> _initPlayers() async {
     try {
+      final audioCtx = AudioContext(
+        android: const AudioContextAndroid(
+          audioFocus: AndroidAudioFocus.none,
+          contentType: AndroidContentType.music,
+          usageType: AndroidUsageType.media,
+          audioMode: AndroidAudioMode.normal,
+          isSpeakerphoneOn: false,
+        ),
+      );
       int? masterIdx;
       for (var i = 0; i < _players.length; i++) {
         final p = _players[i];
+        await p.setAudioContext(audioCtx);
         await p.setReleaseMode(ReleaseMode.stop);
         await p.setVolume(_muted[i] ? 0.0 : _volumes[i]);
         final url = widget.song.urlForPart(i);
