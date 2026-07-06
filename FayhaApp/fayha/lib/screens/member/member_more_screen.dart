@@ -3,8 +3,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../data/choir_data.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_list_tile.dart';
 import '../../widgets/elegant_card.dart';
-import '../../widgets/section_header.dart';
 import '../member_signin_screen.dart';
 import 'member_profile_screen.dart';
 import 'messages_screen.dart';
@@ -30,227 +30,261 @@ class MemberMoreScreen extends StatelessWidget {
       builder: (context, _) {
         final m = AppState.instance.currentMember!;
         return ListView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.page,
+            AppSpacing.xl,
+            AppSpacing.page,
+            AppSpacing.xxxl,
+          ),
           children: [
-            const SectionHeader(eyebrow: 'Account', title: 'Member Settings'),
-            const SizedBox(height: 14),
-            ElegantCard(
-              padding: EdgeInsets.zero,
-              child: Column(
-                children: [
-                  _Tile(
-                    icon: Icons.person_outline,
-                    title: 'My Profile',
-                    subtitle: '${m.voiceSection} · ${m.branch}',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const MemberProfileScreen(),
-                      ),
-                    ),
+            // ── Account ────────────────────────────────────────────────────
+            _GroupLabel('Account'),
+            _TileGroup([
+              AppListTile(
+                icon: Icons.person_outline,
+                title: 'My Profile',
+                subtitle: '${m.voiceSection} · ${m.branch}',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const MemberProfileScreen(),
                   ),
-                  const _Sep(),
-                  _Tile(
-                    icon: Icons.checklist_rtl,
-                    title: 'Attendance',
-                    subtitle: m.isAdmin
-                        ? 'Record the branch\'s rehearsal attendance'
-                        : 'Your rehearsal and concert record',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => m.isAdmin
-                            ? const AttendanceScreen()
-                            : const AttendanceHistoryScreen(),
-                      ),
-                    ),
-                  ),
-                  if (!m.isAdmin) ...[
-                    const _Sep(),
-                    _Tile(
-                      icon: Icons.qr_code_scanner,
-                      title: 'Scan to Check In',
-                      subtitle:
-                          'Scan the QR your admin shows to mark attendance',
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const QrCheckInScreen(),
-                        ),
-                      ),
-                    ),
-                  ],
-                  const _Sep(),
-                  _Tile(
-                    icon: Icons.groups_outlined,
-                    title: 'Members Directory',
-                    subtitle: 'Everyone in the choir, by branch',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const MembersDirectoryScreen(),
-                      ),
-                    ),
-                  ),
-                  const _Sep(),
-                  _Tile(
-                    icon: Icons.forum_outlined,
-                    title: 'Messages',
-                    subtitle: m.isMaestro
-                        ? 'Inbox of every member'
-                        : 'Chat with admins and Maestro',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const MessagesScreen()),
-                    ),
-                  ),
-                  const _Sep(),
-                  _Tile(
-                    icon: Icons.poll_outlined,
-                    title: 'Polls',
-                    subtitle: 'Vote on choir decisions',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const PollsScreen()),
-                    ),
-                  ),
-                  const _Sep(),
-                  _Tile(
-                    icon: Icons.format_quote,
-                    title: 'Testimonials',
-                    subtitle: 'View members\' stories',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const TestimonialsMemberScreen(),
-                      ),
-                    ),
-                  ),
-                  const _Sep(),
-                  _Tile(
-                    icon: Icons.photo_library_outlined,
-                    title: 'Gallery',
-                    subtitle: 'Moments from the choir',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const GalleryScreen()),
-                    ),
-                  ),
-                  if (m.isAdmin || m.isContentEditor) ...[
-                    const _Sep(),
-                    _Tile(
-                      icon: m.isContentEditor && !m.isAdmin
-                          ? Icons.edit_note_outlined
-                          : Icons.admin_panel_settings_outlined,
-                      title: m.isContentEditor && !m.isAdmin
-                          ? 'Editor Panel'
-                          : 'Admin Panel',
-                      subtitle: m.isContentEditor && !m.isAdmin
-                          ? 'Post news, events and announcements'
-                          : 'Approvals · members · attendance stats',
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const AdminPanelScreen(),
-                        ),
-                      ),
-                    ),
-                  ],
-                  const _Sep(),
-                  _Tile(
-                    icon: Icons.share_location,
-                    title: 'Live Locations',
-                    subtitle: 'See members sharing right now',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const LiveLocationsMapScreen(),
-                      ),
-                    ),
-                  ),
-                  const _Sep(),
-                  _Tile(
-                    icon: Icons.directions_bus_outlined,
-                    title: 'Bus Routes',
-                    subtitle: m.isAdmin || m.isMaestro
-                        ? 'Manage routes · drive trips · live tracking'
-                        : 'See live bus · request pickup',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const BusRoutesScreen(),
-                      ),
-                    ),
-                  ),
-                  const _Sep(),
-                  _Tile(
-                    icon: Icons.flight_takeoff_outlined,
-                    title: 'Trip Groups',
-                    subtitle: m.isAdmin
-                        ? 'Manage trip groups · assign members · share info'
-                        : 'View your trip details and upload documents',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const TripGroupsScreen(),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            const SectionHeader(eyebrow: 'Reach', title: 'Choir Contact'),
-            const SizedBox(height: 14),
-            ElegantCard(
-              padding: EdgeInsets.zero,
-              child: Column(
-                children: [
-                  _Tile(
-                    icon: Icons.mail_outline,
-                    title: ChoirData.managerEmail,
-                    subtitle: 'Manager',
-                    onTap: () => launchUrl(
-                      Uri.parse('mailto:${ChoirData.managerEmail}'),
-                      mode: LaunchMode.externalApplication,
-                    ),
+              AppListTile(
+                icon: Icons.checklist_rtl,
+                iconColor: AppColors.secondary,
+                iconBackground:
+                    AppColors.secondary.withValues(alpha: 0.08),
+                title: 'Attendance',
+                subtitle: m.isAdmin
+                    ? 'Record the branch\'s rehearsal attendance'
+                    : 'Your rehearsal and concert record',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => m.isAdmin
+                        ? const AttendanceScreen()
+                        : const AttendanceHistoryScreen(),
                   ),
-                  const _Sep(),
-                  _Tile(
-                    icon: Icons.phone_outlined,
-                    title: ChoirData.phones.first,
-                    subtitle: 'Call manager',
-                    onTap: () => launchUrl(
-                      Uri.parse('tel:${ChoirData.phones.first}'),
-                      mode: LaunchMode.externalApplication,
-                    ),
-                  ),
-                  const _Sep(),
-                  _Tile(
-                    icon: Icons.language,
-                    title: 'Website',
-                    subtitle: ChoirData.websiteUrl,
-                    onTap: () => launchUrl(
-                      Uri.parse(ChoirData.websiteUrl),
-                      mode: LaunchMode.externalApplication,
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
-            const SizedBox(height: 28),
-            OutlinedButton.icon(
-              onPressed: () {
-                AppState.instance.signOut();
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const MemberSignInScreen()),
-                  (_) => false,
-                );
-              },
-              icon: const Icon(Icons.logout, size: 18),
-              label: const Text('Sign out'),
-            ),
-            const SizedBox(height: 16),
+              if (!m.isAdmin)
+                AppListTile(
+                  icon: Icons.qr_code_scanner,
+                  iconColor: AppColors.accentDark,
+                  iconBackground:
+                      AppColors.accent.withValues(alpha: 0.1),
+                  title: 'Scan to Check In',
+                  subtitle:
+                      'Scan the QR your admin shows to mark attendance',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const QrCheckInScreen(),
+                    ),
+                  ),
+                ),
+            ]),
+
+            const SizedBox(height: AppSpacing.lg),
+
+            // ── Choir ──────────────────────────────────────────────────────
+            _GroupLabel('Choir'),
+            _TileGroup([
+              AppListTile(
+                icon: Icons.groups_outlined,
+                title: 'Members Directory',
+                subtitle: 'Everyone in the choir, by branch',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const MembersDirectoryScreen(),
+                  ),
+                ),
+              ),
+              AppListTile(
+                icon: Icons.forum_outlined,
+                iconColor: AppColors.accentDark,
+                iconBackground:
+                    AppColors.accent.withValues(alpha: 0.1),
+                title: 'Messages',
+                subtitle: m.isMaestro
+                    ? 'Inbox of every member'
+                    : 'Chat with admins and Maestro',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const MessagesScreen()),
+                ),
+              ),
+              AppListTile(
+                icon: Icons.poll_outlined,
+                title: 'Polls',
+                subtitle: 'Vote on choir decisions',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PollsScreen()),
+                ),
+              ),
+              AppListTile(
+                icon: Icons.format_quote,
+                title: 'Testimonials',
+                subtitle: 'View members\' stories',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const TestimonialsMemberScreen(),
+                  ),
+                ),
+              ),
+              AppListTile(
+                icon: Icons.photo_library_outlined,
+                iconColor: AppColors.secondary,
+                iconBackground:
+                    AppColors.secondary.withValues(alpha: 0.08),
+                title: 'Gallery',
+                subtitle: 'Moments from the choir',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const GalleryScreen()),
+                ),
+              ),
+            ]),
+
+            const SizedBox(height: AppSpacing.lg),
+
+            // ── Tools ──────────────────────────────────────────────────────
+            _GroupLabel('Tools'),
+            _TileGroup([
+              AppListTile(
+                icon: Icons.share_location,
+                title: 'Live Locations',
+                subtitle: 'See members sharing right now',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const LiveLocationsMapScreen(),
+                  ),
+                ),
+              ),
+              AppListTile(
+                icon: Icons.directions_bus_outlined,
+                iconColor: AppColors.secondary,
+                iconBackground:
+                    AppColors.secondary.withValues(alpha: 0.08),
+                title: 'Bus Routes',
+                subtitle: m.isAdmin || m.isMaestro
+                    ? 'Manage routes · drive trips · live tracking'
+                    : 'See live bus · request pickup',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const BusRoutesScreen(),
+                  ),
+                ),
+              ),
+              AppListTile(
+                icon: Icons.flight_takeoff_outlined,
+                iconColor: AppColors.accentDark,
+                iconBackground:
+                    AppColors.accent.withValues(alpha: 0.1),
+                title: 'Trip Groups',
+                subtitle: m.isAdmin
+                    ? 'Manage trip groups · assign members · share info'
+                    : 'View your trip details and upload documents',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const TripGroupsScreen(),
+                  ),
+                ),
+              ),
+            ]),
+
+            // ── Admin (role-gated) ─────────────────────────────────────────
+            if (m.isAdmin || m.isContentEditor) ...[
+              const SizedBox(height: AppSpacing.lg),
+              _GroupLabel('Admin'),
+              _TileGroup([
+                AppListTile(
+                  icon: m.isContentEditor && !m.isAdmin
+                      ? Icons.edit_note_outlined
+                      : Icons.admin_panel_settings_outlined,
+                  iconColor: AppColors.accentDark,
+                  iconBackground: AppColors.accent.withValues(alpha: 0.1),
+                  title: m.isContentEditor && !m.isAdmin
+                      ? 'Editor Panel'
+                      : 'Admin Panel',
+                  subtitle: m.isContentEditor && !m.isAdmin
+                      ? 'Post news, events and announcements'
+                      : 'Approvals · members · attendance stats',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const AdminPanelScreen(),
+                    ),
+                  ),
+                ),
+              ]),
+            ],
+
+            const SizedBox(height: AppSpacing.lg),
+
+            // ── Contact ────────────────────────────────────────────────────
+            _GroupLabel('Contact'),
+            _TileGroup([
+              AppListTile(
+                icon: Icons.mail_outline,
+                title: ChoirData.managerEmail,
+                subtitle: 'Manager',
+                onTap: () => launchUrl(
+                  Uri.parse('mailto:${ChoirData.managerEmail}'),
+                  mode: LaunchMode.externalApplication,
+                ),
+              ),
+              AppListTile(
+                icon: Icons.phone_outlined,
+                title: ChoirData.phones.first,
+                subtitle: 'Call manager',
+                onTap: () => launchUrl(
+                  Uri.parse('tel:${ChoirData.phones.first}'),
+                  mode: LaunchMode.externalApplication,
+                ),
+              ),
+              AppListTile(
+                icon: Icons.language,
+                title: 'Website',
+                subtitle: ChoirData.websiteUrl,
+                onTap: () => launchUrl(
+                  Uri.parse(ChoirData.websiteUrl),
+                  mode: LaunchMode.externalApplication,
+                ),
+              ),
+            ]),
+
+            const SizedBox(height: AppSpacing.lg),
+
+            // ── Sign out ───────────────────────────────────────────────────
+            _GroupLabel('Session'),
+            _TileGroup([
+              AppListTile(
+                icon: Icons.logout,
+                title: 'Sign Out',
+                subtitle: 'You will need to sign in again',
+                destructive: true,
+                onTap: () {
+                  AppState.instance.signOut();
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(
+                      builder: (_) => const MemberSignInScreen(),
+                    ),
+                    (_) => false,
+                  );
+                },
+              ),
+            ]),
+
+            const SizedBox(height: AppSpacing.xl),
             Center(
               child: Text(
                 'Fayha National Choir Members App',
@@ -264,32 +298,45 @@ class MemberMoreScreen extends StatelessWidget {
   }
 }
 
-class _Tile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-  const _Tile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
+class _GroupLabel extends StatelessWidget {
+  final String label;
+  const _GroupLabel(this.label);
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      onTap: onTap,
-      leading: Icon(icon, color: AppColors.primary),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-      subtitle: Text(subtitle),
-      trailing: const Icon(Icons.chevron_right, color: AppColors.gray),
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 6),
+      child: Text(
+        label.toUpperCase(),
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.0,
+          color: AppColors.lightGray,
+        ),
+      ),
     );
   }
 }
 
-class _Sep extends StatelessWidget {
-  const _Sep();
+class _TileGroup extends StatelessWidget {
+  final List<Widget> children;
+  const _TileGroup(this.children);
+
   @override
-  Widget build(BuildContext context) => const Divider(height: 1, indent: 56);
+  Widget build(BuildContext context) {
+    final visible = children.whereType<Widget>().toList();
+    return ElegantCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          for (int i = 0; i < visible.length; i++) ...[
+            visible[i],
+            if (i < visible.length - 1)
+              const Divider(height: 1, indent: 56),
+          ],
+        ],
+      ),
+    );
+  }
 }

@@ -18,41 +18,50 @@ class SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final eyebrowColor = light ? AppColors.accentLight : AppColors.accentDark;
+    final eyebrowBg = light
+        ? AppColors.accentLight.withValues(alpha: 0.15)
+        : AppColors.accent.withValues(alpha: 0.12);
     final titleColor = light ? AppColors.cream : AppColors.dark;
     final subtitleColor = light ? AppColors.lightGray : AppColors.gray;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          eyebrow.toUpperCase(),
-          style: Theme.of(
-            context,
-          ).textTheme.labelSmall?.copyWith(color: eyebrowColor),
+        // Eyebrow pill replaces the old plain text + 2px bar
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+          decoration: BoxDecoration(
+            color: eyebrowBg,
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+          ),
+          child: Text(
+            eyebrow.toUpperCase(),
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.2,
+              color: eyebrowColor,
+            ),
+          ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Text(
           title,
-          style: Theme.of(
-            context,
-          ).textTheme.headlineMedium?.copyWith(color: titleColor, height: 1.15),
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                color: titleColor,
+                height: 1.15,
+              ),
         ),
         if (subtitle != null) ...[
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Text(
             subtitle!,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: subtitleColor, height: 1.5),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: subtitleColor,
+                  height: 1.5,
+                ),
           ),
         ],
-        const SizedBox(height: 4),
-        Container(
-          margin: const EdgeInsets.only(top: 10),
-          height: 2,
-          width: 48,
-          color: AppColors.accent,
-        ),
       ],
     );
   }

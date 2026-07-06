@@ -11,7 +11,6 @@ import '../../services/trip_groups_service.dart';
 import 'trip_group_detail_screen.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/avatar.dart';
 import '../../widgets/elegant_card.dart';
 import '../../widgets/section_header.dart';
 import 'attendance_history_screen.dart';
@@ -467,77 +466,60 @@ class _ProfileHeader extends StatelessWidget {
   final int years;
   const _ProfileHeader({required this.member, required this.years});
 
+  String get _greeting {
+    final h = DateTime.now().hour;
+    if (h < 12) return 'Good morning,';
+    if (h < 18) return 'Good afternoon,';
+    return 'Good evening,';
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.primaryDark, AppColors.primary],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    final firstName = member.name.split(' ').first;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          _greeting,
+          style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.gray),
         ),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        children: [
-          Avatar(
-            name: member.name,
-            size: 64,
-            background: AppColors.cream,
-            foreground: AppColors.primary,
+        const SizedBox(height: 2),
+        Text(
+          firstName,
+          style: theme.textTheme.headlineLarge?.copyWith(
+            color: AppColors.primary,
+            height: 1.1,
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'WELCOME',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: AppColors.accentLight,
-                    letterSpacing: 1.6,
-                  ),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppColors.accent.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+              ),
+              child: Text(
+                '${member.voiceSection} · ${member.branch}',
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.accentDark,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  member.name,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    color: AppColors.cream,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${member.voiceSection} · ${member.branch} branch',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.cream.withValues(alpha: 0.85),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.accent,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '$years ${years == 1 ? 'year' : 'years'} with the choir',
-                    style: const TextStyle(
-                      color: AppColors.dark,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        ],
-      ),
+            const SizedBox(width: 8),
+            Text(
+              '$years ${years == 1 ? 'year' : 'years'}',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: AppColors.gray,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -705,13 +687,13 @@ class _TileCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppRadius.card),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         onTap: tile.onTap,
         child: Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.card),
             border: Border.all(color: AppColors.offWhite),
           ),
           padding: const EdgeInsets.all(10),
@@ -791,7 +773,7 @@ class _LiveLocationCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: AppColors.secondary.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadius.card),
           border: Border.all(
             color: AppColors.secondary.withValues(alpha: 0.5),
             width: 1,
@@ -843,14 +825,14 @@ class _LiveLocationCard extends StatelessWidget {
     }
     return Material(
       color: AppColors.accent.withValues(alpha: 0.18),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppRadius.card),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         onTap: onEnable,
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.card),
             border: Border.all(
               color: AppColors.accentDark.withValues(alpha: 0.4),
               width: 1,
@@ -904,14 +886,14 @@ class _HouseLocationPrompt extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: AppColors.accent.withValues(alpha: 0.18),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppRadius.card),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.card),
             border: Border.all(
               color: AppColors.accentDark.withValues(alpha: 0.4),
               width: 1,

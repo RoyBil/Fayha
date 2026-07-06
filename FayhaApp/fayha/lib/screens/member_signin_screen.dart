@@ -19,6 +19,7 @@ class _MemberSignInScreenState extends State<MemberSignInScreen> {
   final _password = TextEditingController();
   bool _obscure = true;
   bool _busy = false;
+  String? _authError;
 
   @override
   void dispose() {
@@ -28,6 +29,7 @@ class _MemberSignInScreenState extends State<MemberSignInScreen> {
   }
 
   Future<void> _signIn() async {
+    setState(() => _authError = null);
     if (!_formKey.currentState!.validate()) return;
     setState(() => _busy = true);
     try {
@@ -36,32 +38,34 @@ class _MemberSignInScreenState extends State<MemberSignInScreen> {
       if (!mounted) return;
 
       if (member == null) {
-        setState(() => _busy = false);
-        _showMessage('Account not found. Please register first.');
+        setState(() {
+          _busy = false;
+          _authError = 'Account not found. Please register first.';
+        });
         return;
       }
       switch (member.state) {
         case AccountState.pending:
           await AuthService.signOut();
           if (!mounted) return;
-          setState(() => _busy = false);
-          _showMessage(
-            'Your account is still awaiting admin approval. You will be able to sign in once approved.',
-          );
+          setState(() {
+            _busy = false;
+            _authError =
+                'Your account is awaiting admin approval. You will be notified once approved.';
+          });
           return;
         case AccountState.deactivated:
         case AccountState.deleted:
           await AuthService.signOut();
           if (!mounted) return;
-          setState(() => _busy = false);
-          _showMessage(
-            'This account is not active. Please contact the choir administration.',
-          );
+          setState(() {
+            _busy = false;
+            _authError =
+                'This account is not active. Please contact the choir administration.';
+          });
           return;
         case AccountState.active:
           AppState.instance.signIn(member);
-          // Resume live-location pushes if the user already opted in
-          // on a previous session.
           LiveLocationService.instance.resumeIfEnabled();
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const MemberShell()),
@@ -69,50 +73,39 @@ class _MemberSignInScreenState extends State<MemberSignInScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      setState(() => _busy = false);
-      _showMessage(_friendlyError(e));
+      setState(() {
+        _busy = false;
+        _authError = _friendlyError(e);
+      });
     }
   }
 
   String _friendlyError(Object e) {
     final s = e.toString();
     if (s.contains('Invalid login credentials')) {
-      return 'Wrong email or password.';
+      return 'Wrong email or password. Please try again.';
     }
     if (s.contains('Email not confirmed')) {
-      return 'Email not confirmed yet. Check your inbox, or ask the admin to disable email confirmation.';
+      return 'Email not confirmed yet. Check your inbox.';
     }
-    return 'Could not sign in: $s';
-  }
-
-  void _showMessage(String msg) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        content: Text(msg),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
+    return 'Could not sign in. Please try again.';
   }
 
   Future<void> _forgotPassword() async {
     final email = _email.text.trim();
     if (!email.contains('@')) {
-      _showMessage('Enter your email above first, then tap "Forgot password".');
+      setState(() => _authError = 'Enter your email above first.');
       return;
     }
     try {
       await AuthService.resetPassword(email);
       if (!mounted) return;
-      _showMessage('Password reset link sent to $email.');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Password reset link sent to $email.')),
+      );
     } catch (e) {
       if (!mounted) return;
-      _showMessage('Could not send reset link: $e');
+      setState(() => _authError = 'Could not send reset link. Try again.');
     }
   }
 
@@ -120,51 +113,58 @@ class _MemberSignInScreenState extends State<MemberSignInScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Member Sign In')),
       body: AbsorbPointer(
         absorbing: _busy,
         child: Form(
           key: _formKey,
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.page,
+              56,
+              AppSpacing.page,
+              AppSpacing.xxxl,
+            ),
             children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.primary, AppColors.primaryDark],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                ),
+              // ── Logo mark ────────────────────────────────────────────────
+              Center(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(
-                      Icons.music_note,
-                      color: AppColors.accentLight,
-                      size: 28,
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'Choir Members Portal',
-                      style: theme.textTheme.titleLarge?.copyWith(
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                      ),
+                      child: const Icon(
+                        Icons.music_note,
                         color: AppColors.cream,
+                        size: 28,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 14),
                     Text(
-                      'Access rehearsals, recordings, attendance, messaging and your member profile.',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: AppColors.cream.withValues(alpha: 0.9),
-                        height: 1.5,
+                      'Fayha National Choir',
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        color: AppColors.primary,
                       ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Member Portal',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: AppColors.gray,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 28),
+
+              const SizedBox(height: 36),
+
+              // ── Email ─────────────────────────────────────────────────────
               TextFormField(
                 controller: _email,
                 keyboardType: TextInputType.emailAddress,
@@ -172,13 +172,19 @@ class _MemberSignInScreenState extends State<MemberSignInScreen> {
                   labelText: 'Email',
                   prefixIcon: Icon(Icons.mail_outline),
                 ),
+                onChanged: (_) {
+                  if (_authError != null) setState(() => _authError = null);
+                },
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) return 'Required';
                   if (!v.contains('@')) return 'Enter a valid email';
                   return null;
                 },
               ),
-              const SizedBox(height: 14),
+
+              const SizedBox(height: 12),
+
+              // ── Password ──────────────────────────────────────────────────
               TextFormField(
                 controller: _password,
                 obscureText: _obscure,
@@ -194,9 +200,51 @@ class _MemberSignInScreenState extends State<MemberSignInScreen> {
                     onPressed: () => setState(() => _obscure = !_obscure),
                   ),
                 ),
+                onChanged: (_) {
+                  if (_authError != null) setState(() => _authError = null);
+                },
                 validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
               ),
-              const SizedBox(height: 8),
+
+              // ── Inline auth error ─────────────────────────────────────────
+              if (_authError != null) ...[
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFB23A48).withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                    border: Border.all(
+                      color: const Color(0xFFB23A48).withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        size: 16,
+                        color: Color(0xFFB23A48),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _authError!,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFFB23A48),
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              // ── Forgot password ───────────────────────────────────────────
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
@@ -204,7 +252,8 @@ class _MemberSignInScreenState extends State<MemberSignInScreen> {
                   child: const Text('Forgot password?'),
                 ),
               ),
-              const SizedBox(height: 12),
+
+              // ── Submit ────────────────────────────────────────────────────
               FilledButton(
                 onPressed: _busy ? null : _signIn,
                 child: Padding(
@@ -221,7 +270,10 @@ class _MemberSignInScreenState extends State<MemberSignInScreen> {
                       : const Text('Sign In'),
                 ),
               ),
-              const SizedBox(height: 24),
+
+              const SizedBox(height: AppSpacing.xxl),
+
+              // ── Register link ─────────────────────────────────────────────
               Center(
                 child: TextButton(
                   onPressed: () => Navigator.push(

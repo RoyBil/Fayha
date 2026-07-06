@@ -254,36 +254,36 @@ class _MemberShellState extends State<MemberShell> {
           body: BrandedBackground(
             child: IndexedStack(index: _index, children: _screens),
           ),
-          bottomNavigationBar: BottomNavigationBar(
-            currentIndex: _index,
-            onTap: (i) {
+          bottomNavigationBar: NavigationBar(
+            selectedIndex: _index,
+            onDestinationSelected: (i) {
               setState(() => _index = i);
               _refreshUnread();
             },
-            items: const [
-              BottomNavigationBarItem(
+            destinations: const [
+              NavigationDestination(
                 icon: Icon(Icons.dashboard_outlined),
-                activeIcon: Icon(Icons.dashboard),
+                selectedIcon: Icon(Icons.dashboard),
                 label: 'Home',
               ),
-              BottomNavigationBarItem(
+              NavigationDestination(
                 icon: Icon(Icons.library_music_outlined),
-                activeIcon: Icon(Icons.library_music),
+                selectedIcon: Icon(Icons.library_music),
                 label: 'Songs',
               ),
-              BottomNavigationBarItem(
+              NavigationDestination(
                 icon: Icon(Icons.feed_outlined),
-                activeIcon: Icon(Icons.feed),
+                selectedIcon: Icon(Icons.feed),
                 label: 'News',
               ),
-              BottomNavigationBarItem(
+              NavigationDestination(
                 icon: Icon(Icons.map_outlined),
-                activeIcon: Icon(Icons.map),
+                selectedIcon: Icon(Icons.map),
                 label: 'Map',
               ),
-              BottomNavigationBarItem(
+              NavigationDestination(
                 icon: Icon(Icons.more_horiz_outlined),
-                activeIcon: Icon(Icons.more_horiz),
+                selectedIcon: Icon(Icons.more_horiz),
                 label: 'More',
               ),
             ],

@@ -140,33 +140,33 @@ class _RootScaffoldState extends State<_RootScaffold> {
           child: IndexedStack(index: _index, children: _screens),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _index,
-        onTap: (i) => setState(() => _index = i),
-        items: const [
-          BottomNavigationBarItem(
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _index,
+        onDestinationSelected: (i) => setState(() => _index = i),
+        destinations: const [
+          NavigationDestination(
             icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
+            selectedIcon: Icon(Icons.home),
             label: 'Home',
           ),
-          BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.map_outlined),
-            activeIcon: Icon(Icons.map),
+            selectedIcon: Icon(Icons.map),
             label: 'Map',
           ),
-          BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.music_note_outlined),
-            activeIcon: Icon(Icons.music_note),
+            selectedIcon: Icon(Icons.music_note),
             label: 'Music',
           ),
-          BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.newspaper_outlined),
-            activeIcon: Icon(Icons.newspaper),
+            selectedIcon: Icon(Icons.newspaper),
             label: 'News',
           ),
-          BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.more_horiz_outlined),
-            activeIcon: Icon(Icons.more_horiz),
+            selectedIcon: Icon(Icons.more_horiz),
             label: 'More',
           ),
         ],

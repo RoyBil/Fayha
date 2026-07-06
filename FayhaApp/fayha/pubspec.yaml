@@ -18,7 +18,7 @@ dependencies:
   latlong2: ^0.9.1
   supabase_flutter: ^2.5.0
   image_picker: ^1.1.2
-  record: ^5.1.2
+  record: ^7.1.1
   audioplayers: ^6.1.0
   path_provider: ^2.1.4
   http: ^1.2.0
@@ -49,8 +49,17 @@ dev_dependencies:
     sdk: flutter
 
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/app_icon.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/icon/app_icon.png"
 
 flutter:
   uses-material-design: true
   assets:
     - assets/logo/
+    - assets/icon/

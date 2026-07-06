@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "542210824427",
+    "project_id": "fayha-choir-723b0",
+    "storage_bucket": "fayha-choir-723b0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:542210824427:android:c041c99a83dfc98780c6ae",
+        "android_client_info": {
+          "package_name": "com.fayha.fayha"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDs8Y0fInERMKmU_5aNybw4sHlUK8EgGl0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

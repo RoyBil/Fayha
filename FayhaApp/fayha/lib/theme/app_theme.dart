@@ -1,6 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+class AppSpacing {
+  static const double xs = 4;
+  static const double sm = 8;
+  static const double md = 12;
+  static const double lg = 16;
+  static const double xl = 20;
+  static const double xxl = 24;
+  static const double xxxl = 32;
+  static const double page = 20;
+}
+
+class AppRadius {
+  static const double sm = 6;
+  static const double card = 10;
+  static const double lg = 14;
+  static const double xl = 20;
+  static const double pill = 999;
+}
+
 class AppColors {
   static const primary = Color(0xFF6B1F2E);
   static const primaryDark = Color(0xFF4A1520);
@@ -113,20 +132,34 @@ class AppTheme {
         ),
         iconTheme: const IconThemeData(color: AppColors.primary),
       ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.cream,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.gray,
-        showUnselectedLabels: true,
-        type: BottomNavigationBarType.fixed,
-        elevation: 8,
+        surfaceTintColor: Colors.transparent,
+        indicatorColor: AppColors.primary.withValues(alpha: 0.1),
+        elevation: 0,
+        height: 64,
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
+          return GoogleFonts.inter(
+            color: selected ? AppColors.primary : AppColors.gray,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+            fontSize: 11,
+          );
+        }),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
+          return IconThemeData(
+            color: selected ? AppColors.primary : AppColors.gray,
+            size: 22,
+          );
+        }),
       ),
       cardTheme: CardThemeData(
         color: Colors.white,
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadius.card),
           side: const BorderSide(color: AppColors.offWhite, width: 1),
         ),
       ),
@@ -135,7 +168,9 @@ class AppTheme {
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.cream,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+          ),
           textStyle: GoogleFonts.inter(
             fontWeight: FontWeight.w600,
             letterSpacing: 0.4,
@@ -147,7 +182,9 @@ class AppTheme {
           foregroundColor: AppColors.primary,
           side: const BorderSide(color: AppColors.primary, width: 1.2),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+          ),
           textStyle: GoogleFonts.inter(
             fontWeight: FontWeight.w600,
             letterSpacing: 0.4,
@@ -168,18 +205,31 @@ class AppTheme {
           vertical: 14,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppRadius.sm),
           borderSide: const BorderSide(color: AppColors.offWhite),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppRadius.sm),
           borderSide: const BorderSide(color: AppColors.offWhite),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppRadius.sm),
           borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          borderSide: const BorderSide(color: Color(0xFFB23A48), width: 1.5),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          borderSide: const BorderSide(color: Color(0xFFB23A48), width: 1.5),
+        ),
         labelStyle: GoogleFonts.inter(color: AppColors.gray),
+        floatingLabelStyle: GoogleFonts.inter(
+          color: AppColors.primary,
+          fontWeight: FontWeight.w600,
+          fontSize: 12,
+        ),
       ),
       dividerTheme: const DividerThemeData(
         color: AppColors.offWhite,
