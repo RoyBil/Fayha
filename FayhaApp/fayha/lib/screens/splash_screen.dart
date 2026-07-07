@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../data/choir_data.dart';
+import '../services/auth_service.dart';
+import '../services/live_location_service.dart';
+import '../state/app_state.dart';
 import '../theme/app_theme.dart';
+import 'member/member_shell.dart';
 
 class SplashScreen extends StatefulWidget {
   final Widget next;
@@ -58,12 +62,28 @@ class _SplashScreenState extends State<SplashScreen>
     }
   }
 
-  void _goNext() {
+  Future<void> _goNext() async {
+    if (!mounted) return;
+    // If Supabase already has a valid session (from a previous launch), restore
+    // the member profile and go straight to the member area — no sign-in needed.
+    Widget destination = widget.next;
+    if (AuthService.hasSession) {
+      try {
+        final member = await AuthService.loadCurrentMember();
+        if (member != null && member.state == AccountState.active) {
+          AppState.instance.signIn(member);
+          LiveLocationService.instance.resumeIfEnabled();
+          destination = const MemberShell();
+        }
+      } catch (_) {
+        // Session token may be expired — fall through to public view.
+      }
+    }
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 700),
-        pageBuilder: (_, __, ___) => widget.next,
+        pageBuilder: (_, __, ___) => destination,
         transitionsBuilder: (_, anim, __, child) =>
             FadeTransition(opacity: anim, child: child),
       ),

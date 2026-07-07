@@ -120,7 +120,15 @@ async function sendOne(
           token,
           notification: { title, body },
           data,
-          android: { priority: 'high' },
+          android: {
+            priority: 'high',
+            notification: {
+              channel_id: 'fayha_v2',
+              default_sound: true,
+              notification_priority: 'PRIORITY_HIGH',
+              visibility: 'PUBLIC',
+            },
+          },
           apns: { payload: { aps: { sound: 'default', badge: 1 } } },
         },
       }),

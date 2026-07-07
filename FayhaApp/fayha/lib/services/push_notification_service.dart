@@ -4,16 +4,21 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../firebase_options.dart';
 
 // ─── Background handler ────────────────────────────────────────────────────
 // Must be a top-level function (not a class member) for FCM to invoke it when
 // the app is terminated or in the background.
+// Firebase may not be initialised in this isolate — always guard with
+// apps.isEmpty before calling initializeApp to avoid duplicate-app errors.
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  }
   debugPrint('[FCM] Background message: ${message.messageId}');
-  // flutter_local_notifications shows a heads-up banner automatically on
-  // Android when the app is in the background. On iOS the system handles it.
 }
 
 // ─── Service ───────────────────────────────────────────────────────────────
@@ -32,11 +37,16 @@ class PushNotificationService {
   static final _fcm = FirebaseMessaging.instance;
   static final _localNotif = FlutterLocalNotificationsPlugin();
 
+  // Channel ID bumped to v2 so Android recreates it with sound/vibration even
+  // on devices that cached the old channel without those settings.
   static const _androidChannel = AndroidNotificationChannel(
-    'fayha_default',
+    'fayha_v2',
     'Fayha Choir',
     description: 'Choir announcements, events, messages and updates.',
     importance: Importance.high,
+    playSound: true,
+    enableVibration: true,
+    enableLights: true,
   );
 
   /// Call once after the signed-in member is resolved, passing the app's
@@ -63,7 +73,10 @@ class PushNotificationService {
           ?.createNotificationChannel(_androidChannel);
 
       // Initialise flutter_local_notifications.
-      const initAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
+      // ic_notification is a white-on-transparent vector (required on API 21+).
+      const initAndroid = AndroidInitializationSettings(
+        '@drawable/ic_notification',
+      );
       const initDarwin = DarwinInitializationSettings();
       await _localNotif.initialize(
         const InitializationSettings(android: initAndroid, iOS: initDarwin),
@@ -151,7 +164,10 @@ class PushNotificationService {
           channelDescription: _androidChannel.description,
           importance: Importance.high,
           priority: Priority.high,
-          icon: '@mipmap/ic_launcher',
+          icon: '@drawable/ic_notification',
+          playSound: true,
+          enableVibration: true,
+          enableLights: true,
         ),
         iOS: const DarwinNotificationDetails(
           presentAlert: true,

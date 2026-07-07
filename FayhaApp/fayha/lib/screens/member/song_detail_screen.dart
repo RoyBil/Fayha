@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/choir_songs_service.dart';
 import '../../services/member_songs_service.dart';
 import '../../state/app_state.dart';
@@ -18,15 +19,18 @@ class SongDetailScreen extends StatefulWidget {
 }
 
 class _SongDetailScreenState extends State<SongDetailScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late TabController _tabs;
 
   /// One player per voice section (S1, S2, A1, A2, T1, T2, B1, B2).
   late final List<AudioPlayer> _players;
-  late final List<double> _volumes; // current volume 0..1
-  late final List<bool> _muted; // per-section mute
+  late final List<double> _volumes;
+  late final List<bool> _muted;
 
-  bool _ready = false; // sources loaded
+  /// Index of the player used as position/duration master.
+  int? _masterIdx;
+
+  bool _ready = false;
   bool _loading = true;
   String? _loadError;
   bool _playing = false;
@@ -37,9 +41,16 @@ class _SongDetailScreenState extends State<SongDetailScreen>
   StreamSubscription<Duration>? _durSub;
   StreamSubscription<void>? _completeSub;
 
+  /// Periodic timer that re-aligns all players to the master position.
+  Timer? _driftTimer;
+
+  /// Supabase Realtime broadcast channel for cross-device playback sync.
+  RealtimeChannel? _syncChannel;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _tabs = TabController(length: 3, vsync: this);
     // Allow all tracks to play simultaneously on Android by not requesting
     // exclusive audio focus — without this only one player wins focus and the
@@ -62,7 +73,6 @@ class _SongDetailScreenState extends State<SongDetailScreen>
     _players = List.generate(choirVoiceParts.length, (_) => AudioPlayer());
     _volumes = List<double>.filled(choirVoiceParts.length, 0.8);
     _muted = List<bool>.filled(choirVoiceParts.length, false);
-    // Boost your own section by default.
     final mine = _myIndex();
     if (mine >= 0) _volumes[mine] = 1.0;
     _initPlayers();
@@ -89,6 +99,14 @@ class _SongDetailScreenState extends State<SongDetailScreen>
         if (url != null && url.isNotEmpty) {
           await p.setSource(UrlSource(url));
           masterIdx ??= i;
+          // Imperatively fetch duration — the onDurationChanged event may
+          // have fired before the stream listener below was attached.
+          if (masterIdx == i) {
+            final d = await p.getDuration();
+            if (d != null && d > Duration.zero) {
+              if (mounted) setState(() => _total = d);
+            }
+          }
         }
       }
       if (masterIdx == null) {
@@ -99,7 +117,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
         });
         return;
       }
-      // Use the first available part as the position/duration master.
+      _masterIdx = masterIdx;
       final master = _players[masterIdx];
       _posSub = master.onPositionChanged.listen((p) {
         if (!mounted) return;
@@ -110,11 +128,11 @@ class _SongDetailScreenState extends State<SongDetailScreen>
         setState(() => _total = d);
       });
       _completeSub = master.onPlayerComplete.listen((_) async {
-        // Stop the rest too, reset position to 0.
         for (final p in _players) {
           await p.stop();
           await p.seek(Duration.zero);
         }
+        _driftTimer?.cancel();
         if (!mounted) return;
         setState(() {
           _playing = false;
@@ -126,6 +144,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
         _ready = true;
         _loading = false;
       });
+      _subscribeSyncChannel();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -135,9 +154,111 @@ class _SongDetailScreenState extends State<SongDetailScreen>
     }
   }
 
+  // ── Cross-device sync via Supabase Realtime broadcast ─────────────────────
+
+  void _subscribeSyncChannel() {
+    _syncChannel = Supabase.instance.client
+        .channel('song_sync_${widget.song.id}')
+        .onBroadcast(event: 'ctl', callback: _onRemoteControl)
+        .subscribe();
+  }
+
+  Future<void> _onRemoteControl(Map<String, dynamic> payload) async {
+    final type = payload['type'] as String?;
+    if (type == null || !mounted) return;
+    switch (type) {
+      case 'play':
+        final posMs = (payload['pos_ms'] as num?)?.toInt() ?? 0;
+        final sentAt = (payload['sent_at'] as num?)?.toInt() ?? 0;
+        // Compensate for network latency so all devices start at the same
+        // logical position.
+        final latencyMs =
+            DateTime.now().millisecondsSinceEpoch - sentAt;
+        final adjustedMs =
+            (posMs + latencyMs).clamp(0, _total.inMilliseconds);
+        final target = Duration(milliseconds: adjustedMs);
+        await Future.wait(_players.map((p) => p.seek(target)));
+        await Future.wait(_players.map((p) => p.resume()));
+        if (!mounted) return;
+        setState(() {
+          _playing = true;
+          _pos = target;
+        });
+        _startDriftCorrection();
+      case 'pause':
+        final posMs = (payload['pos_ms'] as num?)?.toInt() ?? 0;
+        for (final p in _players) {
+          await p.pause();
+        }
+        _driftTimer?.cancel();
+        if (!mounted) return;
+        setState(() {
+          _playing = false;
+          _pos = Duration(milliseconds: posMs);
+        });
+      case 'seek':
+        final posMs = (payload['pos_ms'] as num?)?.toInt() ?? 0;
+        final target = Duration(milliseconds: posMs);
+        await Future.wait(_players.map((p) => p.seek(target)));
+        if (!mounted) return;
+        setState(() => _pos = target);
+    }
+  }
+
+  // ── Drift correction (same-device) ────────────────────────────────────────
+
+  void _startDriftCorrection() {
+    _driftTimer?.cancel();
+    _driftTimer = Timer.periodic(const Duration(seconds: 3), (_) async {
+      final mi = _masterIdx;
+      if (!_playing || mi == null) return;
+      final masterPos = await _players[mi].getCurrentPosition();
+      if (masterPos == null) return;
+      for (var i = 0; i < _players.length; i++) {
+        if (i == mi) continue;
+        final url = widget.song.urlForPart(i);
+        if (url == null || url.isEmpty) continue;
+        final pos = await _players[i].getCurrentPosition();
+        if (pos == null) continue;
+        final drift =
+            (pos.inMilliseconds - masterPos.inMilliseconds).abs();
+        // More than 150 ms off — hard-seek to re-align.
+        if (drift > 150) {
+          await _players[i].seek(masterPos);
+        }
+      }
+    });
+  }
+
+  // ── App lifecycle ──────────────────────────────────────────────────────────
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _playing) {
+      // Re-align all players to master after returning from background.
+      _resyncToMaster();
+    }
+  }
+
+  Future<void> _resyncToMaster() async {
+    final mi = _masterIdx;
+    if (mi == null) return;
+    final masterPos = await _players[mi].getCurrentPosition();
+    if (masterPos == null) return;
+    for (var i = 0; i < _players.length; i++) {
+      if (i == mi) continue;
+      final url = widget.song.urlForPart(i);
+      if (url == null || url.isEmpty) continue;
+      await _players[i].seek(masterPos);
+    }
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _tabs.dispose();
+    _driftTimer?.cancel();
+    _syncChannel?.unsubscribe();
     _posSub?.cancel();
     _durSub?.cancel();
     _completeSub?.cancel();
@@ -147,17 +268,33 @@ class _SongDetailScreenState extends State<SongDetailScreen>
     super.dispose();
   }
 
+  // ── Playback controls ──────────────────────────────────────────────────────
+
   Future<void> _togglePlay() async {
     if (!_ready) return;
     if (_playing) {
       for (final p in _players) {
         await p.pause();
       }
+      _driftTimer?.cancel();
       setState(() => _playing = false);
+      await _syncChannel?.sendBroadcastMessage(
+        event: 'ctl',
+        payload: {'type': 'pause', 'pos_ms': _pos.inMilliseconds},
+      );
     } else {
       // Fire resume on all in parallel for closest sync.
       await Future.wait(_players.map((p) => p.resume()));
       setState(() => _playing = true);
+      _startDriftCorrection();
+      await _syncChannel?.sendBroadcastMessage(
+        event: 'ctl',
+        payload: {
+          'type': 'play',
+          'pos_ms': _pos.inMilliseconds,
+          'sent_at': DateTime.now().millisecondsSinceEpoch,
+        },
+      );
     }
   }
 
@@ -166,11 +303,16 @@ class _SongDetailScreenState extends State<SongDetailScreen>
       await p.stop();
       await p.seek(Duration.zero);
     }
+    _driftTimer?.cancel();
     if (!mounted) return;
     setState(() {
       _playing = false;
       _pos = Duration.zero;
     });
+    await _syncChannel?.sendBroadcastMessage(
+      event: 'ctl',
+      payload: {'type': 'seek', 'pos_ms': 0},
+    );
   }
 
   Future<void> _seekAll(double value) async {
@@ -180,6 +322,10 @@ class _SongDetailScreenState extends State<SongDetailScreen>
     );
     await Future.wait(_players.map((p) => p.seek(target)));
     if (mounted) setState(() => _pos = target);
+    await _syncChannel?.sendBroadcastMessage(
+      event: 'ctl',
+      payload: {'type': 'seek', 'pos_ms': target.inMilliseconds},
+    );
   }
 
   Future<void> _setVolume(int i, double v) async {
@@ -218,15 +364,11 @@ class _SongDetailScreenState extends State<SongDetailScreen>
     if (mounted) setState(() {});
   }
 
-  /// Short 2–3 char chip label for the mixer row, derived from the
-  /// SQL key (e.g. `mezzo_soprano` -> `MS`, `tenor_i` -> `TI`).
   String _shortLabel(String key) {
     final parts = key.split('_');
     if (parts.length == 1) {
-      // Single word — first 2 letters in upper case.
       return parts[0].substring(0, parts[0].length >= 2 ? 2 : 1).toUpperCase();
     }
-    // Multi-word — first letter of each part.
     return parts.map((p) => p[0]).join().toUpperCase();
   }
 
@@ -234,11 +376,9 @@ class _SongDetailScreenState extends State<SongDetailScreen>
     final voice = (AppState.instance.currentMember?.voiceSection ?? '')
         .toLowerCase()
         .trim();
-    // Match the new vocabulary by lower-casing both sides.
     for (var i = 0; i < choirVoiceParts.length; i++) {
       if (choirVoiceParts[i].toLowerCase() == voice) return i;
     }
-    // Loose fallbacks for older saved values.
     switch (voice) {
       case 'mezzo-soprano':
         return choirVoiceParts.indexOf('Mezzo Soprano');
@@ -275,8 +415,6 @@ class _SongDetailScreenState extends State<SongDetailScreen>
   Future<void> _openYoutube() async {
     final url = widget.song.youtubeUrl;
     if (url == null || url.isEmpty) return;
-    // Pause any audio that's currently playing so two players don't
-    // overlap.
     for (final p in _players) {
       await p.pause();
     }
@@ -285,7 +423,6 @@ class _SongDetailScreenState extends State<SongDetailScreen>
   }
 
   Future<void> _openEdit() async {
-    // Pause any playing audio before navigating away.
     for (final p in _players) {
       await p.pause();
     }
@@ -341,7 +478,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
     final me = AppState.instance.currentMember;
     if (me == null) return;
     AppState.instance.toggleMemorized(widget.song.id);
-    setState(() {}); // refresh this screen's icon immediately
+    setState(() {});
     try {
       if (currentlyMemorized) {
         await MemberSongsService.remove(
@@ -737,7 +874,8 @@ class _PartMixerRow extends StatelessWidget {
               data: SliderTheme.of(context).copyWith(
                 trackHeight: 3,
                 thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
-                overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+                overlayShape:
+                    const RoundSliderOverlayShape(overlayRadius: 14),
               ),
               child: Slider(
                 value: volume,

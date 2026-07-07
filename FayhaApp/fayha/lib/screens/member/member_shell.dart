@@ -168,7 +168,12 @@ class _MemberShellState extends State<MemberShell> {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
-        return Scaffold(
+        // Block the Android back gesture from silently dropping the user
+        // back to the public view while they're logged in. The explicit
+        // Logout button in the app bar is the correct exit path.
+        return PopScope(
+          canPop: false,
+          child: Scaffold(
           appBar: AppBar(
             automaticallyImplyLeading: false,
             titleSpacing: 16,
@@ -288,6 +293,7 @@ class _MemberShellState extends State<MemberShell> {
               ),
             ],
           ),
+        ),
         );
       },
     );
