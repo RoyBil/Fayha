@@ -174,126 +174,126 @@ class _MemberShellState extends State<MemberShell> {
         return PopScope(
           canPop: false,
           child: Scaffold(
-          appBar: AppBar(
-            automaticallyImplyLeading: false,
-            titleSpacing: 16,
-            title: Row(
-              children: [
-                Avatar(name: m.name, size: 32),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _titles[_index],
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
+            appBar: AppBar(
+              automaticallyImplyLeading: false,
+              titleSpacing: 16,
+              title: Row(
+                children: [
+                  Avatar(name: m.name, size: 32),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _titles[_index],
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                      Text(
-                        '${m.voiceSection} · ${m.branch}',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.gray,
-                          fontWeight: FontWeight.w500,
+                        Text(
+                          '${m.voiceSection} · ${m.branch}',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.gray,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
+                ],
+              ),
+              actions: [
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.notifications_outlined),
+                      onPressed: _openNotifications,
+                    ),
+                    if (_unread > 0)
+                      Positioned(
+                        right: 8,
+                        top: 8,
+                        child: Container(
+                          constraints: const BoxConstraints(
+                            minWidth: 16,
+                            minHeight: 16,
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.accent,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: AppColors.cream,
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Text(
+                            _unread > 9 ? '9+' : '$_unread',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: AppColors.dark,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              height: 1,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                IconButton(
+                  tooltip: 'Log out',
+                  icon: const Icon(Icons.logout),
+                  onPressed: () => _confirmLogout(context),
+                ),
+                const SizedBox(width: 4),
+              ],
+            ),
+            body: BrandedBackground(
+              child: IndexedStack(index: _index, children: _screens),
+            ),
+            bottomNavigationBar: NavigationBar(
+              selectedIndex: _index,
+              onDestinationSelected: (i) {
+                setState(() => _index = i);
+                _refreshUnread();
+              },
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.dashboard_outlined),
+                  selectedIcon: Icon(Icons.dashboard),
+                  label: 'Home',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.library_music_outlined),
+                  selectedIcon: Icon(Icons.library_music),
+                  label: 'Songs',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.feed_outlined),
+                  selectedIcon: Icon(Icons.feed),
+                  label: 'News',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.map_outlined),
+                  selectedIcon: Icon(Icons.map),
+                  label: 'Map',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.more_horiz_outlined),
+                  selectedIcon: Icon(Icons.more_horiz),
+                  label: 'More',
                 ),
               ],
             ),
-            actions: [
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.notifications_outlined),
-                    onPressed: _openNotifications,
-                  ),
-                  if (_unread > 0)
-                    Positioned(
-                      right: 8,
-                      top: 8,
-                      child: Container(
-                        constraints: const BoxConstraints(
-                          minWidth: 16,
-                          minHeight: 16,
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.accent,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: AppColors.cream,
-                            width: 1.5,
-                          ),
-                        ),
-                        child: Text(
-                          _unread > 9 ? '9+' : '$_unread',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: AppColors.dark,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            height: 1,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-              IconButton(
-                tooltip: 'Log out',
-                icon: const Icon(Icons.logout),
-                onPressed: () => _confirmLogout(context),
-              ),
-              const SizedBox(width: 4),
-            ],
           ),
-          body: BrandedBackground(
-            child: IndexedStack(index: _index, children: _screens),
-          ),
-          bottomNavigationBar: NavigationBar(
-            selectedIndex: _index,
-            onDestinationSelected: (i) {
-              setState(() => _index = i);
-              _refreshUnread();
-            },
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.dashboard_outlined),
-                selectedIcon: Icon(Icons.dashboard),
-                label: 'Home',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.library_music_outlined),
-                selectedIcon: Icon(Icons.library_music),
-                label: 'Songs',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.feed_outlined),
-                selectedIcon: Icon(Icons.feed),
-                label: 'News',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.map_outlined),
-                selectedIcon: Icon(Icons.map),
-                label: 'Map',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.more_horiz_outlined),
-                selectedIcon: Icon(Icons.more_horiz),
-                label: 'More',
-              ),
-            ],
-          ),
-        ),
         );
       },
     );

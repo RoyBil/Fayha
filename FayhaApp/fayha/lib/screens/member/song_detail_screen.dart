@@ -172,10 +172,8 @@ class _SongDetailScreenState extends State<SongDetailScreen>
         final sentAt = (payload['sent_at'] as num?)?.toInt() ?? 0;
         // Compensate for network latency so all devices start at the same
         // logical position.
-        final latencyMs =
-            DateTime.now().millisecondsSinceEpoch - sentAt;
-        final adjustedMs =
-            (posMs + latencyMs).clamp(0, _total.inMilliseconds);
+        final latencyMs = DateTime.now().millisecondsSinceEpoch - sentAt;
+        final adjustedMs = (posMs + latencyMs).clamp(0, _total.inMilliseconds);
         final target = Duration(milliseconds: adjustedMs);
         await Future.wait(_players.map((p) => p.seek(target)));
         await Future.wait(_players.map((p) => p.resume()));
@@ -220,8 +218,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
         if (url == null || url.isEmpty) continue;
         final pos = await _players[i].getCurrentPosition();
         if (pos == null) continue;
-        final drift =
-            (pos.inMilliseconds - masterPos.inMilliseconds).abs();
+        final drift = (pos.inMilliseconds - masterPos.inMilliseconds).abs();
         // More than 150 ms off — hard-seek to re-align.
         if (drift > 150) {
           await _players[i].seek(masterPos);
@@ -874,8 +871,7 @@ class _PartMixerRow extends StatelessWidget {
               data: SliderTheme.of(context).copyWith(
                 trackHeight: 3,
                 thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
-                overlayShape:
-                    const RoundSliderOverlayShape(overlayRadius: 14),
+                overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
               ),
               child: Slider(
                 value: volume,
