@@ -37,6 +37,9 @@ android/.gradle/
 android/captures/
 android/gradlew.bat
 
+# Supabase CLI local cache (machine-specific, not for version control)
+**/.temp/
+
 # General
 *.log
 *.pyc
