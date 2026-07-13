@@ -55,8 +55,8 @@ class _BusRoutePlannerTabState extends State<BusRoutePlannerTab>
     setState(() => _locating = true);
     try {
       if (!await Geolocator.isLocationServiceEnabled()) {
-      return;
-    }
+        return;
+      }
       var perm = await Geolocator.checkPermission();
       if (perm == LocationPermission.denied) {
         perm = await Geolocator.requestPermission();
@@ -66,8 +66,9 @@ class _BusRoutePlannerTabState extends State<BusRoutePlannerTab>
         return;
       }
       final pos = await Geolocator.getCurrentPosition(
-        locationSettings:
-            const LocationSettings(accuracy: LocationAccuracy.high),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
       if (!mounted) return;
       setState(() => _myLocation = LatLng(pos.latitude, pos.longitude));
@@ -114,7 +115,10 @@ class _BusRoutePlannerTabState extends State<BusRoutePlannerTab>
       _routing = true;
       _route = null;
     });
-    final via = [for (final p in _stopPts) if (p != null) p];
+    final via = [
+      for (final p in _stopPts)
+        if (p != null) p,
+    ];
     final r = await OsrmService.route(_fromPt!, _toPt!, waypoints: via);
     if (!mounted) return;
     setState(() {
@@ -123,10 +127,12 @@ class _BusRoutePlannerTabState extends State<BusRoutePlannerTab>
     });
     if (r != null && r.polyline.length > 1) {
       try {
-        _ctrl.fitCamera(CameraFit.bounds(
-          bounds: LatLngBounds.fromPoints(r.polyline),
-          padding: const EdgeInsets.fromLTRB(48, 80, 48, 300),
-        ));
+        _ctrl.fitCamera(
+          CameraFit.bounds(
+            bounds: LatLngBounds.fromPoints(r.polyline),
+            padding: const EdgeInsets.fromLTRB(48, 80, 48, 300),
+          ),
+        );
       } catch (_) {}
     } else if (r == null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -177,13 +183,13 @@ class _BusRoutePlannerTabState extends State<BusRoutePlannerTab>
             initialZoom: _defaultZoom,
             minZoom: 2,
             maxZoom: 20,
-            interactionOptions:
-                const InteractionOptions(flags: InteractiveFlag.all),
+            interactionOptions: const InteractionOptions(
+              flags: InteractiveFlag.all,
+            ),
           ),
           children: [
             TileLayer(
-              urlTemplate:
-                  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+              urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
               subdomains: const ['a', 'b', 'c'],
               userAgentPackageName: 'com.fayhanationalchoir.app',
               maxNativeZoom: 19,
@@ -296,41 +302,44 @@ class _BusRoutePlannerTabState extends State<BusRoutePlannerTab>
     final markers = <Marker>[];
 
     if (_myLocation != null) {
-      markers.add(Marker(
-        point: _myLocation!,
-        width: 22,
-        height: 22,
-        child: _BlueDot(),
-      ));
+      markers.add(
+        Marker(point: _myLocation!, width: 22, height: 22, child: _BlueDot()),
+      );
     }
     if (_fromPt != null) {
-      markers.add(Marker(
-        point: _fromPt!,
-        width: 36,
-        height: 46,
-        alignment: Alignment.bottomCenter,
-        child: const _WaypointPin(label: 'A', color: AppColors.secondary),
-      ));
-    }
-    for (int i = 0; i < _stopPts.length; i++) {
-      if (_stopPts[i] != null) {
-        markers.add(Marker(
-          point: _stopPts[i]!,
+      markers.add(
+        Marker(
+          point: _fromPt!,
           width: 36,
           height: 46,
           alignment: Alignment.bottomCenter,
-          child: _WaypointPin(label: '${i + 1}', color: AppColors.accentDark),
-        ));
+          child: const _WaypointPin(label: 'A', color: AppColors.secondary),
+        ),
+      );
+    }
+    for (int i = 0; i < _stopPts.length; i++) {
+      if (_stopPts[i] != null) {
+        markers.add(
+          Marker(
+            point: _stopPts[i]!,
+            width: 36,
+            height: 46,
+            alignment: Alignment.bottomCenter,
+            child: _WaypointPin(label: '${i + 1}', color: AppColors.accentDark),
+          ),
+        );
       }
     }
     if (_toPt != null) {
-      markers.add(Marker(
-        point: _toPt!,
-        width: 36,
-        height: 46,
-        alignment: Alignment.bottomCenter,
-        child: const _WaypointPin(label: 'B', color: AppColors.primary),
-      ));
+      markers.add(
+        Marker(
+          point: _toPt!,
+          width: 36,
+          height: 46,
+          alignment: Alignment.bottomCenter,
+          child: const _WaypointPin(label: 'B', color: AppColors.primary),
+        ),
+      );
     }
 
     return markers;
@@ -462,8 +471,10 @@ class _RoutePlannerPanel extends StatelessWidget {
                         color: AppColors.gray,
                       ),
                       padding: EdgeInsets.zero,
-                      constraints:
-                          const BoxConstraints(minWidth: 28, minHeight: 28),
+                      constraints: const BoxConstraints(
+                        minWidth: 28,
+                        minHeight: 28,
+                      ),
                       tooltip: 'Remove stop',
                     ),
                   ),
@@ -528,8 +539,7 @@ class _RoutePlannerPanel extends StatelessWidget {
           if (route != null)
             Container(
               margin: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               decoration: BoxDecoration(
                 color: AppColors.primary.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(12),
@@ -545,11 +555,7 @@ class _RoutePlannerPanel extends StatelessWidget {
                     value: route!.distanceLabel,
                     sub: 'Distance',
                   ),
-                  Container(
-                    width: 1,
-                    height: 36,
-                    color: AppColors.lightGray,
-                  ),
+                  Container(width: 1, height: 36, color: AppColors.lightGray),
                   _StatBadge(
                     icon: Icons.schedule_rounded,
                     value: route!.etaLabel,
@@ -654,8 +660,7 @@ class _WaypointTile extends StatelessWidget {
                     isEmpty ? hint : value,
                     style: TextStyle(
                       fontSize: 14,
-                      fontWeight:
-                          isEmpty ? FontWeight.w400 : FontWeight.w600,
+                      fontWeight: isEmpty ? FontWeight.w400 : FontWeight.w600,
                       color: isEmpty ? AppColors.lightGray : AppColors.dark,
                     ),
                     maxLines: 1,
@@ -668,10 +673,7 @@ class _WaypointTile extends StatelessWidget {
         ),
         if (trailing != null) ...[
           const SizedBox(width: 4),
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: trailing!,
-          ),
+          Padding(padding: const EdgeInsets.only(top: 8), child: trailing!),
         ],
       ],
     );
@@ -707,8 +709,7 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => _focus.requestFocus());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _focus.requestFocus());
   }
 
   @override
@@ -782,8 +783,10 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
                     icon: const Icon(Icons.close, size: 20),
                     onPressed: () => Navigator.of(context).pop(),
                     padding: EdgeInsets.zero,
-                    constraints:
-                        const BoxConstraints(minWidth: 36, minHeight: 36),
+                    constraints: const BoxConstraints(
+                      minWidth: 36,
+                      minHeight: 36,
+                    ),
                   ),
                 ],
               ),
@@ -841,9 +844,7 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
             if (_loading)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 24),
-                child: Center(
-                  child: CircularProgressIndicator(),
-                ),
+                child: Center(child: CircularProgressIndicator()),
               )
             else if (_results.isNotEmpty)
               ConstrainedBox(
@@ -852,11 +853,8 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
                   shrinkWrap: true,
                   padding: const EdgeInsets.only(top: 4, bottom: 24),
                   itemCount: _results.length,
-                  separatorBuilder: (_, __) => const Divider(
-                    height: 1,
-                    indent: 56,
-                    endIndent: 16,
-                  ),
+                  separatorBuilder: (_, __) =>
+                      const Divider(height: 1, indent: 56, endIndent: 16),
                   itemBuilder: (_, i) {
                     final r = _results[i];
                     return ListTile(
@@ -973,8 +971,9 @@ class _WaypointPin extends StatelessWidget {
           height: 12,
           decoration: BoxDecoration(
             color: color,
-            borderRadius:
-                const BorderRadius.vertical(bottom: Radius.circular(2)),
+            borderRadius: const BorderRadius.vertical(
+              bottom: Radius.circular(2),
+            ),
           ),
         ),
         Container(
@@ -999,11 +998,7 @@ class _BlueDot extends StatelessWidget {
         shape: BoxShape.circle,
         border: Border.all(color: Colors.white, width: 2.5),
         boxShadow: const [
-          BoxShadow(
-            color: Color(0x441565C0),
-            blurRadius: 8,
-            spreadRadius: 2,
-          ),
+          BoxShadow(color: Color(0x441565C0), blurRadius: 8, spreadRadius: 2),
         ],
       ),
     );
@@ -1015,7 +1010,11 @@ class _StatBadge extends StatelessWidget {
   final String value;
   final String sub;
 
-  const _StatBadge({required this.icon, required this.value, required this.sub});
+  const _StatBadge({
+    required this.icon,
+    required this.value,
+    required this.sub,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1038,10 +1037,7 @@ class _StatBadge extends StatelessWidget {
             ),
             Text(
               sub,
-              style: const TextStyle(
-                fontSize: 11,
-                color: AppColors.gray,
-              ),
+              style: const TextStyle(fontSize: 11, color: AppColors.gray),
             ),
           ],
         ),

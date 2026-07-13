@@ -303,9 +303,14 @@ class _BusRouteLiveScreenState extends State<BusRouteLiveScreen>
     try {
       final PickupRequest req;
       if (_pendingPickup != null) {
-        req = await BusPickupService.requestAt(widget.route.id, _pendingPickup!);
+        req = await BusPickupService.requestAt(
+          widget.route.id,
+          _pendingPickup!,
+        );
       } else {
-        req = await BusPickupService.requestFromCurrentLocation(widget.route.id);
+        req = await BusPickupService.requestFromCurrentLocation(
+          widget.route.id,
+        );
       }
       if (!mounted) return;
       setState(() {
@@ -343,9 +348,9 @@ class _BusRouteLiveScreenState extends State<BusRouteLiveScreen>
   }
 
   void _clearPendingPickup() => setState(() {
-        _pendingPickup = null;
-        _pendingPickupLabel = null;
-      });
+    _pendingPickup = null;
+    _pendingPickupLabel = null;
+  });
 
   // ── Navigation to nearest stop ───────────────────────────────────────
 
@@ -400,10 +405,10 @@ class _BusRouteLiveScreenState extends State<BusRouteLiveScreen>
   }
 
   void _clearNavigation() => setState(() {
-        _navRoute = null;
-        _navTargetName = null;
-        _myNavLocation = null;
-      });
+    _navRoute = null;
+    _navTargetName = null;
+    _myNavLocation = null;
+  });
 
   ({String name, LatLng loc}) _nearestTarget(LatLng from) {
     final r = widget.route;
@@ -430,7 +435,8 @@ class _BusRouteLiveScreenState extends State<BusRouteLiveScreen>
     final dLng = (b.longitude - a.longitude) * math.pi / 180;
     final sinDLat = math.sin(dLat / 2);
     final sinDLng = math.sin(dLng / 2);
-    final x = sinDLat * sinDLat +
+    final x =
+        sinDLat * sinDLat +
         math.cos(a.latitude * math.pi / 180) *
             math.cos(b.latitude * math.pi / 180) *
             sinDLng *
@@ -553,7 +559,11 @@ class _BusRouteLiveScreenState extends State<BusRouteLiveScreen>
                   color: AppColors.accent,
                   borderRadius: BorderRadius.circular(6),
                   boxShadow: const [
-                    BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1)),
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 3,
+                      offset: Offset(0, 1),
+                    ),
                   ],
                 ),
                 child: Text(
@@ -566,11 +576,7 @@ class _BusRouteLiveScreenState extends State<BusRouteLiveScreen>
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Container(
-                width: 3,
-                height: 12,
-                color: AppColors.accent,
-              ),
+              Container(width: 3, height: 12, color: AppColors.accent),
               Container(
                 width: 12,
                 height: 12,
@@ -816,11 +822,12 @@ class _BusRouteLiveScreenState extends State<BusRouteLiveScreen>
                               ),
                             )
                           : _ZoomBtn(
-                              icon: (_navRoute != null || _myNavLocation != null)
+                              icon:
+                                  (_navRoute != null || _myNavLocation != null)
                                   ? Icons.navigation
                                   : Icons.navigation_outlined,
-                              iconColor: (_navRoute != null ||
-                                      _myNavLocation != null)
+                              iconColor:
+                                  (_navRoute != null || _myNavLocation != null)
                                   ? const Color(0xFF1565C0)
                                   : null,
                               onTap: _toggleNavigation,
@@ -927,22 +934,37 @@ class _BusRouteLiveScreenState extends State<BusRouteLiveScreen>
                     left: 10,
                     right: 52,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.accent.withValues(alpha: 0.95),
                         borderRadius: BorderRadius.circular(10),
                         boxShadow: const [
-                          BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2)),
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
                         ],
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.front_hand, size: 16, color: AppColors.dark),
+                          const Icon(
+                            Icons.front_hand,
+                            size: 16,
+                            color: AppColors.dark,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               'Pickup: ${_pendingPickupLabel ?? 'Selected location'}\nTap the button below to confirm',
-                              style: const TextStyle(fontSize: 11, color: AppColors.dark, fontWeight: FontWeight.w600),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.dark,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ],
@@ -1663,7 +1685,11 @@ class _PickupSearchSheetState extends State<_PickupSearchSheet> {
     _debounce = Timer(const Duration(milliseconds: 350), () async {
       setState(() => _loading = true);
       final r = await PhotonService.search(q.trim(), near: widget.near);
-      if (mounted) setState(() { _results = r; _loading = false; });
+      if (mounted)
+        setState(() {
+          _results = r;
+          _loading = false;
+        });
     });
   }
 
@@ -1720,9 +1746,20 @@ class _PickupSearchSheetState extends State<_PickupSearchSheet> {
               itemBuilder: (_, i) {
                 final r = _results[i];
                 return ListTile(
-                  leading: const Icon(Icons.place_outlined, color: AppColors.primary),
-                  title: Text(r.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                  subtitle: r.subtitle.isNotEmpty ? Text(r.subtitle, style: const TextStyle(fontSize: 12)) : null,
+                  leading: const Icon(
+                    Icons.place_outlined,
+                    color: AppColors.primary,
+                  ),
+                  title: Text(
+                    r.name,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: r.subtitle.isNotEmpty
+                      ? Text(r.subtitle, style: const TextStyle(fontSize: 12))
+                      : null,
                   onTap: () => Navigator.pop(context, r),
                 );
               },

@@ -38,16 +38,14 @@ class OsrmService {
     List<LatLng> waypoints = const [],
   }) async {
     final all = [start, ...waypoints, end];
-    final coords =
-        all.map((p) => '${p.longitude},${p.latitude}').join(';');
+    final coords = all.map((p) => '${p.longitude},${p.latitude}').join(';');
     try {
       final res = await http
           .get(
-            Uri.https(
-              'router.project-osrm.org',
-              '/route/v1/driving/$coords',
-              {'overview': 'full', 'geometries': 'geojson'},
-            ),
+            Uri.https('router.project-osrm.org', '/route/v1/driving/$coords', {
+              'overview': 'full',
+              'geometries': 'geojson',
+            }),
             headers: {'User-Agent': 'FayhaNationalChoirApp/1.0'},
           )
           .timeout(const Duration(seconds: 15));
@@ -65,7 +63,9 @@ class OsrmService {
 
       return OsrmRoute(
         polyline: rawCoords
-            .map((c) => LatLng((c[1] as num).toDouble(), (c[0] as num).toDouble()))
+            .map(
+              (c) => LatLng((c[1] as num).toDouble(), (c[0] as num).toDouble()),
+            )
             .toList(),
         distanceM: (r['distance'] as num).toDouble(),
         durationS: (r['duration'] as num).toDouble(),

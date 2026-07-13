@@ -98,10 +98,7 @@ class _BusRouteEditorScreenState extends State<BusRouteEditorScreen> {
 
   void _scheduleRecalc() {
     _recalcDebounce?.cancel();
-    _recalcDebounce = Timer(
-      const Duration(milliseconds: 400),
-      _recalcRoute,
-    );
+    _recalcDebounce = Timer(const Duration(milliseconds: 400), _recalcRoute);
   }
 
   Future<void> _recalcRoute() async {
@@ -648,7 +645,11 @@ class _BusRouteEditorScreenState extends State<BusRouteEditorScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.route, color: Colors.white, size: 16),
+                          const Icon(
+                            Icons.route,
+                            color: Colors.white,
+                            size: 16,
+                          ),
                           const SizedBox(width: 6),
                           Text(
                             _preview!.distanceLabel,
@@ -799,8 +800,7 @@ class _PlacesSearchSheetState extends State<_PlacesSearchSheet> {
   bool _searching = false;
   Timer? _debounce;
 
-  bool get _hasGoogleKey =>
-      (GooglePlacesService.apiKey?.isNotEmpty ?? false);
+  bool get _hasGoogleKey => (GooglePlacesService.apiKey?.isNotEmpty ?? false);
 
   @override
   void dispose() {
@@ -927,8 +927,9 @@ class _PlacesSearchSheetState extends State<_PlacesSearchSheet> {
 class _SearchHit {
   final String primaryText;
   final String secondaryText;
-  final String? placeId;       // set when coming from Google Places
-  final PlaceDetail? resolved; // set when coming from Photon (no extra call needed)
+  final String? placeId; // set when coming from Google Places
+  final PlaceDetail?
+  resolved; // set when coming from Photon (no extra call needed)
 
   const _SearchHit({
     required this.primaryText,
@@ -938,21 +939,21 @@ class _SearchHit {
   });
 
   factory _SearchHit.fromGoogle(PlaceSuggestion s) => _SearchHit(
-        primaryText: s.primaryText,
-        secondaryText: s.secondaryText,
-        placeId: s.placeId,
-      );
+    primaryText: s.primaryText,
+    secondaryText: s.secondaryText,
+    placeId: s.placeId,
+  );
 
   factory _SearchHit.fromPhoton(PhotonResult p) => _SearchHit(
-        primaryText: p.name,
-        secondaryText: p.subtitle,
-        resolved: PlaceDetail(
-          placeId: '',
-          name: p.name,
-          address: p.subtitle,
-          location: p.location,
-        ),
-      );
+    primaryText: p.name,
+    secondaryText: p.subtitle,
+    resolved: PlaceDetail(
+      placeId: '',
+      name: p.name,
+      address: p.subtitle,
+      location: p.location,
+    ),
+  );
 }
 
 class _StopsStrip extends StatelessWidget {

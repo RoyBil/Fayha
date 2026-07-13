@@ -28,7 +28,8 @@ class PhotonService {
     final q = query.trim();
     if (q.length < 2) return const [];
 
-    final key = '$q|${near?.latitude.toStringAsFixed(3)}|${near?.longitude.toStringAsFixed(3)}';
+    final key =
+        '$q|${near?.latitude.toStringAsFixed(3)}|${near?.longitude.toStringAsFixed(3)}';
     if (_cache.containsKey(key)) return _cache[key]!;
 
     final params = <String, String>{'q': q, 'limit': '$limit', 'lang': 'en'};
@@ -54,7 +55,8 @@ class PhotonService {
       for (final f in features) {
         final coords = (f['geometry']['coordinates'] as List).cast<num>();
         final p = f['properties'] as Map<String, dynamic>;
-        final name = (p['name'] as String?) ??
+        final name =
+            (p['name'] as String?) ??
             (p['street'] as String?) ??
             (p['city'] as String?) ??
             '';
@@ -70,11 +72,13 @@ class PhotonService {
         final country = p['country'] as String?;
         if (country != null) sub.add(country);
 
-        results.add(PhotonResult(
-          name: name,
-          subtitle: sub.join(', '),
-          location: LatLng(coords[1].toDouble(), coords[0].toDouble()),
-        ));
+        results.add(
+          PhotonResult(
+            name: name,
+            subtitle: sub.join(', '),
+            location: LatLng(coords[1].toDouble(), coords[0].toDouble()),
+          ),
+        );
       }
 
       if (_cache.length >= _cacheMax) _cache.remove(_cache.keys.first);

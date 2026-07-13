@@ -93,8 +93,9 @@ class _NavigateTabState extends State<NavigateTab>
       }
 
       final pos = await Geolocator.getCurrentPosition(
-        locationSettings:
-            const LocationSettings(accuracy: LocationAccuracy.high),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
       if (!mounted) return;
 
@@ -110,7 +111,10 @@ class _NavigateTabState extends State<NavigateTab>
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Location: $e'), duration: const Duration(seconds: 3)),
+        SnackBar(
+          content: Text('Location: $e'),
+          duration: const Duration(seconds: 3),
+        ),
       );
     } finally {
       if (mounted) setState(() => _locating = false);
@@ -270,8 +274,7 @@ class _NavigateTabState extends State<NavigateTab>
           ),
           children: [
             TileLayer(
-              urlTemplate:
-                  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
               userAgentPackageName: 'com.fayhanationalchoir.app',
               maxNativeZoom: 19,
               maxZoom: 20,
@@ -330,10 +333,7 @@ class _NavigateTabState extends State<NavigateTab>
             bottom: 20,
             left: 16,
             right: 16,
-            child: _RouteInfoCard(
-              route: _route!,
-              onClear: _clearRoute,
-            ),
+            child: _RouteInfoCard(route: _route!, onClear: _clearRoute),
           ),
 
         // ── FABs ──────────────────────────────────────────────────────────────
@@ -354,36 +354,42 @@ class _NavigateTabState extends State<NavigateTab>
 
     // Blue dot — current GPS position
     if (_currentLocation != null) {
-      markers.add(Marker(
-        point: _currentLocation!,
-        width: 22,
-        height: 22,
-        child: _CurrentLocationDot(),
-      ));
+      markers.add(
+        Marker(
+          point: _currentLocation!,
+          width: 22,
+          height: 22,
+          child: _CurrentLocationDot(),
+        ),
+      );
     }
 
     // Green start marker (when explicitly set and different from current GPS)
     final startPt = _start;
     if (startPt != null &&
         (_currentLocation == null || startPt != _currentLocation)) {
-      markers.add(Marker(
-        point: startPt,
-        width: 34,
-        height: 40,
-        alignment: Alignment.bottomCenter,
-        child: const _PinIcon(color: AppColors.secondary),
-      ));
+      markers.add(
+        Marker(
+          point: startPt,
+          width: 34,
+          height: 40,
+          alignment: Alignment.bottomCenter,
+          child: const _PinIcon(color: AppColors.secondary),
+        ),
+      );
     }
 
     // Red destination marker
     if (_destination != null) {
-      markers.add(Marker(
-        point: _destination!,
-        width: 34,
-        height: 40,
-        alignment: Alignment.bottomCenter,
-        child: const _PinIcon(color: AppColors.primary),
-      ));
+      markers.add(
+        Marker(
+          point: _destination!,
+          width: 34,
+          height: 40,
+          alignment: Alignment.bottomCenter,
+          child: const _PinIcon(color: AppColors.primary),
+        ),
+      );
     }
 
     return markers;
@@ -453,7 +459,9 @@ class _SearchCard extends StatelessWidget {
                   _Field(
                     controller: startCtrl,
                     focusNode: startFocus,
-                    hint: locating ? 'Getting location…' : 'Start (my location)',
+                    hint: locating
+                        ? 'Getting location…'
+                        : 'Start (my location)',
                     onChanged: onStartChanged,
                     suffix: locating
                         ? const SizedBox(
@@ -476,11 +484,15 @@ class _SearchCard extends StatelessWidget {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : onClear != null
-                            ? GestureDetector(
-                                onTap: onClear,
-                                child: const Icon(Icons.close, size: 16, color: AppColors.gray),
-                              )
-                            : null,
+                        ? GestureDetector(
+                            onTap: onClear,
+                            child: const Icon(
+                              Icons.close,
+                              size: 16,
+                              color: AppColors.gray,
+                            ),
+                          )
+                        : null,
                   ),
                 ],
               ),
@@ -540,7 +552,10 @@ class _Field extends StatelessWidget {
                 child: suffix,
               )
             : null,
-        suffixIconConstraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+        suffixIconConstraints: const BoxConstraints(
+          minWidth: 32,
+          minHeight: 32,
+        ),
       ),
     );
   }
@@ -694,7 +709,11 @@ class _InfoBadge extends StatelessWidget {
   final String value;
   final String label;
 
-  const _InfoBadge({required this.icon, required this.value, required this.label});
+  const _InfoBadge({
+    required this.icon,
+    required this.value,
+    required this.label,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -752,7 +771,11 @@ class _MapFabs extends StatelessWidget {
                       height: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(Icons.my_location, size: 20, color: AppColors.primary),
+                  : const Icon(
+                      Icons.my_location,
+                      size: 20,
+                      color: AppColors.primary,
+                    ),
             ),
           ),
         ),
@@ -783,8 +806,13 @@ class _PinIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Icon(Icons.location_pin, color: color, size: 34, shadows: const [
-      Shadow(color: Colors.black38, blurRadius: 4, offset: Offset(0, 2)),
-    ]);
+    return Icon(
+      Icons.location_pin,
+      color: color,
+      size: 34,
+      shadows: const [
+        Shadow(color: Colors.black38, blurRadius: 4, offset: Offset(0, 2)),
+      ],
+    );
   }
 }

@@ -46,14 +46,18 @@ class NominatimService {
       if (addr != null) {
         final parts = <String>[];
         final road =
-            addr['road'] ?? addr['pedestrian'] ?? addr['footway'] ?? addr['path'];
+            addr['road'] ??
+            addr['pedestrian'] ??
+            addr['footway'] ??
+            addr['path'];
         final num = addr['house_number'];
         if (num != null && road != null) {
           parts.add('$num $road');
         } else if (road != null) {
           parts.add(road as String);
         }
-        final city = addr['city'] ??
+        final city =
+            addr['city'] ??
             addr['town'] ??
             addr['village'] ??
             addr['suburb'] ??

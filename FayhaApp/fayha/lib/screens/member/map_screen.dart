@@ -60,11 +60,7 @@ class _MapScreenState extends State<MapScreen>
         Expanded(
           child: TabBarView(
             controller: _tabs,
-            children: const [
-              _MembersTab(),
-              BusRoutesScreen(),
-              _VillagesTab(),
-            ],
+            children: const [_MembersTab(), BusRoutesScreen(), _VillagesTab()],
           ),
         ),
       ],
