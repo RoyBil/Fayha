@@ -11,6 +11,7 @@ import '../../widgets/elegant_card.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/fayha_map.dart';
 import '../../widgets/section_header.dart';
+import 'bus_routes_screen.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -59,7 +60,11 @@ class _MapScreenState extends State<MapScreen>
         Expanded(
           child: TabBarView(
             controller: _tabs,
-            children: const [_MembersTab(), _BusTab(), _VillagesTab()],
+            children: const [
+              _MembersTab(),
+              BusRoutesScreen(),
+              _VillagesTab(),
+            ],
           ),
         ),
       ],
@@ -477,196 +482,6 @@ class _MembersTabState extends State<_MembersTab>
           ),
         );
       },
-    );
-  }
-}
-
-// ================= BUS =================
-class _BusRoute {
-  final String branch;
-  final Color color;
-  final String label;
-  final String note;
-  final List<LatLng> waypoints;
-  const _BusRoute({
-    required this.branch,
-    required this.color,
-    required this.label,
-    required this.note,
-    required this.waypoints,
-  });
-
-  LatLng get start => waypoints.first;
-  LatLng get end => waypoints.last;
-}
-
-const _busRoutes = <_BusRoute>[
-  _BusRoute(
-    branch: 'Tripoli',
-    color: MapData.tripoliColor,
-    label: 'Tripoli → Beirut',
-    note: 'Pickup at the Mina branch, coastal highway to the venue.',
-    waypoints: [
-      LatLng(34.4534, 35.8145),
-      LatLng(34.27, 35.66),
-      LatLng(34.12, 35.65),
-      LatLng(33.95, 35.55),
-      LatLng(33.8959, 35.4783),
-    ],
-  ),
-  _BusRoute(
-    branch: 'Beirut',
-    color: MapData.beirutColor,
-    label: 'Beirut (local)',
-    note: 'Short pickup loop around AUB and Hamra.',
-    waypoints: [
-      LatLng(33.9025, 35.4822),
-      LatLng(33.8985, 35.4810),
-      LatLng(33.8959, 35.4783),
-    ],
-  ),
-  _BusRoute(
-    branch: 'Aley',
-    color: MapData.aleyColor,
-    label: 'Aley → Beirut',
-    note: 'Mountain road descent into Beirut.',
-    waypoints: [
-      LatLng(33.8027, 35.6095),
-      LatLng(33.85, 35.55),
-      LatLng(33.88, 35.51),
-      LatLng(33.8959, 35.4783),
-    ],
-  ),
-  _BusRoute(
-    branch: 'Chouf',
-    color: MapData.choufColor,
-    label: 'Chouf → Beirut',
-    note: 'From Beiteddine through the Chouf hills.',
-    waypoints: [
-      LatLng(33.6712, 35.5998),
-      LatLng(33.75, 35.55),
-      LatLng(33.84, 35.52),
-      LatLng(33.8959, 35.4783),
-    ],
-  ),
-];
-
-class _BusTab extends StatefulWidget {
-  const _BusTab();
-  @override
-  State<_BusTab> createState() => _BusTabState();
-}
-
-class _BusTabState extends State<_BusTab> with TickerProviderStateMixin {
-  static const LatLng _center = LatLng(34.05, 35.6);
-  static const double _zoom = 8.2;
-  final MapController _ctrl = MapController();
-
-  Future<void> _focus(_BusRoute r) async {
-    await smoothMove(
-      this,
-      _ctrl,
-      r.start,
-      11.0,
-      duration: const Duration(milliseconds: 1300),
-    );
-    if (!mounted) return;
-    _showSheet(
-      context,
-      MapInfoSheet(
-        color: r.color,
-        icon: Icons.directions_bus,
-        title: '${r.branch} Branch Bus',
-        subtitle: r.label,
-        facts: [
-          MapFact(Icons.alt_route, 'Stops', '${r.waypoints.length} waypoints'),
-          MapFact(Icons.place, 'Destination', 'Al Madina Theatre, Beirut'),
-        ],
-        description:
-            '${r.note}\n\nThe route is set by branch admins before each concert or major rehearsal.',
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final pins = _busRoutes
-        .map(
-          (r) => MapPin(
-            point: r.start,
-            color: r.color,
-            label: r.branch,
-            icon: Icons.directions_bus,
-            onTap: () => _focus(r),
-          ),
-        )
-        .toList();
-    final lines = _busRoutes
-        .map(
-          (r) => Polyline(points: r.waypoints, color: r.color, strokeWidth: 4),
-        )
-        .toList();
-    return ListView(
-      padding: const EdgeInsets.only(bottom: 24),
-      children: [
-        const SizedBox(height: 16),
-        FayhaMap(
-          controller: _ctrl,
-          pins: pins,
-          polylines: lines,
-          center: _center,
-          zoom: _zoom,
-        ),
-        const SizedBox(height: 16),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20),
-          child: SectionHeader(
-            eyebrow: 'Transport',
-            title: 'Branch Buses',
-            subtitle:
-                'One bus per branch — admins set each route before a concert.',
-          ),
-        ),
-        const SizedBox(height: 12),
-        ..._busRoutes.map(
-          (r) => Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
-            child: ElegantCard(
-              onTap: () => _focus(r),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: r.color.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(Icons.directions_bus, color: r.color, size: 22),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${r.branch} Branch Bus',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          r.label,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(Icons.chevron_right, color: AppColors.gray),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

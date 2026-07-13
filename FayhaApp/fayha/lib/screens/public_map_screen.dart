@@ -135,7 +135,7 @@ class _RealMap extends StatefulWidget {
 class _RealMapState extends State<_RealMap> with TickerProviderStateMixin {
   void _zoom(double delta) {
     final c = widget.controller.camera;
-    final newZoom = (c.zoom + delta).clamp(2.0, 18.0);
+    final newZoom = (c.zoom + delta).clamp(2.0, 20.0);
     smoothMove(
       this,
       widget.controller,
@@ -173,7 +173,7 @@ class _RealMapState extends State<_RealMap> with TickerProviderStateMixin {
                   initialCenter: widget.center,
                   initialZoom: widget.zoom,
                   minZoom: 2,
-                  maxZoom: 18,
+                  maxZoom: 20,
                   interactionOptions: const InteractionOptions(
                     flags:
                         InteractiveFlag.pinchZoom |
@@ -186,11 +186,11 @@ class _RealMapState extends State<_RealMap> with TickerProviderStateMixin {
                 children: [
                   TileLayer(
                     urlTemplate:
-                        'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-                    subdomains: const ['a', 'b', 'c', 'd'],
+                        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    subdomains: const ['a', 'b', 'c'],
                     userAgentPackageName: 'com.fayhanationalchoir.app',
-                    maxZoom: 19,
-                    additionalOptions: const {'r': ''},
+                    maxNativeZoom: 19,
+                    maxZoom: 20,
                   ),
                   MarkerLayer(
                     markers: widget.pins
@@ -211,7 +211,7 @@ class _RealMapState extends State<_RealMap> with TickerProviderStateMixin {
                   ),
                   const RichAttributionWidget(
                     attributions: [
-                      TextSourceAttribution('© OpenStreetMap · CARTO'),
+                      TextSourceAttribution('© OpenStreetMap contributors'),
                     ],
                   ),
                 ],

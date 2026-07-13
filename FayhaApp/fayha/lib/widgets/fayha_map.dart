@@ -81,7 +81,7 @@ class FayhaMap extends StatefulWidget {
 class _FayhaMapState extends State<FayhaMap> with TickerProviderStateMixin {
   void _zoom(double delta) {
     final c = widget.controller.camera;
-    final newZoom = (c.zoom + delta).clamp(2.0, 18.0);
+    final newZoom = (c.zoom + delta).clamp(2.0, 20.0);
     smoothMove(
       this,
       widget.controller,
@@ -113,23 +113,24 @@ class _FayhaMapState extends State<FayhaMap> with TickerProviderStateMixin {
                   initialCenter: widget.center,
                   initialZoom: widget.zoom,
                   minZoom: 2,
-                  maxZoom: 18,
+                  maxZoom: 20,
                   interactionOptions: const InteractionOptions(
                     flags:
                         InteractiveFlag.pinchZoom |
                         InteractiveFlag.doubleTapZoom |
                         InteractiveFlag.drag |
-                        InteractiveFlag.flingAnimation,
+                        InteractiveFlag.flingAnimation |
+                        InteractiveFlag.scrollWheelZoom,
                   ),
                 ),
                 children: [
                   TileLayer(
                     urlTemplate:
-                        'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-                    subdomains: const ['a', 'b', 'c', 'd'],
+                        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    subdomains: const ['a', 'b', 'c'],
                     userAgentPackageName: 'com.fayhanationalchoir.app',
-                    maxZoom: 19,
-                    additionalOptions: const {'r': ''},
+                    maxNativeZoom: 19,
+                    maxZoom: 20,
                   ),
                   if (widget.polylines.isNotEmpty)
                     PolylineLayer(polylines: widget.polylines),
@@ -152,7 +153,7 @@ class _FayhaMapState extends State<FayhaMap> with TickerProviderStateMixin {
                   ),
                   const RichAttributionWidget(
                     attributions: [
-                      TextSourceAttribution('© OpenStreetMap · CARTO'),
+                      TextSourceAttribution('© OpenStreetMap contributors'),
                     ],
                   ),
                 ],

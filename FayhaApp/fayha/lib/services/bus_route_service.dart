@@ -113,6 +113,8 @@ class BusRouteService {
   static Future<void> updateStopsAndPolyline({
     required String routeId,
     String? name,
+    String? startName,
+    String? endName,
     required LatLng startPoint,
     required LatLng endPoint,
     required List<
@@ -137,10 +139,10 @@ class BusRouteService {
         'p_id': routeId,
         'p_branch': null,
         'p_name': name,
-        'p_start_name': null,
+        'p_start_name': startName,
         'p_start_lat': startPoint.latitude,
         'p_start_lng': startPoint.longitude,
-        'p_end_name': null,
+        'p_end_name': endName,
         'p_end_lat': endPoint.latitude,
         'p_end_lng': endPoint.longitude,
         'p_polyline_coords': directions.polyline
@@ -158,8 +160,8 @@ class BusRouteService {
         'route_id': routeId,
         'order_index': i,
         'name': s.name,
-        'location':
-            'SRID=4326;POINT(${s.location.longitude} ${s.location.latitude})',
+        'lat': s.location.latitude,
+        'lng': s.location.longitude,
         if (s.geofenceRadiusM != null) 'geofence_radius_m': s.geofenceRadiusM,
         if (s.approachRadiusM != null) 'approach_radius_m': s.approachRadiusM,
       });

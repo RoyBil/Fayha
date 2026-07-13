@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/bus_route_models.dart';
 import '../../services/driver_location_service.dart';
 import '../../services/live_tracking_service.dart';
+import '../../services/osrm_service.dart';
 import '../../services/trip_service.dart';
 import '../../theme/app_theme.dart';
 
@@ -30,12 +31,27 @@ class _BusTripDriverScreenState extends State<BusTripDriverScreen> {
   StreamSubscription<TripEvent>? _evtSub;
   final List<TripEvent> _recentEvents = [];
   bool _busy = false;
+  OsrmRoute? _computedRoute;
 
   @override
   void initState() {
     super.initState();
+    _computeFullRoute();
     if (widget.resumeTrip != null) {
       _attachToTrip(widget.resumeTrip!);
+    }
+  }
+
+  Future<void> _computeFullRoute() async {
+    final r = widget.route;
+    final waypoints = r.stops.map((s) => s.location).toList();
+    final result = await OsrmService.route(
+      r.startPoint,
+      r.endPoint,
+      waypoints: waypoints,
+    );
+    if (mounted && result != null) {
+      setState(() => _computedRoute = result);
     }
   }
 
@@ -182,21 +198,32 @@ class _BusTripDriverScreenState extends State<BusTripDriverScreen> {
               children: [
                 TileLayer(
                   urlTemplate:
-                      'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-                  subdomains: const ['a', 'b', 'c', 'd'],
+                      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  subdomains: const ['a', 'b', 'c'],
                   userAgentPackageName: 'com.fayhanationalchoir.app',
-                  additionalOptions: const {'r': ''},
+                  maxNativeZoom: 19,
+                  maxZoom: 20,
                 ),
-                if (r.polyline.length >= 2)
-                  PolylineLayer(
-                    polylines: [
+                PolylineLayer(
+                  polylines: [
+                    if (_computedRoute != null)
+                      Polyline(
+                        points: _computedRoute!.polyline,
+                        color: AppColors.primary,
+                        strokeWidth: 5,
+                        borderColor: Colors.white,
+                        borderStrokeWidth: 2,
+                      )
+                    else if (r.polyline.length >= 2)
                       Polyline(
                         points: r.polyline,
                         color: AppColors.primary,
                         strokeWidth: 4,
+                        borderColor: Colors.white,
+                        borderStrokeWidth: 1,
                       ),
-                    ],
-                  ),
+                  ],
+                ),
                 MarkerLayer(
                   markers: [
                     Marker(
