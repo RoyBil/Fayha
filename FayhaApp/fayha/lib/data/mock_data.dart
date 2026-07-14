@@ -388,7 +388,7 @@ class MockData {
     if (asMaestro) {
       return Member(
         name: 'Barkev Taslakian',
-        email: 'maestro@fayhanationalchoir.com',
+        email: 'conductor@fayhanationalchoir.com',
         phone: '+96176330323',
         joinDate: DateTime(2003, 3, 1),
         branch: 'Tripoli',

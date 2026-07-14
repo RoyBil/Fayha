@@ -27,10 +27,17 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  v_url  text := 'https://<YOUR_PROJECT_REF>.supabase.co/functions/v1/send-push';
-  v_key  text := current_setting('app.service_role_key', true);
+  -- Replace these two values with your real project details.
+  -- Find them in: Supabase Dashboard → Project Settings → API.
+  v_url  text := 'https://ovwvqtppgugzeumttrjr.supabase.co/functions/v1/send-push';
+  v_key  text := 'YOUR_SERVICE_ROLE_KEY';
   v_body jsonb;
 BEGIN
+  IF v_url LIKE '%YOUR_PROJECT_REF%' OR v_key = 'YOUR_SERVICE_ROLE_KEY' THEN
+    RAISE WARNING '[push] _notify_push: placeholders not replaced — skipping push';
+    RETURN;
+  END IF;
+
   v_body := jsonb_build_object(
     'title',  p_title,
     'body',   p_body,
@@ -58,11 +65,10 @@ EXCEPTION WHEN OTHERS THEN
 END;
 $$;
 
--- NOTE: to activate the triggers below you must first set the
--- service-role key so the helper can authenticate with the edge function:
---   ALTER DATABASE postgres
---     SET app.service_role_key = '<your service_role key>';
--- Then reload the config in each session:  SELECT pg_reload_conf();
+-- NOTE: run these two statements once in the Supabase SQL editor, then redeploy:
+--   ALTER DATABASE postgres SET app.supabase_url = 'https://YOUR_PROJECT_REF.supabase.co';
+--   ALTER DATABASE postgres SET app.service_role_key = 'YOUR_SERVICE_ROLE_KEY';
+--   SELECT pg_reload_conf();
 
 -- =============================================================
 -- 3. Per-table triggers

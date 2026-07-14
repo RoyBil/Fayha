@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 /// Opens a YouTube video inside the app (no browser hand-off).
@@ -22,6 +23,20 @@ Future<void> showYoutubePopup(
   );
 }
 
+/// Opens the YouTube app if installed, otherwise falls back to the browser.
+Future<void> _openExternal(String videoId) async {
+  // iOS + Android: custom-scheme deep-link into the YouTube app.
+  final appUri = Uri.parse('youtube://watch?v=$videoId');
+  final webUri = Uri.parse('https://www.youtube.com/watch?v=$videoId');
+  try {
+    if (await canLaunchUrl(appUri)) {
+      await launchUrl(appUri);
+      return;
+    }
+  } catch (_) {}
+  await launchUrl(webUri, mode: LaunchMode.externalApplication);
+}
+
 class _YoutubePopup extends StatefulWidget {
   final String videoId;
   final String? title;
@@ -33,6 +48,7 @@ class _YoutubePopup extends StatefulWidget {
 
 class _YoutubePopupState extends State<_YoutubePopup> {
   late final YoutubePlayerController _ctrl;
+  bool _playerReady = false;
 
   @override
   void initState() {
@@ -45,6 +61,14 @@ class _YoutubePopupState extends State<_YoutubePopup> {
         strictRelatedVideos: true,
       ),
     )..loadVideoById(videoId: widget.videoId);
+
+    _ctrl.listen((state) {
+      if (!_playerReady &&
+          state.playerState != PlayerState.unknown &&
+          state.playerState != PlayerState.unStarted) {
+        if (mounted) setState(() => _playerReady = true);
+      }
+    });
   }
 
   @override
@@ -92,6 +116,14 @@ class _YoutubePopupState extends State<_YoutubePopup> {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  // Always-visible fallback: opens native YouTube app or browser.
+                  // This is the primary path on physical phones where the
+                  // in-app WebView player may be blocked by YouTube's policy.
+                  IconButton(
+                    icon: const Icon(Icons.open_in_new, color: Colors.white70),
+                    tooltip: 'Watch in YouTube',
+                    onPressed: () => _openExternal(widget.videoId),
+                  ),
                   IconButton(
                     icon: const Icon(Icons.close, color: Colors.white),
                     onPressed: () => Navigator.of(context).pop(),
@@ -107,6 +139,23 @@ class _YoutubePopupState extends State<_YoutubePopup> {
                 child: YoutubePlayer(controller: _ctrl),
               ),
             ),
+            // Persistent fallback row — tapping takes the user to the YouTube
+            // app/browser, which is 100% reliable on physical devices.
+            if (!_playerReady)
+              Padding(
+                padding: const EdgeInsets.only(top: 8, bottom: 4),
+                child: TextButton.icon(
+                  onPressed: () => _openExternal(widget.videoId),
+                  icon: const Icon(
+                    Icons.play_circle_outline,
+                    color: Colors.white70,
+                  ),
+                  label: const Text(
+                    'Watch in YouTube app',
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                ),
+              ),
             const SizedBox(height: 12),
           ],
         ),

@@ -86,7 +86,7 @@ class _MemberSignUpScreenState extends State<MemberSignUpScreen> {
   }
 
   bool get _isMaestroEmail =>
-      _email.text.trim().toLowerCase() == 'maestro@fayhanationalchoir.com';
+      _email.text.trim().toLowerCase() == 'conductor@fayhanationalchoir.com';
 
   Future<void> _pickPhoto() async {
     final xfile = await ImagePicker().pickImage(

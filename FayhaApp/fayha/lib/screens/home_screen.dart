@@ -10,6 +10,7 @@ import '../services/testimonials_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/avatar.dart';
 import '../widgets/elegant_card.dart';
+import '../widgets/instagram_glyph.dart';
 import '../widgets/section_header.dart';
 import 'concert_detail_screen.dart';
 import 'join_screen.dart';
@@ -764,8 +765,16 @@ class _InstagramHandleCard extends StatelessWidget {
   const _InstagramHandleCard();
 
   Future<void> _open() async {
+    const username = 'fayhanationalchoir';
+    final appUri = Uri.parse('instagram://user?username=$username');
+    try {
+      if (await canLaunchUrl(appUri)) {
+        await launchUrl(appUri);
+        return;
+      }
+    } catch (_) {}
     await launchUrl(
-      Uri.parse('https://www.instagram.com/fayhanationalchoir/'),
+      Uri.parse('https://www.instagram.com/$username/'),
       mode: LaunchMode.externalApplication,
     );
   }
@@ -792,7 +801,7 @@ class _InstagramHandleCard extends StatelessWidget {
               ),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const _InstagramGlyph(color: Colors.white, size: 22),
+            child: const InstagramGlyph(color: Colors.white, size: 22),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -1048,54 +1057,6 @@ class _HomeGalleryGrid extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-/// Hand-drawn Instagram glyph: rounded square + circle + corner dot.
-/// Avoids a 3rd-party icon package that broke against recent Flutter.
-class _InstagramGlyph extends StatelessWidget {
-  final Color color;
-  final double size;
-  const _InstagramGlyph({required this.color, this.size = 22});
-
-  @override
-  Widget build(BuildContext context) {
-    final stroke = size * 0.09;
-    return SizedBox(
-      width: size,
-      height: size,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Outer rounded square.
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(size * 0.28),
-              border: Border.all(color: color, width: stroke),
-            ),
-          ),
-          // Inner lens circle.
-          Container(
-            width: size * 0.46,
-            height: size * 0.46,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: color, width: stroke),
-            ),
-          ),
-          // Top-right dot.
-          Positioned(
-            top: size * 0.18,
-            right: size * 0.18,
-            child: Container(
-              width: size * 0.11,
-              height: size * 0.11,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

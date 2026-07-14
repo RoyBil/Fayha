@@ -91,15 +91,35 @@ class ChoirSong {
 class ChoirSongsService {
   static final _c = Supabase.instance.client;
 
-  static Future<List<ChoirSong>> fetchAll() async {
+  static List<ChoirSong>? _cache;
+  static DateTime? _cacheAt;
+  static const _cacheTtl = Duration(minutes: 5);
+
+  static Future<List<ChoirSong>> fetchAll({bool forceRefresh = false}) async {
+    final cached = _cache;
+    final at = _cacheAt;
+    if (!forceRefresh &&
+        cached != null &&
+        at != null &&
+        DateTime.now().difference(at) < _cacheTtl) {
+      return cached;
+    }
     final rows = await _c
         .from('choir_songs')
         .select()
         .order('sort_order', ascending: true)
         .order('created_at', ascending: false);
-    return (rows as List)
+    final result = (rows as List)
         .map((r) => ChoirSong.fromMap(r as Map<String, dynamic>))
         .toList();
+    _cache = result;
+    _cacheAt = DateTime.now();
+    return result;
+  }
+
+  static void invalidateCache() {
+    _cache = null;
+    _cacheAt = null;
   }
 
   /// Uploads a single voice-part audio file and returns its public URL.

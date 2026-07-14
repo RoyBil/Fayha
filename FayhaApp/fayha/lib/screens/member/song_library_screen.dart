@@ -25,7 +25,7 @@ class _SongLibraryScreenState extends State<SongLibraryScreen> {
   }
 
   Future<void> _reload() async {
-    final f = ChoirSongsService.fetchAll();
+    final f = ChoirSongsService.fetchAll(forceRefresh: true);
     if (!mounted) return;
     setState(() => _future = f);
     await f;

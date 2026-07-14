@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../data/choir_data.dart';
 import '../theme/app_theme.dart';
 import '../widgets/elegant_card.dart';
+import '../widgets/instagram_glyph.dart';
 import '../widgets/section_header.dart';
 import 'about_screen.dart';
 import 'join_screen.dart';
@@ -129,9 +130,11 @@ class MoreScreen extends StatelessWidget {
             Expanded(
               child: _SocialButton(
                 label: '@fayhanationalchoir',
-                icon: Icons.camera_alt_outlined,
-                onTap: () =>
-                    _launch('https://www.instagram.com/fayhanationalchoir/'),
+                iconWidget: const InstagramGlyph(
+                  color: AppColors.primary,
+                  size: 20,
+                ),
+                onTap: () => _launchInstagram('fayhanationalchoir'),
               ),
             ),
             const SizedBox(width: 10),
@@ -157,6 +160,22 @@ class MoreScreen extends StatelessWidget {
 
   Future<void> _launch(String url) async {
     await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+  }
+
+  Future<void> _launchInstagram(String username) async {
+    // Try to open the Instagram app first (works on physical devices);
+    // fall back to the browser if the app is not installed.
+    final appUri = Uri.parse('instagram://user?username=$username');
+    try {
+      if (await canLaunchUrl(appUri)) {
+        await launchUrl(appUri);
+        return;
+      }
+    } catch (_) {}
+    await launchUrl(
+      Uri.parse('https://www.instagram.com/$username/'),
+      mode: LaunchMode.externalApplication,
+    );
   }
 }
 
@@ -257,12 +276,14 @@ class _ContactRow extends StatelessWidget {
 
 class _SocialButton extends StatelessWidget {
   final String label;
-  final IconData icon;
+  final IconData? icon;
+  final Widget? iconWidget;
   final VoidCallback onTap;
   const _SocialButton({
     required this.label,
-    required this.icon,
     required this.onTap,
+    this.icon,
+    this.iconWidget,
   });
 
   @override
@@ -273,10 +294,17 @@ class _SocialButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 20),
+          iconWidget ?? Icon(icon, size: 20),
           const SizedBox(height: 6),
-          Text(label, style: const TextStyle(fontSize: 12)),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 11),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );

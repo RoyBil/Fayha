@@ -313,9 +313,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         color: AppColors.primary,
                       ),
                       const SizedBox(width: 10),
-                      Text(
-                        '$_branch branch',
-                        style: theme.textTheme.titleMedium,
+                      Expanded(
+                        child: Text(
+                          '$_branch branch',
+                          style: theme.textTheme.titleMedium,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
                       ),
                     ],
                   ),

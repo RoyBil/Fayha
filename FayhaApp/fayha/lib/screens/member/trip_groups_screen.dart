@@ -210,9 +210,13 @@ class _GroupCard extends StatelessWidget {
                         color: AppColors.gray,
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        group.destination!,
-                        style: theme.textTheme.bodySmall,
+                      Expanded(
+                        child: Text(
+                          group.destination!,
+                          style: theme.textTheme.bodySmall,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
                       ),
                     ],
                   ),
@@ -227,10 +231,14 @@ class _GroupCard extends StatelessWidget {
                         color: AppColors.gray,
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        _dateRange(group.departureDate!, group.returnDate),
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: AppColors.primary,
+                      Expanded(
+                        child: Text(
+                          _dateRange(group.departureDate!, group.returnDate),
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: AppColors.primary,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
                         ),
                       ),
                     ],

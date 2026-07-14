@@ -38,8 +38,19 @@ class AdminService {
     await _c.from('members').update({'status': status}).eq('id', memberId);
   }
 
-  static Future<void> approve(String memberId) =>
-      _setStatus(memberId, 'active');
+  static Future<void> approve(String memberId) async {
+    await _setStatus(memberId, 'active');
+    // Notify the newly approved member. Fire-and-forget — the push may not
+    // reach them if they haven't opened the app since signing up (no FCM token
+    // yet), but it will succeed once they sign in and the token is registered.
+    PushNotificationService.dispatch(
+      title: '✅ Account Approved',
+      body:
+          'Welcome to Fayha National Choir! Your account has been approved — sign in now.',
+      kind: 'announcement',
+      memberIds: [memberId],
+    ).catchError((_) {});
+  }
   static Future<void> deny(String memberId) => _setStatus(memberId, 'deleted');
   static Future<void> deactivate(String memberId) =>
       _setStatus(memberId, 'deactivated');
@@ -48,7 +59,29 @@ class AdminService {
   static Future<void> remove(String memberId) => _setStatus(memberId, 'left');
 
   static Future<void> setRole(String memberId, String role) async {
-    await _c.from('members').update({'role': role}).eq('id', memberId);
+    if (role == 'admin') {
+      final row = await _c
+          .from('members')
+          .select('role')
+          .eq('id', memberId)
+          .single();
+      final currentRole = row['role'] as String?;
+      await _c.from('members').update({'role': role}).eq('id', memberId);
+      if (currentRole != 'admin') {
+        // Inserting into member_notifications does two things:
+        // 1. Stores the notification in the member's in-app history.
+        // 2. Fires the push_on_member_notif DB trigger → sends FCM push.
+        _c.from('member_notifications').insert({
+          'member_id': memberId,
+          'kind': 'announcement',
+          'title': '🎉 You\'re now an Admin!',
+          'body':
+              'Congratulations! You\'ve been promoted to Admin of Fayha National Choir.',
+        }).catchError((_) {});
+      }
+    } else {
+      await _c.from('members').update({'role': role}).eq('id', memberId);
+    }
   }
 
   static Future<void> setGalleryUploadPermission(

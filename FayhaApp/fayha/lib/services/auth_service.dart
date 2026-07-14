@@ -60,6 +60,16 @@ class AuthService {
     AppState.instance.signOut();
   }
 
+  /// Fast sign-out: clears local state and navigates instantly, then
+  /// invalidates the Supabase session and removes the FCM token in the
+  /// background so the UI is never blocked by network round-trips.
+  static void signOutFast() {
+    LiveLocationService.instance.stopTimer();
+    AppState.instance.signOut();
+    // Background cleanup — do not await so the caller can navigate immediately.
+    _c.auth.signOut().catchError((_) {});
+  }
+
   static Future<void> resetPassword(String email) async {
     await _c.auth.resetPasswordForEmail(email);
   }

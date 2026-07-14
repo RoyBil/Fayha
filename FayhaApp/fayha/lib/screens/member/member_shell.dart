@@ -151,9 +151,10 @@ class _MemberShellState extends State<MemberShell> {
       ),
     );
     if (confirmed != true) return;
-    await PushNotificationService.clearToken();
     _pushInitialised = false;
-    await AuthService.signOut();
+    // Clear local state and navigate immediately; clean up server-side in background.
+    AuthService.signOutFast();
+    PushNotificationService.clearToken().catchError((_) {});
     if (!context.mounted) return;
     Navigator.of(context).popUntil((route) => route.isFirst);
   }

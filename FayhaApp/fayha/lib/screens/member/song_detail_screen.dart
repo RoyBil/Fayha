@@ -89,26 +89,23 @@ class _SongDetailScreenState extends State<SongDetailScreen>
           isSpeakerphoneOn: false,
         ),
       );
+
+      // Initialise all players in parallel — setSource is the slow step
+      // because it opens a network connection; doing them concurrently
+      // cuts load time from O(n) sequential to O(1) parallel.
+      await Future.wait([
+        for (var i = 0; i < _players.length; i++) _initOnePlayer(i, audioCtx),
+      ]);
+
+      // Determine master: first index that has audio.
       int? masterIdx;
       for (var i = 0; i < _players.length; i++) {
-        final p = _players[i];
-        await p.setAudioContext(audioCtx);
-        await p.setReleaseMode(ReleaseMode.stop);
-        await p.setVolume(_muted[i] ? 0.0 : _volumes[i]);
-        final url = widget.song.urlForPart(i);
-        if (url != null && url.isNotEmpty) {
-          await p.setSource(UrlSource(url));
-          masterIdx ??= i;
-          // Imperatively fetch duration — the onDurationChanged event may
-          // have fired before the stream listener below was attached.
-          if (masterIdx == i) {
-            final d = await p.getDuration();
-            if (d != null && d > Duration.zero) {
-              if (mounted) setState(() => _total = d);
-            }
-          }
+        if (widget.song.hasPart(i)) {
+          masterIdx = i;
+          break;
         }
       }
+
       if (masterIdx == null) {
         if (!mounted) return;
         setState(() {
@@ -119,6 +116,14 @@ class _SongDetailScreenState extends State<SongDetailScreen>
       }
       _masterIdx = masterIdx;
       final master = _players[masterIdx];
+
+      // Imperatively fetch duration — the onDurationChanged event may
+      // have fired before the stream listener is attached.
+      final d = await master.getDuration();
+      if (d != null && d > Duration.zero) {
+        if (mounted) setState(() => _total = d);
+      }
+
       _posSub = master.onPositionChanged.listen((p) {
         if (!mounted) return;
         setState(() => _pos = p);
@@ -151,6 +156,17 @@ class _SongDetailScreenState extends State<SongDetailScreen>
         _loadError = '$e';
         _loading = false;
       });
+    }
+  }
+
+  Future<void> _initOnePlayer(int i, AudioContext audioCtx) async {
+    final p = _players[i];
+    await p.setAudioContext(audioCtx);
+    await p.setReleaseMode(ReleaseMode.stop);
+    await p.setVolume(_muted[i] ? 0.0 : _volumes[i]);
+    final url = widget.song.urlForPart(i);
+    if (url != null && url.isNotEmpty) {
+      await p.setSource(UrlSource(url));
     }
   }
 
@@ -461,6 +477,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
         await p.stop();
       }
       await ChoirSongsService.delete(widget.song.id);
+      ChoirSongsService.invalidateCache();
       if (!mounted) return;
       Navigator.pop(context, true);
     } catch (e) {
@@ -824,12 +841,16 @@ class _PartMixerRow extends StatelessWidget {
                 Expanded(
                   child: Row(
                     children: [
-                      Text(
-                        label,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: fg,
-                          fontSize: 14,
+                      Flexible(
+                        child: Text(
+                          label,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: fg,
+                            fontSize: 14,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
                         ),
                       ),
                       if (isMine) ...[

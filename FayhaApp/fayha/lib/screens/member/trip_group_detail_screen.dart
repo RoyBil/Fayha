@@ -753,12 +753,16 @@ class _AdminDocsView extends StatelessWidget {
                     size: 28,
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    docs
-                            .firstWhere((d) => d.memberId == entry.key)
-                            .memberName ??
-                        'Member',
-                    style: Theme.of(context).textTheme.titleSmall,
+                  Expanded(
+                    child: Text(
+                      docs
+                              .firstWhere((d) => d.memberId == entry.key)
+                              .memberName ??
+                          'Member',
+                      style: Theme.of(context).textTheme.titleSmall,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
                   ),
                 ],
               ),

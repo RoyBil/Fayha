@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../data/choir_data.dart';
+import '../../services/auth_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_list_tile.dart';
@@ -258,7 +259,7 @@ class MemberMoreScreen extends StatelessWidget {
                 subtitle: 'You will need to sign in again',
                 destructive: true,
                 onTap: () {
-                  AppState.instance.signOut();
+                  AuthService.signOutFast();
                   Navigator.of(context).pushAndRemoveUntil(
                     MaterialPageRoute(
                       builder: (_) => const MemberSignInScreen(),

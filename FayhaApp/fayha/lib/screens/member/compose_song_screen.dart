@@ -276,6 +276,7 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
           youtubeUrl: _youtube.text.trim(),
           partUrls: partPatch.isEmpty ? null : partPatch,
         );
+        ChoirSongsService.invalidateCache();
       } else {
         // ===== CREATE CHOIR SONG =====
         final id = 'csong_${DateTime.now().millisecondsSinceEpoch}';
@@ -323,6 +324,7 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
           partUrls: partUrls,
         );
       }
+      ChoirSongsService.invalidateCache();
       if (!mounted) return;
       Navigator.pop(context, true);
     } catch (e) {
