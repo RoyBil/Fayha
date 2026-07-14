@@ -51,6 +51,7 @@ class AdminService {
       memberIds: [memberId],
     ).catchError((_) {});
   }
+
   static Future<void> deny(String memberId) => _setStatus(memberId, 'deleted');
   static Future<void> deactivate(String memberId) =>
       _setStatus(memberId, 'deactivated');
@@ -71,13 +72,16 @@ class AdminService {
         // Inserting into member_notifications does two things:
         // 1. Stores the notification in the member's in-app history.
         // 2. Fires the push_on_member_notif DB trigger → sends FCM push.
-        _c.from('member_notifications').insert({
-          'member_id': memberId,
-          'kind': 'announcement',
-          'title': '🎉 You\'re now an Admin!',
-          'body':
-              'Congratulations! You\'ve been promoted to Admin of Fayha National Choir.',
-        }).catchError((_) {});
+        _c
+            .from('member_notifications')
+            .insert({
+              'member_id': memberId,
+              'kind': 'announcement',
+              'title': '🎉 You\'re now an Admin!',
+              'body':
+                  'Congratulations! You\'ve been promoted to Admin of Fayha National Choir.',
+            })
+            .catchError((_) {});
       }
     } else {
       await _c.from('members').update({'role': role}).eq('id', memberId);
