@@ -57,10 +57,7 @@ class AuthService {
 
   static Future<void> signOut() async {
     LiveLocationService.instance.stopTimer();
-    await Future.wait([
-      _c.auth.signOut(),
-      MemberCacheService.clear(),
-    ]);
+    await Future.wait([_c.auth.signOut(), MemberCacheService.clear()]);
     AppState.instance.signOut();
   }
 

@@ -24,8 +24,7 @@ class _ChoirHistoryTripDetailScreenState
   bool _togglingParticipation = false;
   int _participantCount = 0;
 
-  bool get _canEdit =>
-      AppState.instance.isEditor || AppState.instance.isAdmin;
+  bool get _canEdit => AppState.instance.isEditor || AppState.instance.isAdmin;
 
   @override
   void initState() {
@@ -73,9 +72,9 @@ class _ChoirHistoryTripDetailScreenState
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not update: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Could not update: $e')));
       }
     } finally {
       if (mounted) setState(() => _togglingParticipation = false);
@@ -109,9 +108,9 @@ class _ChoirHistoryTripDetailScreenState
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not delete: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Could not delete: $e')));
       }
     }
   }
@@ -122,9 +121,9 @@ class _ChoirHistoryTripDetailScreenState
       await _reloadTrip();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not delete: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Could not delete: $e')));
       }
     }
   }
@@ -146,9 +145,9 @@ class _ChoirHistoryTripDetailScreenState
       await _reloadTrip();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not add activity: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Could not add activity: $e')));
       }
     }
   }
@@ -222,10 +221,7 @@ class _ChoirHistoryTripDetailScreenState
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              _trip.name,
-                              style: theme.textTheme.titleLarge,
-                            ),
+                            Text(_trip.name, style: theme.textTheme.titleLarge),
                             Text(
                               _trip.location,
                               style: theme.textTheme.bodyMedium?.copyWith(
@@ -257,8 +253,7 @@ class _ChoirHistoryTripDetailScreenState
                     const SizedBox(height: 12),
                     Text(
                       _trip.description!,
-                      style: theme.textTheme.bodyMedium
-                          ?.copyWith(height: 1.55),
+                      style: theme.textTheme.bodyMedium?.copyWith(height: 1.55),
                     ),
                   ],
                 ],
@@ -334,8 +329,7 @@ class _ChoirHistoryTripDetailScreenState
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: _activityColor(a.type)
-                              .withValues(alpha: 0.12),
+                          color: _activityColor(a.type).withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -352,10 +346,7 @@ class _ChoirHistoryTripDetailScreenState
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              a.title,
-                              style: theme.textTheme.bodyMedium,
-                            ),
+                            Text(a.title, style: theme.textTheme.bodyMedium),
                             if (a.description != null &&
                                 a.description!.isNotEmpty)
                               Text(
@@ -370,8 +361,9 @@ class _ChoirHistoryTripDetailScreenState
                       if (a.activityDate != null)
                         Text(
                           _fmt(a.activityDate!),
-                          style: theme.textTheme.bodySmall
-                              ?.copyWith(color: AppColors.gray),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.gray,
+                          ),
                         ),
                       if (_canEdit)
                         IconButton(
@@ -402,8 +394,7 @@ class _ChoirHistoryTripDetailScreenState
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 3,
                   crossAxisSpacing: 6,
                   mainAxisSpacing: 6,
@@ -450,9 +441,7 @@ class _InfoRow extends StatelessWidget {
     children: [
       Icon(icon, size: 14, color: AppColors.gray),
       const SizedBox(width: 6),
-      Expanded(
-        child: Text(text, style: Theme.of(context).textTheme.bodySmall),
-      ),
+      Expanded(child: Text(text, style: Theme.of(context).textTheme.bodySmall)),
     ],
   );
 }
@@ -492,10 +481,7 @@ class _AddActivityDialogState extends State<_AddActivityDialog> {
               value: _type,
               decoration: const InputDecoration(labelText: 'Type'),
               items: HistoryActivityType.values
-                  .map(
-                    (t) =>
-                        DropdownMenuItem(value: t, child: Text(t.label)),
-                  )
+                  .map((t) => DropdownMenuItem(value: t, child: Text(t.label)))
                   .toList(),
               onChanged: (v) => setState(() => _type = v!),
             ),

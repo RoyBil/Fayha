@@ -80,8 +80,9 @@ class _ComposeChoirHistoryTripScreenState
     for (final f in files) {
       final bytes = await f.readAsBytes();
       final name = f.name;
-      final ext =
-          name.contains('.') ? name.split('.').last.toLowerCase() : 'jpg';
+      final ext = name.contains('.')
+          ? name.split('.').last.toLowerCase()
+          : 'jpg';
       setState(() {
         _newPhotos.add(
           _PickedPhoto(filename: name, extension: ext, bytes: bytes),
@@ -93,9 +94,9 @@ class _ComposeChoirHistoryTripScreenState
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     if (_startDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please pick a start date')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please pick a start date')));
       return;
     }
     setState(() {
@@ -148,8 +149,7 @@ class _ComposeChoirHistoryTripScreenState
       for (var i = 0; i < _newPhotos.length; i++) {
         final p = _newPhotos[i];
         setState(
-          () => _progress =
-              'Uploading photo ${i + 1} of ${_newPhotos.length}…',
+          () => _progress = 'Uploading photo ${i + 1} of ${_newPhotos.length}…',
         );
         final url = await ChoirHistoryService.uploadPhoto(
           tripId: tripId,
@@ -160,7 +160,8 @@ class _ComposeChoirHistoryTripScreenState
       }
 
       // Persist photo list if anything changed
-      final photosChanged = uploaded.isNotEmpty ||
+      final photosChanged =
+          uploaded.isNotEmpty ||
           _existingPhotos.length != (widget.existing?.photoUrls.length ?? 0);
       if (photosChanged) {
         setState(() => _progress = 'Saving photos…');
@@ -177,9 +178,9 @@ class _ComposeChoirHistoryTripScreenState
           _saving = false;
           _progress = null;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
@@ -195,10 +196,7 @@ class _ComposeChoirHistoryTripScreenState
         title: Text(_isEdit ? 'Edit Trip' : 'Add Historical Trip'),
         actions: [
           if (!_saving)
-            TextButton(
-              onPressed: _save,
-              child: const Text('Save'),
-            )
+            TextButton(onPressed: _save, child: const Text('Save'))
           else
             const Padding(
               padding: EdgeInsets.all(12),
@@ -222,8 +220,9 @@ class _ComposeChoirHistoryTripScreenState
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Text(
                     _progress!,
-                    style:
-                        theme.textTheme.bodySmall?.copyWith(color: AppColors.gray),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.gray,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -347,7 +346,9 @@ class _ComposeChoirHistoryTripScreenState
                         hintText: 'e.g. 26.6087',
                       ),
                       keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true, signed: true),
+                        decimal: true,
+                        signed: true,
+                      ),
                       validator: (v) {
                         if (v == null || v.trim().isEmpty) return null;
                         if (double.tryParse(v.trim()) == null) {
@@ -366,7 +367,9 @@ class _ComposeChoirHistoryTripScreenState
                         hintText: 'e.g. 37.9226',
                       ),
                       keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true, signed: true),
+                        decimal: true,
+                        signed: true,
+                      ),
                       validator: (v) {
                         if (v == null || v.trim().isEmpty) return null;
                         if (double.tryParse(v.trim()) == null) {
@@ -394,16 +397,14 @@ class _ComposeChoirHistoryTripScreenState
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 4,
                     crossAxisSpacing: 6,
                     mainAxisSpacing: 6,
                   ),
                   itemCount: _existingPhotos.length,
                   itemBuilder: (_, i) => GestureDetector(
-                    onTap: () =>
-                        setState(() => _existingPhotos.removeAt(i)),
+                    onTap: () => setState(() => _existingPhotos.removeAt(i)),
                     child: Stack(
                       fit: StackFit.expand,
                       children: [

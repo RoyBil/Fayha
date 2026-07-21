@@ -990,7 +990,11 @@ class _SongPickerState extends State<_SongPicker> {
       onTap: () => _showPicker(context),
       child: Row(
         children: [
-          const Icon(Icons.favorite_outline, size: 18, color: AppColors.primary),
+          const Icon(
+            Icons.favorite_outline,
+            size: 18,
+            color: AppColors.primary,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -1062,23 +1066,25 @@ class _ChoirHistorySectionState extends State<_ChoirHistorySection> {
       return ElegantCard(
         child: Column(
           children: [
-            const Icon(Icons.history_edu_outlined, size: 36, color: AppColors.lightGray),
+            const Icon(
+              Icons.history_edu_outlined,
+              size: 36,
+              color: AppColors.lightGray,
+            ),
             const SizedBox(height: 8),
             Text(
               'No trips marked yet',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: AppColors.lightGray),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.lightGray),
             ),
             const SizedBox(height: 4),
             Text(
               'Visit Choir History to mark which trips you joined.',
               textAlign: TextAlign.center,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: AppColors.lightGray),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppColors.lightGray),
             ),
             const SizedBox(height: 12),
             OutlinedButton(
@@ -1135,7 +1141,9 @@ class _ChoirHistorySectionState extends State<_ChoirHistorySection> {
                         Text(
                           trip.name,
                           style: const TextStyle(
-                              fontWeight: FontWeight.w600, fontSize: 14),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -1143,13 +1151,18 @@ class _ChoirHistorySectionState extends State<_ChoirHistorySection> {
                         Text(
                           '${trip.city}, ${trip.country}',
                           style: const TextStyle(
-                              fontSize: 12, color: AppColors.lightGray),
+                            fontSize: 12,
+                            color: AppColors.lightGray,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  const Icon(Icons.chevron_right,
-                      color: AppColors.lightGray, size: 20),
+                  const Icon(
+                    Icons.chevron_right,
+                    color: AppColors.lightGray,
+                    size: 20,
+                  ),
                 ],
               ),
             ),

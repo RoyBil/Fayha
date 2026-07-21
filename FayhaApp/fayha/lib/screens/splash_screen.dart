@@ -84,11 +84,13 @@ class _SplashScreenState extends State<SplashScreen>
         AppState.instance.signIn(cached);
         LiveLocationService.instance.resumeIfEnabled();
         // Refresh from DB in the background so the profile is always fresh.
-        AuthService.loadCurrentMember().then((fresh) {
-          if (fresh != null && fresh.state == AccountState.active) {
-            AppState.instance.signIn(fresh);
-          }
-        }).catchError((_) {});
+        AuthService.loadCurrentMember()
+            .then((fresh) {
+              if (fresh != null && fresh.state == AccountState.active) {
+                AppState.instance.signIn(fresh);
+              }
+            })
+            .catchError((_) {});
         return const MemberShell();
       }
       // 2. No cache (first run after install / cache cleared): hit the network.

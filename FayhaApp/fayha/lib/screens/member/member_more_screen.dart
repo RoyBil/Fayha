@@ -152,9 +152,7 @@ class MemberMoreScreen extends StatelessWidget {
                 subtitle: 'Past trips, concerts, and festivals',
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => const ChoirHistoryScreen(),
-                  ),
+                  MaterialPageRoute(builder: (_) => const ChoirHistoryScreen()),
                 ),
               ),
             ]),

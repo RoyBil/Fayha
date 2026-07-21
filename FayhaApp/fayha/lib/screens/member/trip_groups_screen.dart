@@ -16,8 +16,7 @@ class TripGroupsScreen extends StatefulWidget {
 
 class _TripGroupsScreenState extends State<TripGroupsScreen> {
   late Future<List<TripGroup>> _groups;
-  final bool _isAdmin =
-      AppState.instance.isAdmin || AppState.instance.isEditor;
+  final bool _isAdmin = AppState.instance.isAdmin || AppState.instance.isEditor;
 
   @override
   void initState() {

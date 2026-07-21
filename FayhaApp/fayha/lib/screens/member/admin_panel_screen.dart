@@ -996,7 +996,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             color: AppColors.accentDark,
             colorAlpha: 0.12,
             title: 'Choir History',
-            subtitle: 'Document past trips, concerts, festivals, and activities',
+            subtitle:
+                'Document past trips, concerts, festivals, and activities',
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const ChoirHistoryScreen()),

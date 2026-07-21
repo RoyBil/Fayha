@@ -20,8 +20,7 @@ class _ChoirHistoryScreenState extends State<ChoirHistoryScreen> {
   late Future<List<ChoirHistoryTrip>> _trips;
   late Future<Set<String>> _myParticipations;
 
-  bool get _canEdit =>
-      AppState.instance.isEditor || AppState.instance.isAdmin;
+  bool get _canEdit => AppState.instance.isEditor || AppState.instance.isAdmin;
 
   @override
   void initState() {
@@ -158,8 +157,18 @@ class _TripCard extends StatelessWidget {
   });
 
   static const _months = [
-    'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
-    'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC',
+    'JAN',
+    'FEB',
+    'MAR',
+    'APR',
+    'MAY',
+    'JUN',
+    'JUL',
+    'AUG',
+    'SEP',
+    'OCT',
+    'NOV',
+    'DEC',
   ];
 
   @override

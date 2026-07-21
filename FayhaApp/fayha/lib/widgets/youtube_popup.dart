@@ -60,8 +60,7 @@ class _YoutubeMobileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // YouTube provides free thumbnail images at predictable URLs.
-    final thumbUrl =
-        'https://img.youtube.com/vi/$videoId/hqdefault.jpg';
+    final thumbUrl = 'https://img.youtube.com/vi/$videoId/hqdefault.jpg';
 
     return Dialog(
       backgroundColor: Colors.black,

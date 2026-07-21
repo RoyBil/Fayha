@@ -617,8 +617,8 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
               picked
                   ? _sheetMusic!.filename
                   : (hasExisting
-                      ? 'Score already uploaded — tap Replace to change'
-                      : 'No file selected'),
+                        ? 'Score already uploaded — tap Replace to change'
+                        : 'No file selected'),
               style: Theme.of(context).textTheme.bodySmall,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

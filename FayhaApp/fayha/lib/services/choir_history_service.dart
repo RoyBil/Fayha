@@ -232,7 +232,9 @@ class ChoirHistoryService {
       'heic' => 'image/heic',
       _ => 'image/jpeg',
     };
-    await _c.storage.from(_bucket).uploadBinary(
+    await _c.storage
+        .from(_bucket)
+        .uploadBinary(
           path,
           bytes,
           fileOptions: FileOptions(upsert: true, contentType: contentType),
