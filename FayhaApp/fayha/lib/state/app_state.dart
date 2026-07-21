@@ -81,6 +81,43 @@ class Member {
        travelLocations = travelLocations ?? <String>[],
        clothing = clothing ?? <ClothingItem>[];
 
+  Map<String, dynamic> toMap() => {
+    'id': id,
+    'name': name,
+    'email': email,
+    'phone': phone,
+    'join_date': joinDate.toIso8601String().split('T').first,
+    'branch': branch,
+    'voice_section': voiceSection,
+    'role': role,
+    'photo_url': photoUrl,
+    'status': switch (state) {
+      AccountState.active => 'active',
+      AccountState.deactivated => 'deactivated',
+      AccountState.deleted => 'left',
+      AccountState.pending => 'pending',
+    },
+    'can_upload_gallery': canUploadGallery,
+    'share_location': shareLocation,
+    'favorite_song_id': favoriteSongId,
+    'least_favorite_song_id': leastFavoriteSongId,
+    'concerts_count': concertsCount,
+    'practice_hours': practiceHours,
+    'travels_count': travelsCount,
+    'travel_locations': travelLocations,
+    'clothing': clothing
+        .map((c) => {'type': c.type, 'size': c.size, 'quantity': c.quantity})
+        .toList(),
+    'is_returning': isReturning,
+    'break_from': breakFrom?.toIso8601String().split('T').first,
+    'break_to': breakTo?.toIso8601String().split('T').first,
+    'house_lat': houseLat,
+    'house_lng': houseLng,
+    'house_address': houseAddress,
+    'live_location_enabled': liveLocationEnabled,
+    'singer_level': singerLevel,
+  };
+
   factory Member.fromMap(Map<String, dynamic> r) {
     final role = (r['role'] as String?) ?? 'member';
     final status = (r['status'] as String?) ?? 'pending';

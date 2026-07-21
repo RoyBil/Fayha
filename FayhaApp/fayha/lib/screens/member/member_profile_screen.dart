@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../data/mock_data.dart';
 import '../../services/auth_service.dart';
+import '../../services/choir_songs_service.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/avatar.dart';
 import '../../widgets/branded_background.dart';
 import '../../widgets/elegant_card.dart';
 import '../../widgets/section_header.dart';
+import 'choir_history_screen.dart';
+import 'choir_history_trip_detail_screen.dart';
 import 'house_location_picker_screen.dart';
+import '../../services/choir_history_service.dart';
 
 class MemberProfileScreen extends StatefulWidget {
   const MemberProfileScreen({super.key});
@@ -340,6 +344,13 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
                 ),
                 const SizedBox(height: 28),
                 const SectionHeader(
+                  eyebrow: 'My Story',
+                  title: 'Choir History',
+                ),
+                const SizedBox(height: 14),
+                const _ChoirHistorySection(),
+                const SizedBox(height: 28),
+                const SectionHeader(
                   eyebrow: 'Repertoire',
                   title: 'Song Preferences',
                 ),
@@ -381,7 +392,7 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
                                   ).textTheme.labelMedium,
                                 ),
                                 Text(
-                                  '${m.memorizedSongIds.length} of ${MockData.songs.length} pieces',
+                                  '${m.memorizedSongIds.length} songs memorized',
                                   style: Theme.of(context).textTheme.bodyLarge,
                                 ),
                               ],
@@ -894,7 +905,7 @@ class _ReadOnly extends StatelessWidget {
   }
 }
 
-class _SongPicker extends StatelessWidget {
+class _SongPicker extends StatefulWidget {
   final String label;
   final String? hint;
   final String? currentId;
@@ -907,44 +918,22 @@ class _SongPicker extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final current = MockData.songs
-        .where((s) => s.id == currentId)
-        .cast<RepertoireSong?>()
-        .firstWhere((s) => true, orElse: () => null);
-    return InkWell(
-      onTap: () => _showPicker(context),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.favorite_outline,
-            size: 18,
-            color: AppColors.primary,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: theme.textTheme.labelMedium),
-                const SizedBox(height: 2),
-                Text(
-                  current?.title ?? 'Not set',
-                  style: theme.textTheme.bodyLarge,
-                ),
-                if (hint != null) ...[
-                  const SizedBox(height: 2),
-                  Text(hint!, style: theme.textTheme.bodySmall),
-                ],
-              ],
-            ),
-          ),
-          const Icon(Icons.chevron_right, color: AppColors.gray),
-        ],
-      ),
-    );
+  State<_SongPicker> createState() => _SongPickerState();
+}
+
+class _SongPickerState extends State<_SongPicker> {
+  List<ChoirSong> _songs = [];
+
+  @override
+  void initState() {
+    super.initState();
+    ChoirSongsService.fetchAll().then((songs) {
+      if (mounted) setState(() => _songs = songs);
+    });
   }
+
+  ChoirSong? get _current =>
+      _songs.where((s) => s.id == widget.currentId).firstOrNull;
 
   void _showPicker(BuildContext context) {
     showModalBottomSheet(
@@ -964,18 +953,26 @@ class _SongPicker extends StatelessWidget {
               leading: const Icon(Icons.clear),
               title: const Text('None'),
               onTap: () {
-                onPick(null);
+                widget.onPick(null);
                 Navigator.pop(context);
               },
             ),
-            ...MockData.songs.map(
+            if (_songs.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  'No songs in the library yet.',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ..._songs.map(
               (s) => ListTile(
                 leading: const Icon(Icons.music_note),
                 title: Text(s.title),
-                subtitle: Text(s.subtitle),
-                selected: s.id == currentId,
+                subtitle: s.subtitle != null ? Text(s.subtitle!) : null,
+                selected: s.id == widget.currentId,
                 onTap: () {
-                  onPick(s.id);
+                  widget.onPick(s.id);
                   Navigator.pop(context);
                 },
               ),
@@ -983,6 +980,193 @@ class _SongPicker extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: () => _showPicker(context),
+      child: Row(
+        children: [
+          const Icon(Icons.favorite_outline, size: 18, color: AppColors.primary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(widget.label, style: theme.textTheme.labelMedium),
+                const SizedBox(height: 2),
+                Text(
+                  _current?.title ?? 'Not set',
+                  style: theme.textTheme.bodyLarge,
+                ),
+                if (widget.hint != null) ...[
+                  const SizedBox(height: 2),
+                  Text(widget.hint!, style: theme.textTheme.bodySmall),
+                ],
+              ],
+            ),
+          ),
+          const Icon(Icons.chevron_right, color: AppColors.gray),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Choir History profile section ─────────────────────────────────────────────
+
+class _ChoirHistorySection extends StatefulWidget {
+  const _ChoirHistorySection();
+
+  @override
+  State<_ChoirHistorySection> createState() => _ChoirHistorySectionState();
+}
+
+class _ChoirHistorySectionState extends State<_ChoirHistorySection> {
+  List<ChoirHistoryTrip> _trips = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final all = await ChoirHistoryService.fetchAll();
+      final myIds = await ChoirHistoryService.fetchMyParticipations();
+      if (!mounted) return;
+      setState(() {
+        _trips = all.where((t) => myIds.contains(t.id)).toList();
+        _loading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_trips.isEmpty) {
+      return ElegantCard(
+        child: Column(
+          children: [
+            const Icon(Icons.history_edu_outlined, size: 36, color: AppColors.lightGray),
+            const SizedBox(height: 8),
+            Text(
+              'No trips marked yet',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: AppColors.lightGray),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Visit Choir History to mark which trips you joined.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: AppColors.lightGray),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ChoirHistoryScreen()),
+              ),
+              child: const Text('Browse History'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        for (final trip in _trips.take(3))
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: ElegantCard(
+              onTap: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ChoirHistoryTripDetailScreen(trip: trip),
+                  ),
+                );
+                _load();
+              },
+              child: Row(
+                children: [
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: AppColors.accent.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      '${trip.startDate.year}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        color: AppColors.accentDark,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          trip.name,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w600, fontSize: 14),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${trip.city}, ${trip.country}',
+                          style: const TextStyle(
+                              fontSize: 12, color: AppColors.lightGray),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right,
+                      color: AppColors.lightGray, size: 20),
+                ],
+              ),
+            ),
+          ),
+        TextButton.icon(
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ChoirHistoryScreen()),
+          ),
+          icon: const Icon(Icons.history_edu_outlined, size: 16),
+          label: Text(
+            _trips.length > 3
+                ? 'View all ${_trips.length} trips'
+                : 'View full choir history',
+          ),
+        ),
+      ],
     );
   }
 }

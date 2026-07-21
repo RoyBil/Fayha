@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../data/choir_data.dart';
 import '../services/auth_service.dart';
 import '../services/live_location_service.dart';
+import '../services/member_cache_service.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import 'member/member_shell.dart';
@@ -22,6 +23,9 @@ class _SplashScreenState extends State<SplashScreen>
   late final Animation<double> _logoScale;
   late final Animation<double> _lineGrow;
   late final Animation<double> _textFade;
+
+  // Session check runs immediately, in parallel with the animation.
+  late final Future<Widget?> _sessionFuture;
 
   @override
   void initState() {
@@ -49,7 +53,14 @@ class _SplashScreenState extends State<SplashScreen>
       curve: const Interval(0.55, 1.0, curve: Curves.easeOut),
     );
     _ctrl.forward();
-    Future.delayed(const Duration(milliseconds: 5000), _goNext);
+
+    // Start session restore immediately — by the time the animation finishes
+    // (~2.4 s), the result is usually already available, so _goNext has no
+    // additional wait in the common case.
+    _sessionFuture = _checkSession();
+
+    // Show the splash for at least 3 s (≥ animation duration) then navigate.
+    Future.delayed(const Duration(milliseconds: 3000), _goNext);
   }
 
   bool _precached = false;
@@ -62,23 +73,41 @@ class _SplashScreenState extends State<SplashScreen>
     }
   }
 
+  /// Resolves the session: returns [MemberShell] if a valid signed-in member
+  /// is found (from cache or network), or null to show the public home.
+  Future<Widget?> _checkSession() async {
+    if (!AuthService.hasSession) return null;
+    try {
+      // 1. Try the local cache first — instant, no network needed.
+      final cached = await MemberCacheService.load();
+      if (cached != null && cached.state == AccountState.active) {
+        AppState.instance.signIn(cached);
+        LiveLocationService.instance.resumeIfEnabled();
+        // Refresh from DB in the background so the profile is always fresh.
+        AuthService.loadCurrentMember().then((fresh) {
+          if (fresh != null && fresh.state == AccountState.active) {
+            AppState.instance.signIn(fresh);
+          }
+        }).catchError((_) {});
+        return const MemberShell();
+      }
+      // 2. No cache (first run after install / cache cleared): hit the network.
+      final member = await AuthService.loadCurrentMember();
+      if (member != null && member.state == AccountState.active) {
+        AppState.instance.signIn(member);
+        LiveLocationService.instance.resumeIfEnabled();
+        return const MemberShell();
+      }
+    } catch (_) {
+      // Network error or expired token — fall through to public view.
+    }
+    return null;
+  }
+
   Future<void> _goNext() async {
     if (!mounted) return;
-    // If Supabase already has a valid session (from a previous launch), restore
-    // the member profile and go straight to the member area — no sign-in needed.
-    Widget destination = widget.next;
-    if (AuthService.hasSession) {
-      try {
-        final member = await AuthService.loadCurrentMember();
-        if (member != null && member.state == AccountState.active) {
-          AppState.instance.signIn(member);
-          LiveLocationService.instance.resumeIfEnabled();
-          destination = const MemberShell();
-        }
-      } catch (_) {
-        // Session token may be expired — fall through to public view.
-      }
-    }
+    final shell = await _sessionFuture;
+    final destination = shell ?? widget.next;
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(

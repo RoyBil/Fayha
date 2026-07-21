@@ -26,7 +26,7 @@ class _TripGroupDetailScreenState extends State<TripGroupDetailScreen>
   late TabController _tabs;
   late TripGroup _group;
 
-  bool get _isAdmin => AppState.instance.isAdmin;
+  bool get _isAdmin => AppState.instance.isAdmin || AppState.instance.isEditor;
   String get _myId => AppState.instance.currentMember?.id ?? '';
 
   late Future<List<TripGroupInfo>> _info;

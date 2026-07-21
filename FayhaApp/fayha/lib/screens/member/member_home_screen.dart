@@ -24,6 +24,7 @@ import 'admin_panel_screen.dart';
 import 'gallery_screen.dart';
 import 'qr_check_in_screen.dart';
 import 'house_location_picker_screen.dart';
+import 'choir_history_screen.dart';
 import 'members_directory_screen.dart';
 
 class MemberHomeScreen extends StatefulWidget {
@@ -115,7 +116,7 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
           children: [
             _ProfileHeader(member: m, years: years),
-            if (!m.isMaestro) ...[
+            ...[
               const SizedBox(height: 14),
               _LiveLocationCard(
                 enabled: m.liveLocationEnabled,
@@ -264,6 +265,16 @@ class _MemberHomeScreenState extends State<MemberHomeScreen> {
                     context,
                     MaterialPageRoute(
                       builder: (_) => const TestimonialsMemberScreen(),
+                    ),
+                  ),
+                ),
+                _Tile(
+                  icon: Icons.history_edu_outlined,
+                  label: 'History',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ChoirHistoryScreen(),
                     ),
                   ),
                 ),

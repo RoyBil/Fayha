@@ -179,13 +179,16 @@ class _MembersList extends StatelessWidget {
                             child: Text(
                               m.name,
                               style: Theme.of(context).textTheme.titleMedium,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           if (m.singerLevel != null) ...[
-                            _LevelChip(level: m.singerLevel!),
                             const SizedBox(width: 4),
+                            _LevelChip(level: m.singerLevel!),
                           ],
-                          if (m.role != 'member')
+                          if (m.role != 'member') ...[
+                            const SizedBox(width: 4),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 6,
@@ -209,6 +212,7 @@ class _MembersList extends StatelessWidget {
                                 ),
                               ),
                             ),
+                          ],
                         ],
                       ),
                       const SizedBox(height: 2),
@@ -246,37 +250,34 @@ class _MembersList extends StatelessWidget {
   }
 }
 
-/// Compact singer-level pill: Beginner (grey) / Intermediate (burgundy) /
-/// Professional (gold). Used on the directory tiles.
+/// Compact singer-level pill shown on directory tiles.
+/// Handles both the stage-role values (on_stage / assistant_conductor / …)
+/// and the skill-level values (beginner / intermediate / professional).
 class _LevelChip extends StatelessWidget {
   final String level;
   const _LevelChip({required this.level});
 
-  static String _label(String v) {
-    switch (v) {
-      case 'beginner':
-        return 'Beginner';
-      case 'intermediate':
-        return 'Intermediate';
-      case 'professional':
-        return 'Pro';
-      default:
-        return v;
-    }
-  }
+  static String _label(String v) => switch (v) {
+    'not_on_stage' => 'Off Stage',
+    'on_stage' => 'On Stage',
+    'assistant_conductor' => 'Asst. Cond.',
+    'friend' => 'Friend',
+    'beginner' => 'Beginner',
+    'intermediate' => 'Inter.',
+    'professional' => 'Pro',
+    _ => v,
+  };
 
-  static Color _color(String v) {
-    switch (v) {
-      case 'beginner':
-        return AppColors.gray;
-      case 'intermediate':
-        return AppColors.primary;
-      case 'professional':
-        return AppColors.accentDark;
-      default:
-        return AppColors.gray;
-    }
-  }
+  static Color _color(String v) => switch (v) {
+    'not_on_stage' => AppColors.gray,
+    'on_stage' => AppColors.secondary,
+    'assistant_conductor' => AppColors.accentDark,
+    'friend' => AppColors.primary,
+    'beginner' => AppColors.gray,
+    'intermediate' => AppColors.primary,
+    'professional' => AppColors.accentDark,
+    _ => AppColors.gray,
+  };
 
   @override
   Widget build(BuildContext context) {

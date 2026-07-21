@@ -21,6 +21,7 @@ import 'manage_social_posts_screen.dart';
 import 'compose_poll_screen.dart';
 import 'compose_message_screen.dart';
 import 'compose_news_screen.dart';
+import 'choir_history_screen.dart';
 import 'compose_song_screen.dart';
 import 'bus_routes_screen.dart';
 import 'trip_groups_screen.dart';
@@ -896,8 +897,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
         ),
         const SizedBox(height: 16),
 
-        // ===== Add =====
-        if (_isAdmin) ...[
+        // ===== Songs — admin + editor =====
+        if (_isAdmin || _isEditor) ...[
           _ComposeCard(
             icon: Icons.library_music,
             color: AppColors.primary,
@@ -916,6 +917,10 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             },
           ),
           const SizedBox(height: 12),
+        ],
+
+        // ===== Polls — admin only =====
+        if (_isAdmin) ...[
           _ComposeCard(
             icon: Icons.poll_outlined,
             color: AppColors.primary,
@@ -935,6 +940,10 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             },
           ),
           const SizedBox(height: 12),
+        ],
+
+        // ===== Trip Groups — admin + editor =====
+        if (_isAdmin || _isEditor) ...[
           _ComposeCard(
             icon: Icons.flight_takeoff,
             color: AppColors.accentDark,
@@ -948,6 +957,10 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             ),
           ),
           const SizedBox(height: 12),
+        ],
+
+        // ===== Bus Routes — admin only =====
+        if (_isAdmin) ...[
           _ComposeCard(
             icon: Icons.directions_bus_outlined,
             color: AppColors.secondary,
@@ -961,6 +974,10 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             ),
           ),
           const SizedBox(height: 28),
+        ],
+
+        // ===== Manage audience songs — admin + editor =====
+        if (_isAdmin || _isEditor) ...[
           Text('Manage audience songs', style: theme.textTheme.titleMedium),
           const SizedBox(height: 4),
           Text(
@@ -969,9 +986,23 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
           ),
           const SizedBox(height: 12),
           const _ManageAudienceSongsList(),
+          const SizedBox(height: 28),
         ],
-        if (_isAdmin && _isEditor) const SizedBox(height: 12),
+
+        // ===== Editor content =====
         if (_isEditor) ...[
+          _ComposeCard(
+            icon: Icons.history_edu,
+            color: AppColors.accentDark,
+            colorAlpha: 0.12,
+            title: 'Choir History',
+            subtitle: 'Document past trips, concerts, festivals, and activities',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ChoirHistoryScreen()),
+            ),
+          ),
+          const SizedBox(height: 12),
           _ComposeCard(
             icon: Icons.newspaper,
             color: AppColors.secondary,

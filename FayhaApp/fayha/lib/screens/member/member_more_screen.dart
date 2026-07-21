@@ -13,6 +13,7 @@ import 'polls_screen.dart';
 import 'attendance_history_screen.dart';
 import 'attendance_screen.dart';
 import 'testimonials_member_screen.dart';
+import 'choir_history_screen.dart';
 import 'gallery_screen.dart';
 import 'qr_check_in_screen.dart';
 import 'admin_panel_screen.dart';
@@ -141,6 +142,19 @@ class MemberMoreScreen extends StatelessWidget {
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const GalleryScreen()),
+                ),
+              ),
+              AppListTile(
+                icon: Icons.history_edu_outlined,
+                iconColor: AppColors.accentDark,
+                iconBackground: AppColors.accent.withValues(alpha: 0.1),
+                title: 'Choir History',
+                subtitle: 'Past trips, concerts, and festivals',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ChoirHistoryScreen(),
+                  ),
                 ),
               ),
             ]),

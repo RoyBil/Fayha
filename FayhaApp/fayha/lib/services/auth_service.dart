@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../state/app_state.dart';
 import 'live_location_service.dart';
+import 'member_cache_service.dart';
 import 'member_songs_service.dart';
 
 class AuthService {
@@ -56,18 +57,22 @@ class AuthService {
 
   static Future<void> signOut() async {
     LiveLocationService.instance.stopTimer();
-    await _c.auth.signOut();
+    await Future.wait([
+      _c.auth.signOut(),
+      MemberCacheService.clear(),
+    ]);
     AppState.instance.signOut();
   }
 
   /// Fast sign-out: clears local state and navigates instantly, then
-  /// invalidates the Supabase session and removes the FCM token in the
-  /// background so the UI is never blocked by network round-trips.
+  /// invalidates the Supabase session in the background so the UI is never
+  /// blocked by network round-trips.
   static void signOutFast() {
     LiveLocationService.instance.stopTimer();
     AppState.instance.signOut();
-    // Background cleanup — do not await so the caller can navigate immediately.
+    // Background cleanup — fire-and-forget.
     _c.auth.signOut().catchError((_) {});
+    MemberCacheService.clear();
   }
 
   static Future<void> resetPassword(String email) async {
@@ -78,7 +83,8 @@ class AuthService {
 
   static String? get currentUserId => _c.auth.currentUser?.id;
 
-  /// Loads the signed-in user's member profile from the `members` table.
+  /// Loads the signed-in user's member profile from the `members` table
+  /// and saves it to the local cache for the next cold-start.
   static Future<Member?> loadCurrentMember() async {
     final user = _c.auth.currentUser;
     if (user == null) return null;
@@ -94,6 +100,7 @@ class AuthService {
     } catch (_) {
       // ignore — member_songs table may not exist yet
     }
+    await MemberCacheService.save(m);
     return m;
   }
 

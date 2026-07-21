@@ -36,6 +36,7 @@ class ChoirSong {
   final String? description;
   final String? lyrics;
   final String? youtubeUrl;
+  final String? sheetMusicUrl;
 
   /// Audio URLs keyed by [choirVoicePartKeys] entry. Null = part not
   /// uploaded for this song.
@@ -51,6 +52,7 @@ class ChoirSong {
     this.description,
     this.lyrics,
     this.youtubeUrl,
+    this.sheetMusicUrl,
     required this.partUrls,
     required this.createdAt,
   });
@@ -82,6 +84,7 @@ class ChoirSong {
       description: r['description'] as String?,
       lyrics: r['lyrics'] as String?,
       youtubeUrl: r['youtube_url'] as String?,
+      sheetMusicUrl: r['sheet_music_url'] as String?,
       partUrls: urls,
       createdAt: DateTime.parse(r['created_at'] as String),
     );
@@ -93,7 +96,7 @@ class ChoirSongsService {
 
   static List<ChoirSong>? _cache;
   static DateTime? _cacheAt;
-  static const _cacheTtl = Duration(minutes: 5);
+  static const _cacheTtl = Duration(minutes: 30);
 
   static Future<List<ChoirSong>> fetchAll({bool forceRefresh = false}) async {
     final cached = _cache;
@@ -149,6 +152,26 @@ class ChoirSongsService {
     return _c.storage.from('choir_song_parts').getPublicUrl(path);
   }
 
+  /// Uploads a sheet-music file (PDF or image) and returns its public URL.
+  /// Path: {songId}/sheet_music.{ext}
+  static Future<String> uploadSheetMusic({
+    required String songId,
+    required Uint8List bytes,
+    required String fileExtension,
+  }) async {
+    final ext = fileExtension.isEmpty ? 'pdf' : fileExtension;
+    final path = '$songId/sheet_music.$ext';
+    final contentType = ext == 'pdf' ? 'application/pdf' : 'image/$ext';
+    await _c.storage
+        .from('choir_song_parts')
+        .uploadBinary(
+          path,
+          bytes,
+          fileOptions: FileOptions(upsert: true, contentType: contentType),
+        );
+    return _c.storage.from('choir_song_parts').getPublicUrl(path);
+  }
+
   /// Inserts a new choir song. Pass any number of voice-part URLs;
   /// missing parts are stored as NULL (the song just won't have audio
   /// for those sections).
@@ -160,6 +183,7 @@ class ChoirSongsService {
     String? description,
     String? lyrics,
     String? youtubeUrl,
+    String? sheetMusicUrl,
     required Map<String, String?> partUrls,
   }) async {
     final me = _c.auth.currentUser?.id;
@@ -171,6 +195,7 @@ class ChoirSongsService {
       'description': description,
       'lyrics': lyrics,
       'youtube_url': youtubeUrl,
+      'sheet_music_url': sheetMusicUrl,
       'created_by': me,
       'sort_order': DateTime.now().millisecondsSinceEpoch ~/ 1000,
     };
@@ -191,6 +216,7 @@ class ChoirSongsService {
     String? description,
     String? lyrics,
     String? youtubeUrl,
+    String? sheetMusicUrl,
     Map<String, String?>? partUrls,
   }) async {
     final patch = <String, dynamic>{};
@@ -200,6 +226,7 @@ class ChoirSongsService {
     if (description != null) patch['description'] = description;
     if (lyrics != null) patch['lyrics'] = lyrics;
     if (youtubeUrl != null) patch['youtube_url'] = youtubeUrl;
+    if (sheetMusicUrl != null) patch['sheet_music_url'] = sheetMusicUrl;
     if (partUrls != null) {
       for (final e in partUrls.entries) {
         patch['${e.key}_url'] = e.value;

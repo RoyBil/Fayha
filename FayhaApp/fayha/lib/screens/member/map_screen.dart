@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../data/map_data.dart';
+import '../../services/choir_history_service.dart';
 import '../../services/live_location_service.dart';
 import '../../services/member_houses_service.dart';
 import '../../state/app_state.dart';
@@ -495,29 +496,53 @@ class _VillagesTabState extends State<_VillagesTab>
   static const double _zoom = 4.0;
   final MapController _ctrl = MapController();
 
-  Future<void> _focus(Venue v) async {
-    await smoothMove(
-      this,
-      _ctrl,
-      LatLng(v.lat, v.lng),
-      10.0,
-      duration: const Duration(milliseconds: 1500),
-    );
+  List<ChoirHistoryTrip> _trips = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final trips = await ChoirHistoryService.fetchAll();
+      if (!mounted) return;
+      setState(() {
+        _trips = trips;
+        _loading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _focusTrip(ChoirHistoryTrip t) async {
+    if (t.hasCoordinates) {
+      await smoothMove(
+        this,
+        _ctrl,
+        LatLng(t.lat!, t.lng!),
+        10.0,
+        duration: const Duration(milliseconds: 1500),
+      );
+    }
     if (!mounted) return;
     final url =
-        'https://www.google.com/maps/search/${Uri.encodeComponent('${v.city}, ${v.country}')}';
+        'https://www.google.com/maps/search/${Uri.encodeComponent('${t.city}, ${t.country}')}';
     _showSheet(
       context,
       MapInfoSheet(
         color: AppColors.accentDark,
         icon: Icons.place,
-        title: '${v.city}, ${v.country}',
-        subtitle: v.event,
+        title: '${t.city}, ${t.country}',
+        subtitle: t.name,
         facts: [
-          MapFact(Icons.event, 'Date', v.date),
-          MapFact(Icons.theater_comedy, 'Event', v.event),
+          MapFact(Icons.event, 'Year', '${t.startDate.year}'),
+          MapFact(Icons.theater_comedy, 'Trip', t.name),
         ],
-        description: v.notes,
+        description: t.description ?? '',
         onOpenMap: () => _open(url),
       ),
     );
@@ -525,19 +550,19 @@ class _VillagesTabState extends State<_VillagesTab>
 
   @override
   Widget build(BuildContext context) {
-    final venues = [...MapData.venues]
-      ..sort((a, b) => b.sortDate.compareTo(a.sortDate));
-    final pins = venues
+    final pins = _trips
+        .where((t) => t.hasCoordinates)
         .map(
-          (v) => MapPin(
-            point: LatLng(v.lat, v.lng),
+          (t) => MapPin(
+            point: LatLng(t.lat!, t.lng!),
             color: AppColors.accentDark,
-            label: v.city,
+            label: t.city,
             icon: Icons.place,
-            onTap: () => _focus(v),
+            onTap: () => _focusTrip(t),
           ),
         )
         .toList();
+
     return ListView(
       padding: const EdgeInsets.only(bottom: 24),
       children: [
@@ -553,48 +578,62 @@ class _VillagesTabState extends State<_VillagesTab>
           ),
         ),
         const SizedBox(height: 12),
-        ...venues.map(
-          (v) => Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
-            child: ElegantCard(
-              onTap: () => _focus(v),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppColors.accent.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(10),
+        if (_loading)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 32),
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (_trips.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            child: Text(
+              'No trips recorded yet. Editors can add past trips in the Choir History section.',
+              textAlign: TextAlign.center,
+            ),
+          )
+        else
+          ..._trips.map(
+            (t) => Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+              child: ElegantCard(
+                onTap: () => _focusTrip(t),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.accent.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.place,
+                        color: AppColors.accentDark,
+                        size: 22,
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.place,
-                      color: AppColors.accentDark,
-                      size: 22,
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${t.city}, ${t.country}',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            t.name,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${v.city}, ${v.country}',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          v.date,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(Icons.chevron_right, color: AppColors.gray),
-                ],
+                    const Icon(Icons.chevron_right, color: AppColors.gray),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
       ],
     );
   }

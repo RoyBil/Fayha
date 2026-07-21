@@ -1,9 +1,12 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
-/// Opens a YouTube video inside the app (no browser hand-off).
-/// Returns nothing — the dialog manages its own controller lifecycle.
+/// Opens a YouTube video.
+/// • On mobile (iOS/Android): YouTube blocks WebView playback, so we show a
+///   thumbnail card with a button that opens the YouTube app or browser.
+/// • On web: the in-app iframe player is embedded directly.
 Future<void> showYoutubePopup(
   BuildContext context,
   String url, {
@@ -16,6 +19,17 @@ Future<void> showYoutubePopup(
     );
     return Future.value();
   }
+
+  // Mobile: YouTube's iframe API blocks embedded WebView playback.
+  // Show a thumbnail preview and open externally instead.
+  if (!kIsWeb) {
+    return showDialog<void>(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (_) => _YoutubeMobileCard(videoId: videoId, title: title),
+    );
+  }
+
   return showDialog<void>(
     context: context,
     barrierColor: Colors.black87,
@@ -25,7 +39,6 @@ Future<void> showYoutubePopup(
 
 /// Opens the YouTube app if installed, otherwise falls back to the browser.
 Future<void> _openExternal(String videoId) async {
-  // iOS + Android: custom-scheme deep-link into the YouTube app.
   final appUri = Uri.parse('youtube://watch?v=$videoId');
   final webUri = Uri.parse('https://www.youtube.com/watch?v=$videoId');
   try {
@@ -36,6 +49,127 @@ Future<void> _openExternal(String videoId) async {
   } catch (_) {}
   await launchUrl(webUri, mode: LaunchMode.externalApplication);
 }
+
+// ── Mobile card (thumbnail + external launch) ─────────────────────────────────
+
+class _YoutubeMobileCard extends StatelessWidget {
+  final String videoId;
+  final String? title;
+  const _YoutubeMobileCard({required this.videoId, this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    // YouTube provides free thumbnail images at predictable URLs.
+    final thumbUrl =
+        'https://img.youtube.com/vi/$videoId/hqdefault.jpg';
+
+    return Dialog(
+      backgroundColor: Colors.black,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 10, 6, 6),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title ?? 'YouTube',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+          ),
+          // Thumbnail
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: AspectRatio(
+                aspectRatio: 16 / 9,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.network(
+                      thumbUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: const Color(0xFF1a1a1a),
+                        child: const Icon(
+                          Icons.play_circle_outline,
+                          color: Colors.white54,
+                          size: 64,
+                        ),
+                      ),
+                    ),
+                    // Play overlay
+                    Center(
+                      child: Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.55),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.play_arrow,
+                          color: Colors.white,
+                          size: 40,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // Open button
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 14, 12, 16),
+            child: SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF0000),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _openExternal(videoId);
+                },
+                icon: const Icon(Icons.play_circle_outline, size: 20),
+                label: const Text(
+                  'Watch on YouTube',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Web in-app player ─────────────────────────────────────────────────────────
 
 class _YoutubePopup extends StatefulWidget {
   final String videoId;
@@ -81,9 +215,8 @@ class _YoutubePopupState extends State<_YoutubePopup> {
   Widget build(BuildContext context) {
     const inset = 12.0;
     final mq = MediaQuery.of(context);
-    // Largest 16:9 rectangle that fits the screen with margins.
     final maxW = mq.size.width - inset * 2;
-    final maxH = mq.size.height - inset * 4 - 80; // leave room for header
+    final maxH = mq.size.height - inset * 4 - 80;
     final byW = (maxW * 9 / 16);
     final playerW = byW <= maxH ? maxW : maxH * 16 / 9;
     final playerH = playerW * 9 / 16;
@@ -116,9 +249,6 @@ class _YoutubePopupState extends State<_YoutubePopup> {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  // Always-visible fallback: opens native YouTube app or browser.
-                  // This is the primary path on physical phones where the
-                  // in-app WebView player may be blocked by YouTube's policy.
                   IconButton(
                     icon: const Icon(Icons.open_in_new, color: Colors.white70),
                     tooltip: 'Watch in YouTube',
@@ -139,8 +269,6 @@ class _YoutubePopupState extends State<_YoutubePopup> {
                 child: YoutubePlayer(controller: _ctrl),
               ),
             ),
-            // Persistent fallback row — tapping takes the user to the YouTube
-            // app/browser, which is 100% reliable on physical devices.
             if (!_playerReady)
               Padding(
                 padding: const EdgeInsets.only(top: 8, bottom: 4),

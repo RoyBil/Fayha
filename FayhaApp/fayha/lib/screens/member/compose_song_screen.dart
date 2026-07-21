@@ -51,9 +51,13 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
     null,
   );
   _PickedAudio? _audienceAudio;
+  _PickedAudio? _sheetMusic;
 
   bool get _isEdit => widget.existing != null;
   bool get _isAudienceEdit => widget.existingAudience != null;
+
+  // Existing sheet-music URL (edit mode) — shown so user knows one exists.
+  String? _existingSheetMusicUrl;
 
   @override
   void initState() {
@@ -66,6 +70,7 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
       _description.text = e.description ?? '';
       _lyrics.text = e.lyrics ?? '';
       _youtube.text = e.youtubeUrl ?? '';
+      _existingSheetMusicUrl = e.sheetMusicUrl;
       _target = _SongTarget.choir;
     }
     final ea = widget.existingAudience;
@@ -143,6 +148,21 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
         extension: ext,
         bytes: bytes,
       );
+    });
+  }
+
+  Future<void> _pickSheetMusic() async {
+    const typeGroup = XTypeGroup(
+      label: 'Sheet Music',
+      extensions: ['pdf', 'png', 'jpg', 'jpeg'],
+    );
+    final file = await openFile(acceptedTypeGroups: [typeGroup]);
+    if (file == null) return;
+    final bytes = await file.readAsBytes();
+    final name = file.name;
+    final ext = name.contains('.') ? name.split('.').last.toLowerCase() : 'pdf';
+    setState(() {
+      _sheetMusic = _PickedAudio(filename: name, extension: ext, bytes: bytes);
     });
   }
 
@@ -265,6 +285,15 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
             fileExtension: p.extension,
           );
         }
+        String? newSheetUrl;
+        if (_sheetMusic != null) {
+          setState(() => _progress = 'Uploading sheet music…');
+          newSheetUrl = await ChoirSongsService.uploadSheetMusic(
+            songId: existing.id,
+            bytes: Uint8List.fromList(_sheetMusic!.bytes),
+            fileExtension: _sheetMusic!.extension,
+          );
+        }
         setState(() => _progress = 'Saving changes…');
         await ChoirSongsService.update(
           id: existing.id,
@@ -274,6 +303,7 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
           description: _description.text.trim(),
           lyrics: _lyrics.text.trim(),
           youtubeUrl: _youtube.text.trim(),
+          sheetMusicUrl: newSheetUrl,
           partUrls: partPatch.isEmpty ? null : partPatch,
         );
         ChoirSongsService.invalidateCache();
@@ -304,6 +334,15 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
             fileExtension: p.extension,
           );
         }
+        String? newSheetUrl;
+        if (_sheetMusic != null) {
+          setState(() => _progress = 'Uploading sheet music…');
+          newSheetUrl = await ChoirSongsService.uploadSheetMusic(
+            songId: id,
+            bytes: Uint8List.fromList(_sheetMusic!.bytes),
+            fileExtension: _sheetMusic!.extension,
+          );
+        }
         setState(() => _progress = 'Publishing…');
         await ChoirSongsService.create(
           id: id,
@@ -321,6 +360,7 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
           youtubeUrl: _youtube.text.trim().isEmpty
               ? null
               : _youtube.text.trim(),
+          sheetMusicUrl: newSheetUrl,
           partUrls: partUrls,
         );
       }
@@ -433,6 +473,20 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
                 ),
                 const SizedBox(height: 12),
                 for (var i = 0; i < choirVoiceParts.length; i++) _partRow(i),
+                const SizedBox(height: 22),
+                Text(
+                  'Sheet music (optional)',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _existingSheetMusicUrl != null
+                      ? 'A score is already uploaded. Pick a file to replace it.'
+                      : 'Upload a PDF or image score that members can view.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 10),
+                _sheetMusicRow(),
               ],
               const SizedBox(height: 24),
               if (_saving && _progress != null)
@@ -522,6 +576,62 @@ class _ComposeSongScreenState extends State<ComposeSongScreen> {
               size: 16,
             ),
             label: Text((picked || _isAudienceEdit) ? 'Replace' : 'Upload'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sheetMusicRow() {
+    final picked = _sheetMusic != null;
+    final hasExisting = _existingSheetMusicUrl != null;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: picked ? AppColors.secondary : AppColors.offWhite,
+          width: picked ? 1.5 : 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.accentDark.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            alignment: Alignment.center,
+            child: const Icon(
+              Icons.picture_as_pdf_outlined,
+              color: AppColors.accentDark,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              picked
+                  ? _sheetMusic!.filename
+                  : (hasExisting
+                      ? 'Score already uploaded — tap Replace to change'
+                      : 'No file selected'),
+              style: Theme.of(context).textTheme.bodySmall,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          TextButton.icon(
+            onPressed: _pickSheetMusic,
+            icon: Icon(
+              (picked || hasExisting) ? Icons.swap_horiz : Icons.upload_file,
+              size: 16,
+            ),
+            label: Text((picked || hasExisting) ? 'Replace' : 'Upload'),
           ),
         ],
       ),

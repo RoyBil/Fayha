@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/choir_songs_service.dart';
 import '../../services/member_songs_service.dart';
@@ -22,10 +23,12 @@ class _SongDetailScreenState extends State<SongDetailScreen>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late TabController _tabs;
 
-  /// One player per voice section (S1, S2, A1, A2, T1, T2, B1, B2).
+  /// One player per voice section (indexed by [choirVoiceParts]).
   late final List<AudioPlayer> _players;
   late final List<double> _volumes;
   late final List<bool> _muted;
+  // Tracks which players have had setSource called (phase-2 guard).
+  late final List<bool> _hasSource;
 
   /// Index of the player used as position/duration master.
   int? _masterIdx;
@@ -73,6 +76,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
     _players = List.generate(choirVoiceParts.length, (_) => AudioPlayer());
     _volumes = List<double>.filled(choirVoiceParts.length, 0.8);
     _muted = List<bool>.filled(choirVoiceParts.length, false);
+    _hasSource = List<bool>.filled(choirVoiceParts.length, false);
     final mine = _myIndex();
     if (mine >= 0) _volumes[mine] = 1.0;
     _initPlayers();
@@ -90,14 +94,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
         ),
       );
 
-      // Initialise all players in parallel — setSource is the slow step
-      // because it opens a network connection; doing them concurrently
-      // cuts load time from O(n) sequential to O(1) parallel.
-      await Future.wait([
-        for (var i = 0; i < _players.length; i++) _initOnePlayer(i, audioCtx),
-      ]);
-
-      // Determine master: first index that has audio.
+      // Phase 1 — init only the master player so the mixer shows immediately.
       int? masterIdx;
       for (var i = 0; i < _players.length; i++) {
         if (widget.song.hasPart(i)) {
@@ -115,10 +112,9 @@ class _SongDetailScreenState extends State<SongDetailScreen>
         return;
       }
       _masterIdx = masterIdx;
-      final master = _players[masterIdx];
+      await _initOnePlayer(masterIdx, audioCtx);
 
-      // Imperatively fetch duration — the onDurationChanged event may
-      // have fired before the stream listener is attached.
+      final master = _players[masterIdx];
       final d = await master.getDuration();
       if (d != null && d > Duration.zero) {
         if (mounted) setState(() => _total = d);
@@ -133,9 +129,10 @@ class _SongDetailScreenState extends State<SongDetailScreen>
         setState(() => _total = d);
       });
       _completeSub = master.onPlayerComplete.listen((_) async {
-        for (final p in _players) {
-          await p.stop();
-          await p.seek(Duration.zero);
+        for (var j = 0; j < _players.length; j++) {
+          if (!_hasSource[j]) continue;
+          await _players[j].stop();
+          await _players[j].seek(Duration.zero);
         }
         _driftTimer?.cancel();
         if (!mounted) return;
@@ -144,12 +141,31 @@ class _SongDetailScreenState extends State<SongDetailScreen>
           _pos = Duration.zero;
         });
       });
+
       if (!mounted) return;
       setState(() {
         _ready = true;
         _loading = false;
       });
       _subscribeSyncChannel();
+
+      // Phase 2 — init remaining players in the background. The mixer is
+      // already visible; these players join playback as they become ready.
+      await Future.wait([
+        for (var i = 0; i < _players.length; i++)
+          if (i != masterIdx) _initOnePlayer(i, audioCtx),
+      ]);
+
+      // Sync background players to current playback position.
+      if (!mounted) return;
+      final currentPos = _pos;
+      final futures = <Future<void>>[];
+      for (var i = 0; i < _players.length; i++) {
+        if (i == masterIdx || !_hasSource[i]) continue;
+        futures.add(_players[i].seek(currentPos));
+        if (_playing) futures.add(_players[i].resume());
+      }
+      if (futures.isNotEmpty) await Future.wait(futures);
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -167,6 +183,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
     final url = widget.song.urlForPart(i);
     if (url != null && url.isNotEmpty) {
       await p.setSource(UrlSource(url));
+      _hasSource[i] = true;
     }
   }
 
@@ -186,13 +203,11 @@ class _SongDetailScreenState extends State<SongDetailScreen>
       case 'play':
         final posMs = (payload['pos_ms'] as num?)?.toInt() ?? 0;
         final sentAt = (payload['sent_at'] as num?)?.toInt() ?? 0;
-        // Compensate for network latency so all devices start at the same
-        // logical position.
         final latencyMs = DateTime.now().millisecondsSinceEpoch - sentAt;
         final adjustedMs = (posMs + latencyMs).clamp(0, _total.inMilliseconds);
         final target = Duration(milliseconds: adjustedMs);
-        await Future.wait(_players.map((p) => p.seek(target)));
-        await Future.wait(_players.map((p) => p.resume()));
+        await Future.wait(_activePlayers.map((p) => p.seek(target)));
+        await Future.wait(_activePlayers.map((p) => p.resume()));
         if (!mounted) return;
         setState(() {
           _playing = true;
@@ -201,7 +216,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
         _startDriftCorrection();
       case 'pause':
         final posMs = (payload['pos_ms'] as num?)?.toInt() ?? 0;
-        for (final p in _players) {
+        for (final p in _activePlayers) {
           await p.pause();
         }
         _driftTimer?.cancel();
@@ -213,7 +228,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
       case 'seek':
         final posMs = (payload['pos_ms'] as num?)?.toInt() ?? 0;
         final target = Duration(milliseconds: posMs);
-        await Future.wait(_players.map((p) => p.seek(target)));
+        await Future.wait(_activePlayers.map((p) => p.seek(target)));
         if (!mounted) return;
         setState(() => _pos = target);
     }
@@ -229,9 +244,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
       final masterPos = await _players[mi].getCurrentPosition();
       if (masterPos == null) return;
       for (var i = 0; i < _players.length; i++) {
-        if (i == mi) continue;
-        final url = widget.song.urlForPart(i);
-        if (url == null || url.isEmpty) continue;
+        if (i == mi || !_hasSource[i]) continue;
         final pos = await _players[i].getCurrentPosition();
         if (pos == null) continue;
         final drift = (pos.inMilliseconds - masterPos.inMilliseconds).abs();
@@ -259,9 +272,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
     final masterPos = await _players[mi].getCurrentPosition();
     if (masterPos == null) return;
     for (var i = 0; i < _players.length; i++) {
-      if (i == mi) continue;
-      final url = widget.song.urlForPart(i);
-      if (url == null || url.isEmpty) continue;
+      if (i == mi || !_hasSource[i]) continue;
       await _players[i].seek(masterPos);
     }
   }
@@ -283,10 +294,16 @@ class _SongDetailScreenState extends State<SongDetailScreen>
 
   // ── Playback controls ──────────────────────────────────────────────────────
 
+  // Returns only players that have had a source set (phase-2 safe).
+  List<AudioPlayer> get _activePlayers => [
+    for (var i = 0; i < _players.length; i++)
+      if (_hasSource[i]) _players[i],
+  ];
+
   Future<void> _togglePlay() async {
     if (!_ready) return;
     if (_playing) {
-      for (final p in _players) {
+      for (final p in _activePlayers) {
         await p.pause();
       }
       _driftTimer?.cancel();
@@ -296,8 +313,8 @@ class _SongDetailScreenState extends State<SongDetailScreen>
         payload: {'type': 'pause', 'pos_ms': _pos.inMilliseconds},
       );
     } else {
-      // Fire resume on all in parallel for closest sync.
-      await Future.wait(_players.map((p) => p.resume()));
+      // Fire resume on all active players in parallel for closest sync.
+      await Future.wait(_activePlayers.map((p) => p.resume()));
       setState(() => _playing = true);
       _startDriftCorrection();
       await _syncChannel?.sendBroadcastMessage(
@@ -312,7 +329,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
   }
 
   Future<void> _stop() async {
-    for (final p in _players) {
+    for (final p in _activePlayers) {
       await p.stop();
       await p.seek(Duration.zero);
     }
@@ -333,7 +350,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
     final target = Duration(
       milliseconds: (value * _total.inMilliseconds).round(),
     );
-    await Future.wait(_players.map((p) => p.seek(target)));
+    await Future.wait(_activePlayers.map((p) => p.seek(target)));
     if (mounted) setState(() => _pos = target);
     await _syncChannel?.sendBroadcastMessage(
       event: 'ctl',
@@ -524,7 +541,8 @@ class _SongDetailScreenState extends State<SongDetailScreen>
     final m = AppState.instance.currentMember;
     final memorized = m?.memorizedSongIds.contains(widget.song.id) ?? false;
     final mine = _myIndex();
-    final canManage = (m?.role == 'admin' || m?.role == 'superAdmin');
+    final canManage =
+        (m?.role == 'admin' || m?.role == 'superAdmin' || m?.role == 'editor');
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.song.title, style: const TextStyle(fontSize: 20)),
@@ -722,6 +740,17 @@ class _SongDetailScreenState extends State<SongDetailScreen>
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
       children: [
+        if ((widget.song.sheetMusicUrl ?? '').isNotEmpty) ...[
+          OutlinedButton.icon(
+            onPressed: () => launchUrl(
+              Uri.parse(widget.song.sheetMusicUrl!),
+              mode: LaunchMode.externalApplication,
+            ),
+            icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
+            label: const Text('View Sheet Music'),
+          ),
+          const SizedBox(height: 16),
+        ],
         if ((widget.song.lyrics ?? '').isEmpty)
           Text(
             'No lyrics added for this song yet.',
